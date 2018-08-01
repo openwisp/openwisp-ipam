@@ -1,0 +1,5 @@
+coverage
+coveralls
+isort
+flake8
+django-extensions>=2.0.7
