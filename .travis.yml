@@ -1,0 +1,32 @@
+language: python
+sudo: false
+
+cache: pip
+
+python:
+  - "3.5"
+
+branches:
+  only:
+    - master
+
+env:
+  matrix:
+   - ''  # main tests
+
+before_install:
+  - pip install https://github.com/openwisp/django-ipam/archive/master.zip
+  - pip install --no-cache-dir -U -r requirements-test.txt
+  - ./runflake8
+  - ./runisort
+
+install:
+  - pip3 install "django>=2.0,<2.1"
+  - python setup.py -q develop
+
+# command to run tests, e.g. python setup.py test
+script:
+  - coverage run --source=openwisp_ipam runtests.py
+
+after_success:
+  - coveralls
