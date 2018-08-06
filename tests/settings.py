@@ -37,12 +37,23 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'openwisp_utils.admin_theme',
+    # all-auth
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    # openwisp2 modules
+    'openwisp_users',
     'openwisp_ipam',
+    # admin
     'django.contrib.admin',
+    # rest framework
     'rest_framework',
 ]
 
 EXTENDED_APPS = ['django_ipam']
+AUTH_USER_MODEL = 'openwisp_users.User'
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
