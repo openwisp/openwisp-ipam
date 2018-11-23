@@ -2,6 +2,7 @@ import os
 from unittest import skipIf
 
 import swapper
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import ModelForm
 from django.test import TestCase
@@ -140,3 +141,31 @@ class TestForms(BaseTestForms, TestCase):
 class TestModel(BaseTestModel, CreateModelsMixin, TestCase):
     ipaddress_model = swapper.load_model('openwisp_ipam', 'IPAddress')
     subnet_model = swapper.load_model('openwisp_ipam', 'Subnet')
+
+
+class TestUserAdmin(TestCase):
+    user_model = get_user_model()
+
+    def test_create_user(self):
+        self.user_model.objects.create_superuser(
+            username='admin',
+            password='qwertyuiop',
+            email='',
+        )
+        self.client.post(
+            '/admin/login/?next=/admin/',
+            {
+                'username': 'admin',
+                'password': 'qwertyuiop'
+            },
+        )
+        self.client.post(
+            '/admin/openwisp_users/user/add/',
+            {
+                "username": "test1212",
+                "email": "test1@test.com",
+                "password1": "qwertyuiop",
+                "password2": "qwertyuiop",
+            }
+        )
+        self.assertIsNotNone(self.user_model.objects.get(username="test1212"))
