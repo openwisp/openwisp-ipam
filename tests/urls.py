@@ -7,4 +7,5 @@ admin.autodiscover()
 urlpatterns = [
     url(r'^', include('openwisp_ipam.urls', namespace='ipam')),
     url(r'^admin/', admin.site.urls),
+    url(r'^accounts/', include('allauth.urls')),
 ]
