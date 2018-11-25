@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import ModelForm
 from django.test import TestCase
 from django.urls import reverse
+from openwisp_utils.tests.utils import TestMultitenantAdminMixin
 
 from django_ipam.tests.base.test_admin import BaseTestAdmin
 from django_ipam.tests.base.test_api import BaseTestApi
@@ -169,3 +170,55 @@ class TestUserAdmin(TestCase):
             }
         )
         self.assertIsNotNone(self.user_model.objects.get(username="test1212"))
+
+
+class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCase):
+    ipaddress_model = swapper.load_model('openwisp_ipam', 'IPAddress')
+    subnet_model = swapper.load_model('openwisp_ipam', 'Subnet')
+
+    def _create_multitenancy_test_env(self):
+        org1 = self._create_org(name="test1organization")
+        org2 = self._create_org(name="test2organization")
+        subnet1 = self._create_subnet(
+            subnet='172.16.0.1/16',
+            organization=org1
+        )
+        subnet2 = self._create_subnet(
+            subnet='192.168.0.1/16',
+            organization=org2
+        )
+        ipadd1 = self._create_ipaddress(
+            ip_address='172.16.0.1',
+            organization=org1,
+            subnet=subnet1
+
+        )
+        ipadd2 = self._create_ipaddress(
+            ip_address='192.168.0.1',
+            organization=org2,
+            subnet=subnet2
+        )
+        operator = self._create_operator(organizations=[org1])
+        data = dict(
+            org1=org1, org2=org2,
+            subnet1=subnet1, subnet2=subnet2,
+            ipadd1=ipadd1, ipadd2=ipadd2,
+            operator=operator
+        )
+        return data
+
+    def test_multitenancy_ip_queryset(self):
+        data = self._create_multitenancy_test_env()
+        self._test_multitenant_admin(
+            url=reverse('admin:openwisp_ipam_ipaddress_changelist'),
+            visible=[data['ipadd1']],
+            hidden=[data['ipadd2']]
+        )
+
+    def test_multitenancy_subnet_queryset(self):
+        data = self._create_multitenancy_test_env()
+        self._test_multitenant_admin(
+            url=reverse('admin:openwisp_ipam_subnet_changelist'),
+            visible=[data['subnet1']],
+            hidden=[data['subnet2']]
+        )
