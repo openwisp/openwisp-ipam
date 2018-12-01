@@ -17,6 +17,7 @@ env:
 before_install:
   - pip install -e git+https://github.com/openwisp/django-ipam#egg=django-ipam
   - pip install --no-cache-dir -U -r requirements-test.txt
+  - ./runcheckmigration
   - ./runflake8
   - ./runisort
 
