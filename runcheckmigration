@@ -1,0 +1,3 @@
+#!/bin/bash
+set -e
+checkmigrations --migration-path ./openwisp_ipam/migrations/ || exit 1
