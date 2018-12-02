@@ -1,6 +1,6 @@
-from django.apps import AppConfig
+from django_ipam.apps import DjangoIpamConfig
 
 
-class OpenWispIpamConfig(AppConfig):
+class OpenWispIpamConfig(DjangoIpamConfig):
     name = 'openwisp_ipam'
     verbose_name = 'IPAM'
