@@ -1,5 +1,4 @@
 coverage
 coveralls
-isort
-flake8
 django-extensions>=2.0.7
+openwisp-utils[qa]>=0.2.1
