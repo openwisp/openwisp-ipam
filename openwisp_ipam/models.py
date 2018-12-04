@@ -17,11 +17,11 @@ class Subnet(OrgMixin, AbstractSubnet):
         ip = self.get_first_available_ip()
         if not ip:
             return None
-        ip_address = load_model('openwisp_ipam', 'IpAddress')(
-                                ip_address=ip,
-                                subnet=self,
-                                organization=self.organization,
-                                **options)
+        ip_address = load_model('openwisp_ipam',
+                                'IpAddress')(ip_address=ip,
+                                             subnet=self,
+                                             organization=self.organization,
+                                             **options)
         ip_address.full_clean()
         ip_address.save()
         return ip_address
