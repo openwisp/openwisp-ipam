@@ -1,6 +1,2 @@
 openwisp-users>=0.1.11,<0.2
-openwisp-utils>=0.3,<0.4
-django>=1.11,<2.1
-swapper>=1.1.0
-djangorestframework>=3.7,<3.9
-xlrd>=1.1.0
+django-ipam<0.2
