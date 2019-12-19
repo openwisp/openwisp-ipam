@@ -1,5 +1,5 @@
 from django.contrib import admin
-from openwisp_utils.admin import MultitenantAdminMixin
+from openwisp_users.multitenancy import MultitenantAdminMixin
 
 from django_ipam.base.admin import AbstractIpAddressAdmin, AbstractSubnetAdmin
 
