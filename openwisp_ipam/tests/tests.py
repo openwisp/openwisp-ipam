@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.forms import ModelForm
 from django.test import TestCase
 from django.urls import reverse
-from openwisp_utils.tests.utils import TestMultitenantAdminMixin
+from openwisp_users.tests.utils import TestMultitenantAdminMixin
 
 from django_ipam.tests.base.test_admin import BaseTestAdmin
 from django_ipam.tests.base.test_api import BaseTestApi
