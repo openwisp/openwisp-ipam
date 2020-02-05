@@ -7,6 +7,10 @@ openwisp-ipam
 .. image:: https://coveralls.io/repos/openwisp/openwisp-ipam/badge.svg
   :target: https://coveralls.io/r/openwisp/openwisp-ipam
 
+.. image:: https://requires.io/github/openwisp/openwisp-ipam/requirements.svg?branch=master
+  :target: https://requires.io/github/openwisp/openwisp-ipam/requirements/?branch=master
+  :alt: Requirements Status
+
 ------------
 
 Openwisp-ipam is part of the `OpenWISP project <http://openwisp.org>`_.
