@@ -24,7 +24,7 @@ class TestAdmin(BaseTestAdmin, CreateModelsMixin, PostDataMixin, TestCase):
 
     def setUp(self):
         self._create_org()
-        super(TestAdmin, self).setUp()
+        super().setUp()
 
     def test_csv_upload(self):
         csv_data = """Monachers - Matera,
@@ -89,7 +89,7 @@ class TestApi(CreateModelsMixin, BaseTestApi, PostDataMixin, TestCase):
 
     def setUp(self):
         self._create_org()
-        super(TestApi, self).setUp()
+        super().setUp()
 
     def test_import_subnet_api(self):
         csv_data = """Monachers - Matera,
