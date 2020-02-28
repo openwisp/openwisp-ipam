@@ -1,8 +1,10 @@
 import os
+import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '7&cb7ybp)-z@f5ow8jryz=0*b!@4ma%e#bl2$z!+_g!i3*8=k_'
 DEBUG = True
+TESTING = sys.argv[1] == 'test'
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
@@ -24,11 +26,13 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     # rest framework
     'rest_framework',
+    # Only for developement
+    'django_extensions',
 ]
 
-EXTENDED_APPS = ['django_ipam']
-AUTH_USER_MODEL = 'openwisp_users.User'
 SITE_ID = 1
+ROOT_URLCONF = 'openwisp2.urls'
+AUTH_USER_MODEL = 'openwisp_users.User'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -39,8 +43,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-ROOT_URLCONF = 'urls'
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -68,8 +70,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wsgi.application'
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -87,8 +87,13 @@ STATIC_URL = '/static/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-OPENWISP_ORGANIZATON_USER_ADMIN = True
-OPENWISP_ORGANIZATON_OWNER_ADMIN = True
+if TESTING:
+    OPENWISP_ORGANIZATON_USER_ADMIN = True
+    OPENWISP_ORGANIZATON_OWNER_ADMIN = True
 
-DJANGO_IPAM_IPADDRESS_MODEL = 'openwisp_ipam.IpAddress'
-DJANGO_IPAM_SUBNET_MODEL = 'openwisp_ipam.Subnet'
+if os.environ.get('SAMPLE_APP', False):
+    INSTALLED_APPS.remove('openwisp_ipam')
+    EXTENDED_APPS = ['openwisp_ipam']
+    INSTALLED_APPS.append('openwisp2.sample_ipam')
+    OPENWISP_IPAM_IPADDRESS_MODEL = 'sample_ipam.IpAddress'
+    OPENWISP_IPAM_SUBNET_MODEL = 'sample_ipam.Subnet'

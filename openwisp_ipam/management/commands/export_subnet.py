@@ -1,7 +1,7 @@
 import swapper
 
-from django_ipam.management.commands import BaseExportSubnetCommand
+from . import BaseExportSubnetCommand
 
 
 class Command(BaseExportSubnetCommand):
-    subnet_model = swapper.load_model('django_ipam', 'Subnet')
+    subnet_model = swapper.load_model('openwisp_ipam', 'Subnet')
