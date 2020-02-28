@@ -6,5 +6,4 @@ app_name = 'ipam'
 urlpatterns = [
     url(r'^api/v1/', include(api)),
     url(r'^accounts/', include('openwisp_users.accounts.urls')),
-    url(r'^', include('django_ipam.api.urls')),
 ]

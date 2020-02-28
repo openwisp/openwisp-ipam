@@ -2,7 +2,7 @@ import swapper
 
 from django_ipam.api.generics import (
     BaseAvailableIpView, BaseExportSubnetView, BaseImportSubnetView, BaseIpAddressListCreateView,
-    BaseIpAddressView, BaseRequestIPView, BaseSubnetListCreateView, BaseSubnetView,
+    BaseIpAddressView, BaseRequestIPView, BaseSubnetHostsView, BaseSubnetListCreateView, BaseSubnetView,
 )
 
 IpAddress = swapper.load_model('django_ipam', 'IpAddress')
@@ -69,6 +69,14 @@ class ExportSubnetView(BaseExportSubnetView):
     queryset = Subnet.objects.none()
 
 
+class SubnetHostsView(BaseSubnetHostsView):
+    """
+    View for retrieving subnet's available/used hosts lists.
+    """
+    subnet_model = Subnet
+    queryset = Subnet.objects.none()
+
+
 import_subnet = ImportSubnetView.as_view()
 export_subnet = ExportSubnetView.as_view()
 request_ip = RequestIPView.as_view()
@@ -77,3 +85,4 @@ subnet = SubnetView.as_view()
 ip_address = IpAddressView.as_view()
 subnet_list_ipaddress = SubnetIpAddressListCreateView.as_view()
 get_first_available_ip = AvailableIpView.as_view()
+subnet_hosts = SubnetHostsView.as_view()
