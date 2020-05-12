@@ -165,6 +165,7 @@ class AbstractIpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, Mode
     list_filter = ('subnet',)
     search_fields = ['ip_address']
     autocomplete_fields = ['subnet']
+    multitenant_parent = 'subnet'
 
     class Media:
         js = (

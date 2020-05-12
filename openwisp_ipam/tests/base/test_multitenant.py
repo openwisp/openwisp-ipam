@@ -22,13 +22,11 @@ class BaseTestMultitenant(TestMultitenantAdminMixin, CreateModelsMixin):
         )
         ipadd1 = self._create_ipaddress(
             ip_address='172.16.0.1',
-            organization=org1,
             subnet=subnet1
 
         )
         ipadd2 = self._create_ipaddress(
             ip_address='192.168.0.1',
-            organization=org2,
             subnet=subnet2
         )
         operator = self._create_operator(organizations=[org1])
