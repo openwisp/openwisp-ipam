@@ -91,7 +91,7 @@ class AbstractSubnet(OrgMixin, TimeStampedEditableModel):
         if not ip:
             return None
         ip_address = load_model('openwisp_ipam', 'IpAddress')(
-            ip_address=ip, subnet=self, organization=self.organization, **options
+            ip_address=ip, subnet=self, **options
         )
         ip_address.full_clean()
         ip_address.save()
@@ -124,15 +124,12 @@ class AbstractSubnet(OrgMixin, TimeStampedEditableModel):
         ipaddress_list = []
         for row in reader:
             if not ipaddress_model.objects.filter(
-                subnet=subnet,
-                ip_address=row[0].strip(),
-                organization=subnet.organization,
+                subnet=subnet, ip_address=row[0].strip(),
             ).exists():
                 instance = ipaddress_model(
                     subnet=subnet,
                     ip_address=row[0].strip(),
                     description=row[1].strip(),
-                    organization=subnet.organization,
                 )
                 try:
                     instance.full_clean()
@@ -188,7 +185,7 @@ class AbstractSubnet(OrgMixin, TimeStampedEditableModel):
         return instance
 
 
-class AbstractIpAddress(OrgMixin, TimeStampedEditableModel):
+class AbstractIpAddress(TimeStampedEditableModel):
     subnet = models.ForeignKey(
         get_model_name('openwisp_ipam', 'Subnet'), on_delete=models.CASCADE
     )
@@ -208,7 +205,11 @@ class AbstractIpAddress(OrgMixin, TimeStampedEditableModel):
             raise ValidationError(
                 {'ip_address': _('IP address does not belong to the subnet')}
             )
-        addresses = load_model('openwisp_ipam', 'IpAddress').objects.all().values()
+        addresses = (
+            load_model('openwisp_ipam', 'IpAddress')
+            .objects.filter(subnet=self.subnet_id)
+            .values()
+        )
         for ip in addresses:
             if self.id == ip['id']:
                 continue
