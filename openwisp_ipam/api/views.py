@@ -137,7 +137,7 @@ class AvailableIpView(RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        return Response(subnet.get_first_available_ip())
+        return Response(subnet.get_next_available_ip())
 
 
 class IpAddressListCreateView(ListCreateAPIView):
@@ -248,5 +248,5 @@ subnet_list_create = SubnetListCreateView.as_view()
 subnet = SubnetView.as_view()
 ip_address = IpAddressView.as_view()
 subnet_list_ipaddress = IpAddressListCreateView.as_view()
-get_first_available_ip = AvailableIpView.as_view()
+get_next_available_ip = AvailableIpView.as_view()
 subnet_hosts = SubnetHostsView.as_view()

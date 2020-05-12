@@ -77,7 +77,7 @@ class AbstractSubnet(OrgMixin, TimeStampedEditableModel):
                     {'subnet': _('Subnet overlaps with %s') % allowed_master}
                 )
 
-    def get_first_available_ip(self):
+    def get_next_available_ip(self):
         ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
         for host in self.subnet.hosts():
             if str(host) not in ipaddress_set:
@@ -87,7 +87,7 @@ class AbstractSubnet(OrgMixin, TimeStampedEditableModel):
     def request_ip(self, options=None):
         if options is None:
             options = {}
-        ip = self.get_first_available_ip()
+        ip = self.get_next_available_ip()
         if not ip:
             return None
         ip_address = load_model('openwisp_ipam', 'IpAddress')(

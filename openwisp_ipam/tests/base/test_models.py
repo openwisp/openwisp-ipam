@@ -55,19 +55,19 @@ class BaseTestModel(CreateModelsMixin):
         subnet = self._create_subnet(subnet='10.0.0.0/24')
         self._create_ipaddress(ip_address='10.0.0.1',
                                subnet=subnet)
-        ipaddr = subnet.get_first_available_ip()
+        ipaddr = subnet.get_next_available_ip()
         self.assertEqual(str(ipaddr), '10.0.0.2')
 
     def test_available_ipv6(self):
         subnet = self._create_subnet(subnet='fdb6:21b:a477::9f7/64')
         self._create_ipaddress(ip_address='fdb6:21b:a477::1',
                                subnet=subnet)
-        ipaddr = subnet.get_first_available_ip()
+        ipaddr = subnet.get_next_available_ip()
         self.assertEqual(str(ipaddr), 'fdb6:21b:a477::2')
 
     def test_unavailable_ip(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32')
-        ipaddr = subnet.get_first_available_ip()
+        ipaddr = subnet.get_next_available_ip()
         self.assertEqual(ipaddr, None)
 
     def test_request_ipv4(self):

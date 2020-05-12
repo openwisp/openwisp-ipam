@@ -11,9 +11,9 @@ def get_api_urls(api_views):
     return [
         url(r'^import-subnet/$', api_views.import_subnet, name='import-subnet'),
         url(
-            r'^subnet/(?P<subnet_id>[^/]+)/get-first-available-ip/$',
-            api_views.get_first_available_ip,
-            name='get_first_available_ip',
+            r'^subnet/(?P<subnet_id>[^/]+)/get-next-available-ip/$',
+            api_views.get_next_available_ip,
+            name='get_next_available_ip',
         ),
         url(
             r'^subnet/(?P<subnet_id>[^/]+)/request-ip/$',

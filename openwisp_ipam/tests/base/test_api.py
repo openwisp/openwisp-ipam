@@ -20,20 +20,20 @@ class BaseTestApi(CreateModelsMixin, PostDataMixin):
     def test_ipv4_get_avaialble_api(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24')
         self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
-        response = self.client.get(reverse('ipam:get_first_available_ip', args=(subnet.id,)))
+        response = self.client.get(reverse('ipam:get_next_available_ip', args=(subnet.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '10.0.0.2')
 
     def test_ipv6_get_avaialble_api(self):
         subnet = self._create_subnet(subnet='fdb6:21b:a477::9f7/64')
         self._create_ipaddress(ip_address='fdb6:21b:a477::1', subnet=subnet)
-        response = self.client.get(reverse('ipam:get_first_available_ip', args=(subnet.id,)))
+        response = self.client.get(reverse('ipam:get_next_available_ip', args=(subnet.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'fdb6:21b:a477::2')
 
     def test_unavailable_ip(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32', description='Sample Subnet')
-        response = self.client.get(reverse('ipam:get_first_available_ip', args=(subnet.id,)))
+        response = self.client.get(reverse('ipam:get_next_available_ip', args=(subnet.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, None)
 

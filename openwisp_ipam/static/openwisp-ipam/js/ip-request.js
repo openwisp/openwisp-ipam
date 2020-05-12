@@ -6,7 +6,7 @@
     function getAvailableIp() {
         $.ajax({
             type: 'GET',
-            url: django.ipamGetFirstAvailableIpUrl.replace('0000', $('#id_subnet').val()),
+            url: django.ipamGetNextAvailableIpUrl.replace('0000', $('#id_subnet').val()),
             success: function (res) {
                 if (!res) {
                     alert('No IP address available');

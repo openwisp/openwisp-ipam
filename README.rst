@@ -126,7 +126,7 @@ The default page size is 10 which can be overridden using the `page_size` parame
     /api/v1/<api endpoint url>/?page=1&page_size=10
 
 
-Get First Available IP
+Get Next Available IP
 ######################
 
 A model method to fetch the next available IP address under a specific subnet. This method can also be accessed via a RESTful API.
@@ -140,7 +140,7 @@ Returns the next available IP address under a subnet.
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet_id>/get-first-available-ip/
+    /api/v1/subnet/<subnet_id>/get-next-available-ip/
 
 Request IP
 ##########
