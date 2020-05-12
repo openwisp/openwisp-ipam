@@ -173,8 +173,8 @@ class AbstractIpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, Mode
         )
 
     def get_extra_context(self):
-        url = reverse('ipam:get_first_available_ip', args=['0000'])
-        return {'get_first_available_ip_url': url}
+        url = reverse('ipam:get_next_available_ip', args=['0000'])
+        return {'get_next_available_ip_url': url}
 
     def add_view(self, request, form_url='', extra_context=None):
         return super().add_view(request, form_url, self.get_extra_context())
