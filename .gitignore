@@ -70,9 +70,6 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# pyenv
-.python-version
-
 # celery beat schedule file
 celerybeat-schedule
 
@@ -82,7 +79,9 @@ celerybeat-schedule
 # dotenv
 .env
 
-# virtualenv
+# python env
+.python-version
+Pipfile
 .venv
 venv/
 ENV/
