@@ -221,7 +221,7 @@ Returns the list of ``Subnet`` instances.
 
 .. code-block:: text
 
-    /api/v1/subnet
+    /api/v1/subnet/
 
 POST
 ++++
@@ -230,7 +230,7 @@ Create a new ``Subnet``.
 
 .. code-block:: text
 
-    /api/v1/subnet
+    /api/v1/subnet/
 
 =============    ========================================
 Param            Description
@@ -252,7 +252,7 @@ Get details of a ``Subnet`` instance
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>
+    /api/v1/subnet/<subnet-id>/
 
 DELETE
 ++++++
@@ -261,7 +261,7 @@ Delete a ``Subnet`` instance
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>
+    /api/v1/subnet/<subnet-id>/
 
 PUT
 +++
@@ -270,7 +270,7 @@ Update details of a ``Subnet`` instance.
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>
+    /api/v1/subnet/<subnet-id>/
 
 =============    ========================================
 Param            Description
@@ -292,7 +292,7 @@ Get details of an ``IP address`` instance.
 
 .. code-block:: text
 
-    /api/v1/ip-address/<ip_address-id>
+    /api/v1/ip-address/<ip_address-id>/
 
 DELETE
 ++++++
@@ -301,7 +301,7 @@ Delete an ``IP address`` instance.
 
 .. code-block:: text
 
-    /api/v1/ip-address/<ip_address-id>
+    /api/v1/ip-address/<ip_address-id>/
 
 PUT
 +++
@@ -310,7 +310,7 @@ Update details of an ``IP address`` instance.
 
 .. code-block:: text
 
-    /api/v1/ip-address/<ip_address-id>
+    /api/v1/ip-address/<ip_address-id>/
 
 ===========    ========================================
 Param          Description
@@ -330,7 +330,7 @@ POST
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>/export
+    /api/v1/subnet/<subnet-id>/export/
 
 Import Subnet View
 ##################
@@ -342,7 +342,7 @@ POST
 
 .. code-block:: text
 
-    /api/v1/import-subnet
+    /api/v1/import-subnet/
 
 
 Exporting and Importing Subnet
@@ -597,4 +597,3 @@ file <tests/openwisp2/sample_ipam/tests.py>`_.
 `Support channels <http://openwisp.org/support.html>`_ |
 `Issue Tracker <https://github.com/openwisp/openwisp-ipam/issues>`_ |
 `License <https://github.com/openwisp/openwisp-ipam/blob/master/LICENSE>`_
-
