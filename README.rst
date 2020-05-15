@@ -32,7 +32,7 @@ Available Features
 * Automatic free space display for all subnets
 * Visual display for a specific subnet
 * IP request module
-* RESTful API to for CRUD operations
+* REST API for CRUD operations and main features
 * Possibility to search for an IP or subnet
 * CSV Import and Export of subnets and their IPs
 
@@ -106,8 +106,8 @@ openwisp-ipam provides a graphical representation of a subnet which shows the av
 
 .. image:: docs/visual-display.png
 
-RESTful API
-===========
+REST API
+========
 
 API Authentication
 ##################
@@ -133,7 +133,7 @@ The default page size is 10 which can be overridden using the `page_size` parame
 Get Next Available IP
 ######################
 
-A model method to fetch the next available IP address under a specific subnet. This method can also be accessed via a RESTful API.
+A model method to fetch the next available IP address under a specific subnet. This method can also be accessed via a REST API.
 
 `openwisp_ipam/base/models.py <openwisp_ipam/base/models.py#L69>`_
 
