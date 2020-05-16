@@ -36,6 +36,12 @@ Available Features
 * Possibility to search for an IP or subnet
 * CSV Import and Export of subnets and their IPs
 
+Project Goals
+=============
+
+* provide a django reusable app with features of IP Address management
+* provide abstract models which can be extended into other django based apps
+
 Dependencies
 ============
 
