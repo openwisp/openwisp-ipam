@@ -1,7 +1,21 @@
 from ipaddress import ip_network
 
+from django.forms import ModelForm
+from django.test import TestCase
+from swapper import load_model
 
-class BaseTestForms(object):
+Subnet = load_model('openwisp_ipam', 'Subnet')
+
+
+class NetworkAddressTestModelForm(ModelForm):
+    class Meta:
+        model = Subnet
+        fields = ('subnet',)
+
+
+class TestForms(TestCase):
+    form_class = NetworkAddressTestModelForm
+
     def test_none_value(self):
         form = self.form_class({'subnet': None})
         self.assertFalse(form.is_valid())

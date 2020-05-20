@@ -1,20 +1,24 @@
 from ipaddress import IPv4Network, IPv6Network
 
 from django.core.exceptions import ValidationError
+from django.test import TestCase
+from swapper import load_model
 
 from . import CreateModelsMixin
 
+Subnet = load_model('openwisp_ipam', 'Subnet')
+IpAddress = load_model('openwisp_ipam', 'IpAddress')
 
-class BaseTestModel(CreateModelsMixin):
+
+class TestModel(CreateModelsMixin, TestCase):
     def test_ip_address_string_representation(self):
-        ipaddress = self.ipaddress_model(ip_address='entry ip_address')
+        ipaddress = IpAddress(ip_address='entry ip_address')
         self.assertEqual(str(ipaddress), ipaddress.ip_address)
 
     def test_invalid_ipaddress_subnet(self):
         self._create_subnet(subnet='192.168.2.0/24')
         try:
-            self._create_ipaddress(ip_address='10.0.0.2',
-                                   subnet=self.subnet_model.objects.first())
+            self._create_ipaddress(ip_address='10.0.0.2', subnet=Subnet.objects.first())
         except ValidationError as e:
             self.assertTrue(e.message_dict['ip_address'] == ['IP address does not belong to the subnet'])
         else:
@@ -23,20 +27,21 @@ class BaseTestModel(CreateModelsMixin):
     def test_valid_ipaddress_subnet(self):
         self._create_subnet(subnet='192.168.2.0/24')
         try:
-            self._create_ipaddress(ip_address='192.168.2.1',
-                                   subnet=self.subnet_model.objects.first())
+            self._create_ipaddress(
+                ip_address='192.168.2.1', subnet=Subnet.objects.first()
+            )
         except ValidationError:
             self.fail('ValidationError raised')
 
     def test_used_ipaddress(self):
         self._create_subnet(subnet='10.0.0.0/24')
-        self._create_ipaddress(ip_address='10.0.0.1',
-                               subnet=self.subnet_model.objects.first())
+        self._create_ipaddress(ip_address='10.0.0.1', subnet=Subnet.objects.first())
         try:
-            self._create_ipaddress(ip_address='10.0.0.1',
-                                   subnet=self.subnet_model.objects.first())
+            self._create_ipaddress(ip_address='10.0.0.1', subnet=Subnet.objects.first())
         except ValidationError as e:
-            self.assertTrue(e.message_dict['ip_address'] == ['IP address already used.'])
+            self.assertTrue(
+                e.message_dict['ip_address'] == ['IP address already used.']
+            )
         else:
             self.fail('ValidationError not raised')
 
@@ -44,8 +49,7 @@ class BaseTestModel(CreateModelsMixin):
         error_message = "'1234325' does not appear to be an IPv4 or IPv6 address"
         self._create_subnet(subnet='10.0.0.0/24')
         try:
-            self._create_ipaddress(ip_address='1234325',
-                                   subnet=self.subnet_model.objects.first())
+            self._create_ipaddress(ip_address='1234325', subnet=Subnet.objects.first())
         except ValueError as e:
             self.assertEqual(str(e), error_message)
         else:
@@ -53,15 +57,13 @@ class BaseTestModel(CreateModelsMixin):
 
     def test_available_ipv4(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24')
-        self._create_ipaddress(ip_address='10.0.0.1',
-                               subnet=subnet)
+        self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
         ipaddr = subnet.get_next_available_ip()
         self.assertEqual(str(ipaddr), '10.0.0.2')
 
     def test_available_ipv6(self):
         subnet = self._create_subnet(subnet='fdb6:21b:a477::9f7/64')
-        self._create_ipaddress(ip_address='fdb6:21b:a477::1',
-                               subnet=subnet)
+        self._create_ipaddress(ip_address='fdb6:21b:a477::1', subnet=subnet)
         ipaddr = subnet.get_next_available_ip()
         self.assertEqual(str(ipaddr), 'fdb6:21b:a477::2')
 
@@ -72,15 +74,13 @@ class BaseTestModel(CreateModelsMixin):
 
     def test_request_ipv4(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24')
-        self._create_ipaddress(ip_address='10.0.0.1',
-                               subnet=subnet)
+        self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
         ipaddr = subnet.request_ip()
         self.assertEqual(str(ipaddr), '10.0.0.2')
 
     def test_request_ipv6(self):
         subnet = self._create_subnet(subnet='fdb6:21b:a477::9f7/64')
-        self._create_ipaddress(ip_address='fdb6:21b:a477::1',
-                               subnet=subnet)
+        self._create_ipaddress(ip_address='fdb6:21b:a477::1', subnet=subnet)
         ipaddr = subnet.request_ip()
         self.assertEqual(str(ipaddr), 'fdb6:21b:a477::2')
 
@@ -90,11 +90,11 @@ class BaseTestModel(CreateModelsMixin):
         self.assertEqual(ipaddr, None)
 
     def test_subnet_string_representation(self):
-        subnet = self.subnet_model(subnet='entry subnet')
+        subnet = Subnet(subnet='entry subnet')
         self.assertEqual(str(subnet), str(subnet.subnet))
 
     def test_subnet_string_representation_with_name(self):
-        subnet = self.subnet_model(subnet='entry subnet', name='test1')
+        subnet = Subnet(subnet='entry subnet', name='test1')
         self.assertEqual(str(subnet), '{0} {1}'.format(subnet.name, str(subnet.subnet)))
 
     def test_valid_cidr_field(self):
@@ -104,7 +104,9 @@ class BaseTestModel(CreateModelsMixin):
             self.fail('ValidationError raised')
 
     def test_invalid_cidr_field(self):
-        error_message = ["'192.192.192.192.192' does not appear to be an IPv4 or IPv6 network"]
+        error_message = [
+            "'192.192.192.192.192' does not appear to be an IPv4 or IPv6 network"
+        ]
         try:
             self._create_subnet(subnet='192.192.192.192.192')
         except ValidationError as e:
@@ -117,7 +119,9 @@ class BaseTestModel(CreateModelsMixin):
         try:
             self._create_subnet(subnet='192.168.2.0/25')
         except ValidationError as e:
-            self.assertTrue(e.message_dict['subnet'] == ['Subnet overlaps with 192.168.2.0/24'])
+            self.assertTrue(
+                e.message_dict['subnet'] == ['Subnet overlaps with 192.168.2.0/24']
+            )
         else:
             self.fail('ValidationError not raised')
 
@@ -126,7 +130,9 @@ class BaseTestModel(CreateModelsMixin):
         try:
             self._create_subnet(subnet='192.168.2.0/24', master_subnet=subnet)
         except ValidationError as e:
-            self.assertTrue(e.message_dict['master_subnet'] == ['Invalid master subnet'])
+            self.assertTrue(
+                e.message_dict['master_subnet'] == ['Invalid master subnet']
+            )
         else:
             self.fail('ValidationError not raised')
 
@@ -144,7 +150,9 @@ class BaseTestModel(CreateModelsMixin):
         try:
             self._create_subnet(subnet='12.0.56.0/26', master_subnet=subnet1)
         except ValidationError as e:
-            self.assertEqual(e.message_dict['subnet'], ['Subnet overlaps with 12.0.56.0/25'])
+            self.assertEqual(
+                e.message_dict['subnet'], ['Subnet overlaps with 12.0.56.0/25']
+            )
         else:
             self.fail('ValidationError not raised')
 
@@ -152,7 +160,9 @@ class BaseTestModel(CreateModelsMixin):
         try:
             self._create_subnet(subnet=None)
         except ValidationError as err:
-            self.assertTrue(err.message_dict['subnet'] == ['This field cannot be null.'])
+            self.assertTrue(
+                err.message_dict['subnet'] == ['This field cannot be null.']
+            )
         else:
             self.fail('ValidationError not raised')
 
@@ -160,18 +170,20 @@ class BaseTestModel(CreateModelsMixin):
         try:
             self._create_subnet(subnet='')
         except ValidationError as err:
-            self.assertTrue(err.message_dict['subnet'] == ['This field cannot be blank.'])
+            self.assertTrue(
+                err.message_dict['subnet'] == ['This field cannot be blank.']
+            )
         else:
             self.fail('ValidationError not raised')
 
     def test_retrieves_ipv4_ipnetwork_type(self):
         instance = self._create_subnet(subnet='10.1.2.0/24')
-        instance = self.subnet_model.objects.get(pk=instance.pk)
+        instance = Subnet.objects.get(pk=instance.pk)
         self.assertIsInstance(instance.subnet, IPv4Network)
 
     def test_retrieves_ipv6_ipnetwork_type(self):
         instance = self._create_subnet(subnet='2001:db8::0/32')
-        instance = self.subnet_model.objects.get(pk=instance.pk)
+        instance = Subnet.objects.get(pk=instance.pk)
         self.assertIsInstance(instance.subnet, IPv6Network)
 
     def test_incompatible_ipadresses(self):
@@ -179,7 +191,9 @@ class BaseTestModel(CreateModelsMixin):
         try:
             self._create_subnet(subnet='2001:db8::0/32', master_subnet=instance)
         except TypeError as err:
-            self.assertEqual(str(err), '2001:db8::/32 and 10.1.2.0/24 are not of the same version')
+            self.assertEqual(
+                str(err), '2001:db8::/32 and 10.1.2.0/24 are not of the same version'
+            )
         else:
             self.fail('TypeError not raised')
 
@@ -190,6 +204,8 @@ class BaseTestModel(CreateModelsMixin):
         try:
             instance2.subnet.subnet_of(instance.subnet)
         except AttributeError as err:
-            self.assertIn(str(err), '\'IPv4Network\' object has no attribute \'network_address\'')
+            self.assertIn(
+                str(err), '\'IPv4Network\' object has no attribute \'network_address\''
+            )
         else:
             self.fail('TypeError not raised')

@@ -1,6 +1,5 @@
 import swapper
-
-from . import BaseExportSubnetCommand
+from openwisp_ipam.management.commands import BaseExportSubnetCommand
 
 
 class Command(BaseExportSubnetCommand):

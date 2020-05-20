@@ -3,15 +3,24 @@ import os
 from io import StringIO
 
 from django.core.management import CommandError, call_command
+from django.test import TestCase
+from swapper import load_model
 
 from . import CreateModelsMixin, FileMixin
 
+Subnet = load_model('openwisp_ipam', 'Subnet')
+IpAddress = load_model('openwisp_ipam', 'IpAddress')
 
-class BaseTestCommands(CreateModelsMixin, FileMixin):
+
+class TestCommands(CreateModelsMixin, FileMixin, TestCase):
     def test_export_subnet_command(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24', name='Sample Subnet')
-        self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet, description='Testing')
-        self._create_ipaddress(ip_address='10.0.0.2', subnet=subnet, description='Testing')
+        self._create_ipaddress(
+            ip_address='10.0.0.1', subnet=subnet, description='Testing'
+        )
+        self._create_ipaddress(
+            ip_address='10.0.0.2', subnet=subnet, description='Testing'
+        )
         self._create_ipaddress(ip_address='10.0.0.3', subnet=subnet)
         self._create_ipaddress(ip_address='10.0.0.4', subnet=subnet)
         out = StringIO()
@@ -24,18 +33,21 @@ class BaseTestCommands(CreateModelsMixin, FileMixin):
 
     def test_import_subnet_command(self):
         with self.assertRaises(CommandError):
-            call_command('import_subnet', file=self._get_path('static/invalid_data.csv'))
-        self.assertEqual(self.subnet_model.objects.all().count(), 0)
-        self.assertEqual(self.ipaddress_model.objects.all().count(), 0)
+            call_command(
+                'import_subnet', file=self._get_path('static/invalid_data.csv')
+            )
+        self.assertEqual(Subnet.objects.all().count(), 0)
+        self.assertEqual(IpAddress.objects.all().count(), 0)
         call_command('import_subnet', file=self._get_path('static/import_data.xls'))
-        self.assertEqual(self.subnet_model.objects.all().count(), 1)
-        self.assertEqual(self.ipaddress_model.objects.all().count(), 8)
+        self.assertEqual(Subnet.objects.all().count(), 1)
+        self.assertEqual(IpAddress.objects.all().count(), 8)
         with self.assertRaises(CommandError):
             call_command('import_subnet', file='invalid.pdf')
         with self.assertRaises(CommandError):
             call_command('import_subnet', file='invalid_path.csv')
 
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         files = glob.glob('data_[a-z0-9]*.csv')
         for file in files:
             os.remove(file)
