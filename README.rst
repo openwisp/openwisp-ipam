@@ -18,7 +18,7 @@ openwisp-ipam
   :target: https://requires.io/github/openwisp/openwisp-ipam/requirements/?branch=master
   :alt: Requirements Status
 
-.. image:: docs/subnet_demo.gif
+.. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/subnet_demo.gif
   :alt: Feature Highlights
 
 .. contents:: **Table of Contents**:
@@ -111,7 +111,7 @@ Visual Display of subnets
 
 openwisp-ipam provides a graphical representation of a subnet which shows the available free space under any subnet.
 
-.. image:: docs/visual-display.png
+.. image:: https://raw.githubusercontent.com/openwisp/openwisp-ipam/raw/master/docs/visual-display.png
 
 REST API
 ********
@@ -376,7 +376,7 @@ From admin interface
 
 Data can be exported from the admin interface by just clicking on the export button on the subnet's admin change view.
 
-.. image:: docs/export.png
+.. image:: https://raw.githubusercontent.com/openwisp/openwisp-ipam/raw/master/docs/export.png
 
 Importing
 ---------
@@ -398,7 +398,7 @@ From admin interface
 
 Data can be imported from the admin interface by just clicking on the import button on the subnet view.
 
-.. image:: docs/import.png
+.. image:: https://raw.githubusercontent.com/openwisp/openwisp-ipam/raw/master/docs/import.png
 
 CSV file format
 ===============
