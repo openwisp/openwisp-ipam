@@ -40,14 +40,26 @@ Available Features
 Project Goals
 *************
 
-* provide a django reusable app with features of IP Address management
-* provide abstract models which can be extended into other django based apps
+* provide basic features of IP Address management as a reusable django app
+* integrate this module in the rest of the OpenWISP ecosystem
+* allow standalone usage (without the rest of OpenWISP)
+* provide ways to extended the core features in order to create derivatives
 
 Dependencies
 ************
 
 * Python 3.6 or higher
 * Django 2.2 or higher
+* Django REST Framework (for the REST API)
+* openwisp-users
+* swapper
+
+Install stable version
+**********************
+
+.. code-block:: shell
+
+    pip install openwisp-ipam
 
 Install development version
 ***************************
@@ -423,8 +435,13 @@ Add ``openwisp_ipam`` to ``INSTALLED_APPS``:
 .. code-block:: python
 
     INSTALLED_APPS = [
-        # other apps
+        # openwisp2 modules
+        'openwisp_users',
         'openwisp_ipam',
+        # admin
+        'django.contrib.admin',
+        # rest framework
+        'rest_framework',
     ]
 
 Add the URLs to your main ``urls.py``:
@@ -433,6 +450,7 @@ Add the URLs to your main ``urls.py``:
 
     urlpatterns = [
         # ... other urls in your project ...
+        url(r'^admin/', admin.site.urls),
         # openwisp-ipam urls
         url(r'^', include('openwisp_ipam.urls')),
     ]
