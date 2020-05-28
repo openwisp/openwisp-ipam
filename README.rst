@@ -140,7 +140,7 @@ The default page size is 10 which can be overridden using the `page_size` parame
 Get Next Available IP
 =====================
 
-A model method to fetch the next available IP address under a specific subnet. This method can also be accessed via a REST API: `openwisp_ipam/base/models.py <openwisp_ipam/base/models.py#L80>`_
+A model method to fetch the next available IP address under a specific subnet. This method can also be accessed via a REST API: `openwisp_ipam/base/models.py <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/openwisp_ipam/base/models.py#L80>`_
 
 GET
 ---
@@ -453,8 +453,8 @@ which can be imported, extended and reused to create derivative apps.
 In order to implement your custom version of *openwisp-ipam*,
 you need to perform the steps described in this section.
 
-When in doubt, the code in the `test project <tests/openwisp2/>`_ and
-the `sample app </tests/openwisp2/sample_ipam/>`_
+When in doubt, the code in the `test project <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/>`_ and
+the `sample app <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/sample_ipam/>`_
 will serve you as source of truth:
 just replicate and adapt that code to get a basic derivative of
 *openwisp-ipam* working.
@@ -556,8 +556,8 @@ Add ``openwisp_utils.loaders.DependencyLoader`` to ``TEMPLATES`` in your ``setti
 
 Please refer to the following files in the sample app of the test project:
 
-- `sample_ipam/__init__.py <tests/openwisp2/sample_ipam/__init__.py>`_.
-- `sample_ipam/apps.py <tests/openwisp2/sample_ipam/apps.py>`_.
+- `sample_ipam/__init__.py <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/sample_ipam/__init__.py>`_.
+- `sample_ipam/apps.py <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/sample_ipam/apps.py>`_.
 
 You have to replicate and adapt that code in your project.
 
@@ -568,7 +568,7 @@ the `"Applications" section in the django documentation <https://docs.djangoproj
 ============================
 
 For the purpose of showing an example, we added a simple "details" field to the
-`models of the sample app in the test project <tests/openwisp2/sample_ipam/models.py>`_.
+`models of the sample app in the test project <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/sample_ipam/models.py>`_.
 
 You can add fields in a similar way in your ``models.py`` file.
 
@@ -603,7 +603,7 @@ For more information, refer to the
 10. Create the admin
 ====================
 
-Refer to the `admin.py file of the sample app <tests/openwisp2/sample_ipam/admin.py>`_.
+Refer to the `admin.py file of the sample app <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/sample_ipam/admin.py>`_.
 
 To introduce changes to the admin, you can do it in two main ways which are described below.
 
@@ -684,7 +684,7 @@ you're introducing are not breaking some of the existing features of *openwisp-i
 In case you need to add breaking changes, you can overwrite the tests defined
 in the base classes to test your own behavior.
 
-See the `tests of the sample app <tests/openwisp2/sample_ipam/tests.py>`_
+See the `tests of the sample app <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/sample_ipam/tests.py>`_
 to find out how to do this.
 
 You can then run tests with::
@@ -709,7 +709,7 @@ The API view classes can be extended into other django applications as well. Not
 that it is not required for extending openwisp-ipam to your app and this change
 is required only if you plan to make changes to the API views.
 
-Create a view file as done in `views.py <tests/openwisp2/sample_ipam/views.py>`_.
+Create a view file as done in `views.py <https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/sample_ipam/views.py>`_.
 
 For more information about django views, please refer to the `views section in the django documentation <https://docs.djangoproject.com/en/dev/topics/http/views/>`_.
 
