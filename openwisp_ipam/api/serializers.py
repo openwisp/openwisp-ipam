@@ -1,9 +1,9 @@
-import swapper
 from openwisp_utils.api.serializers import ValidatedModelSerializer
 from rest_framework import serializers
+from swapper import load_model
 
-IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
-Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
+IpAddress = load_model('openwisp_ipam', 'IpAddress')
+Subnet = load_model('openwisp_ipam', 'Subnet')
 
 
 class IpRequestSerializer(ValidatedModelSerializer):

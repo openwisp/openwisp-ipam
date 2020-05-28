@@ -1,69 +1,45 @@
-import os
-from unittest import skipUnless
-
-import swapper
-from django.forms import ModelForm
-from django.test import TestCase
-from openwisp_ipam.tests.base.test_admin import BaseTestAdmin
-from openwisp_ipam.tests.base.test_api import BaseTestApi
-from openwisp_ipam.tests.base.test_commands import BaseTestCommands
-from openwisp_ipam.tests.base.test_forms import BaseTestForms
-from openwisp_ipam.tests.base.test_models import BaseTestModel
-from openwisp_ipam.tests.base.test_multitenant import BaseTestMultitenant
-from openwisp_users.tests.test_admin import TestUsersAdmin
-
-IpAddress = swapper.load_model('sample_ipam', 'IPAddress')
-Subnet = swapper.load_model('sample_ipam', 'Subnet')
+from openwisp_ipam.tests.test_admin import TestAdmin as BaseTestAdmin
+from openwisp_ipam.tests.test_api import TestApi as BaseTestApi
+from openwisp_ipam.tests.test_commands import TestCommands as BaseTestCommands
+from openwisp_ipam.tests.test_forms import TestForms as BaseTestForms
+from openwisp_ipam.tests.test_models import TestModel as BaseTestModel
+from openwisp_ipam.tests.test_multitenant import TestMultitenantAdmin as BaseTestMultitenantAdmin
+from openwisp_users.tests.test_admin import TestUsersAdmin as BaseTestUsersAdmin
 
 
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class TestAdmin(BaseTestAdmin, TestCase):
-    app_name = 'sample_ipam'
-    ipaddress_model = IpAddress
-    subnet_model = Subnet
+class TestAdmin(BaseTestAdmin):
+    app_label = 'sample_ipam'
 
 
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class TestApi(BaseTestApi, TestCase):
-    ipaddress_model = IpAddress
-    subnet_model = Subnet
-
-
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class TestCommands(BaseTestCommands, TestCase):
-    app_name = 'sample_ipam'
-    subnet_model = Subnet
-    ipaddress_model = IpAddress
-
-
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class NetworkAddressTestModelForm(ModelForm):
-    class Meta:
-        model = Subnet
-        fields = ('subnet',)
-
-
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class TestForms(BaseTestForms, TestCase):
-    form_class = NetworkAddressTestModelForm
-
-
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class TestModel(BaseTestModel, TestCase):
-    ipaddress_model = IpAddress
-    subnet_model = Subnet
-
-
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class TestMultitenantAdmin(BaseTestMultitenant, TestCase):
-    app_name = 'sample_ipam'
-    ipaddress_model = IpAddress
-    subnet_model = Subnet
-
-
-@skipUnless(os.environ.get('SAMPLE_APP', False), 'Running tests on standard django-ipam models')
-class TestUsersIntegration(TestUsersAdmin):
+class TestApi(BaseTestApi):
     pass
 
 
-del TestUsersAdmin
+class TestCommands(BaseTestCommands):
+    pass
+
+
+class TestForms(BaseTestForms):
+    pass
+
+
+class TestModel(BaseTestModel):
+    pass
+
+
+class TestMultitenantAdmin(BaseTestMultitenantAdmin):
+    app_label = 'sample_ipam'
+
+
+class TestUsersIntegration(BaseTestUsersAdmin):
+    pass
+
+
+# this is necessary to avoid excuting the base test suites
+del BaseTestAdmin
+del BaseTestApi
+del BaseTestCommands
+del BaseTestForms
+del BaseTestModel
+del BaseTestMultitenantAdmin
+del BaseTestUsersAdmin
