@@ -7,7 +7,11 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import pagination, serializers, status
 from rest_framework.authentication import BasicAuthentication, SessionAuthentication
 from rest_framework.generics import (
-    CreateAPIView, ListAPIView, ListCreateAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView,
+    CreateAPIView,
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveAPIView,
+    RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
 from rest_framework.permissions import DjangoModelPermissions
@@ -17,7 +21,10 @@ from rest_framework.utils.urls import remove_query_param, replace_query_param
 from ..base.models import AbstractSubnet, CsvImportException
 from .responses import HostsResponse
 from .serializers import (
-    HostsResponseSerializer, ImportSubnetSerializer, IpAddressSerializer, IpRequestSerializer,
+    HostsResponseSerializer,
+    ImportSubnetSerializer,
+    IpAddressSerializer,
+    IpRequestSerializer,
     SubnetSerializer,
 )
 
@@ -40,7 +47,7 @@ class HostsListPagination(pagination.BasePagination):
         self.queryset = queryset
         self.request = request
         self.offset = self.get_offset(request)
-        return list(queryset[self.offset: self.offset + self.limit])
+        return list(queryset[self.offset : self.offset + self.limit])
 
     def get_paginated_response(self, data):
         return Response(

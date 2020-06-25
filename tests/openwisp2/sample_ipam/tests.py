@@ -3,7 +3,9 @@ from openwisp_ipam.tests.test_api import TestApi as BaseTestApi
 from openwisp_ipam.tests.test_commands import TestCommands as BaseTestCommands
 from openwisp_ipam.tests.test_forms import TestForms as BaseTestForms
 from openwisp_ipam.tests.test_models import TestModel as BaseTestModel
-from openwisp_ipam.tests.test_multitenant import TestMultitenantAdmin as BaseTestMultitenantAdmin
+from openwisp_ipam.tests.test_multitenant import (
+    TestMultitenantAdmin as BaseTestMultitenantAdmin,
+)
 from openwisp_users.tests.test_admin import TestUsersAdmin as BaseTestUsersAdmin
 
 

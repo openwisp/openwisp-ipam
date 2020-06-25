@@ -41,7 +41,9 @@ class BaseExportSubnetCommand(BaseCommand):
         except self.subnet_model.DoesNotExist:
             raise CommandError(_('Subnet "%s" does not exist' % subnet))
         except ValueError:
-            raise CommandError(_("'%s' does not appear to be an IPv4 or IPv6 network" % subnet))
+            raise CommandError(
+                _("'%s' does not appear to be an IPv4 or IPv6 network" % subnet)
+            )
         with open('data_{0}.csv'.format(instance.id), 'w+') as csvfile:
             writer = csv.writer(csvfile, delimiter=',')
             instance.export_csv(instance.id, writer)
