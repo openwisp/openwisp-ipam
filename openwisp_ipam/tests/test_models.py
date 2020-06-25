@@ -20,7 +20,10 @@ class TestModel(CreateModelsMixin, TestCase):
         try:
             self._create_ipaddress(ip_address='10.0.0.2', subnet=Subnet.objects.first())
         except ValidationError as e:
-            self.assertTrue(e.message_dict['ip_address'] == ['IP address does not belong to the subnet'])
+            self.assertTrue(
+                e.message_dict['ip_address']
+                == ['IP address does not belong to the subnet']
+            )
         else:
             self.fail('ValidationError not raised')
 

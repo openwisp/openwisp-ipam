@@ -2,14 +2,20 @@
 
 set -e
 
-openwisp-utils-qa-checks \
+echo ''
+echo 'Check JavaScript Linting'
+jslint ./openwisp_ipam/static/openwisp-ipam/js/*.js
+
+echo ''
+echo 'Running checks for openwisp_ipam'
+openwisp-qa-check \
           --migration-path ./openwisp_ipam/migrations/ \
           --migration-module openwisp_ipam
 
 echo ''
 echo 'Running checks for SAMPLE_APP'
 
-SAMPLE_APP=1 openwisp-utils-qa-checks \
+SAMPLE_APP=1 openwisp-qa-check \
               --skip-isort \
               --skip-flake8 \
               --skip-checkmigrations \
