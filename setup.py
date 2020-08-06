@@ -1,7 +1,8 @@
 import os
 
-from openwisp_ipam import get_version
 from setuptools import find_packages, setup
+
+from openwisp_ipam import get_version
 
 with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as readme:
     README = readme.read()

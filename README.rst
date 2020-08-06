@@ -505,9 +505,19 @@ ensuring also that ``openwisp_ipam`` has been removed:
 
     INSTALLED_APPS = [
         # ... other apps ...
-
-        # 'openwisp_ipam'  <-- comment out or delete this line
-        'myipam'
+        'openwisp_utils.admin_theme',
+        # all-auth
+        'django.contrib.sites',
+        'allauth',
+        'allauth.account',
+        'allauth.socialaccount',
+        # openwisp2 modules
+        'openwisp_users',
+        # 'myipam',   <-- replace without your app-name here
+        # admin
+        'django.contrib.admin',
+        # rest framework
+        'rest_framework',
     ]
 
 For more information about how to work with django projects and django apps,

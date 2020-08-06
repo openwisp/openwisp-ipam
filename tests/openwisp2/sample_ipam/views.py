@@ -4,6 +4,7 @@ to modify the API views as well.
 """
 
 import swapper
+
 from openwisp_ipam.api.views import (
     AvailableIpView as BaseAvailableIpView,
     ExportSubnetView as BaseExportSubnetView,
