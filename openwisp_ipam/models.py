@@ -1,5 +1,6 @@
-from openwisp_ipam.base.models import AbstractIpAddress, AbstractSubnet
 from swapper import swappable_setting
+
+from openwisp_ipam.base.models import AbstractIpAddress, AbstractSubnet
 
 
 class Subnet(AbstractSubnet):

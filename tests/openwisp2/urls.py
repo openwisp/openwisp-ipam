@@ -12,6 +12,7 @@ if os.environ.get('SAMPLE_APP', False):
     # you are extending the app and modifing the API
     # views in your extended application.
     from openwisp_ipam.urls import get_urls
+
     from .sample_ipam import views as api_views
 
     urlpatterns += [

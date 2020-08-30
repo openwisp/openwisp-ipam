@@ -1,4 +1,5 @@
 from django.db import models
+
 from openwisp_ipam.base.models import AbstractIpAddress, AbstractSubnet
 
 

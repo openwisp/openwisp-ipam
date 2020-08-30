@@ -1,4 +1,5 @@
 import swapper
+
 from openwisp_ipam.management.commands import BaseImportSubnetCommand
 
 
