@@ -47,7 +47,7 @@ class HostsListPagination(pagination.BasePagination):
         self.queryset = queryset
         self.request = request
         self.offset = self.get_offset(request)
-        return list(queryset[self.offset : self.offset + self.limit])
+        return list(queryset[self.offset : self.offset + self.limit])  # noqa
 
     def get_paginated_response(self, data):
         return Response(
