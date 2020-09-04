@@ -16,5 +16,4 @@ if __name__ == "__main__":
         args.insert(2, "openwisp_ipam")
     else:
         args.insert(2, "openwisp2")
-    # args.insert(3, "-v 3")
     execute_from_command_line(args)

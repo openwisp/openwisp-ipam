@@ -23,7 +23,7 @@ def get_install_requires():
 setup(
     name='openwisp-ipam',
     version=get_version(),
-    packages=find_packages(exclude=['tests', 'docs']),
+    packages=find_packages(exclude=['tests*', 'docs*']),
     include_package_data=True,
     license='BSD-3-Clause',
     description='A django IP address management app.',
