@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Version 0.1.1 [2020-09-03]
+--------------------------
+
+- Updated dependencies (django 3.1, openwisp-users 0.4.0, openwisp-utils 0.6.0)
+
 Version 0.1.0 [2020-05-28]
 --------------------------
 
