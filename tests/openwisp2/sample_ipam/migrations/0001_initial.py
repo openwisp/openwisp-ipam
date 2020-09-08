@@ -6,6 +6,7 @@ import django.db.models.deletion
 import django.utils.timezone
 import model_utils.fields
 import openwisp_users.mixins
+import swapper
 from django.db import migrations, models
 
 import openwisp_ipam.base.fields
@@ -53,7 +54,10 @@ class Migration(migrations.Migration):
                     'subnet',
                     openwisp_ipam.base.fields.NetworkField(
                         db_index=True,
-                        help_text='Subnet in CIDR notation, eg: "10.0.0.0/24" for IPv4 and "fdb6:21b:a477::9f7/64" for IPv6',
+                        help_text=(
+                            'Subnet in CIDR notation, eg: "10.0.0.0/24" '
+                            'for IPv4 and "fdb6:21b:a477::9f7/64" for IPv6'
+                        ),
                         max_length=43,
                     ),
                 ),
@@ -66,7 +70,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name='child_subnet_set',
-                        to='sample_ipam.Subnet',
+                        to=swapper.get_model_name('openwisp_ipam', 'Subnet'),
                     ),
                 ),
                 (
@@ -78,7 +82,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={'abstract': False,},
+            options={'abstract': False},
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
         migrations.CreateModel(
@@ -124,11 +128,11 @@ class Migration(migrations.Migration):
                     'subnet',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='sample_ipam.Subnet',
+                        to=swapper.get_model_name('openwisp_ipam', 'Subnet'),
                     ),
                 ),
             ],
-            options={'abstract': False,},
+            options={'abstract': False},
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
         migrations.AddIndex(

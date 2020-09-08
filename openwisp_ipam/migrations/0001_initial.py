@@ -6,6 +6,7 @@ import django.db.models.deletion
 import django.utils.timezone
 import model_utils.fields
 import openwisp_users.mixins
+import swapper
 from django.conf import settings
 from django.db import migrations, models
 
@@ -60,7 +61,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={'abstract': False, 'swappable': 'OPENWISP_IPAM_IPADDRESS_MODEL',},
+            options={
+                'abstract': False,
+                'swappable': swapper.swappable_setting('openwisp_ipam', 'Ipaddress'),
+            },
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
         migrations.CreateModel(
@@ -96,7 +100,10 @@ class Migration(migrations.Migration):
                     'subnet',
                     openwisp_ipam.base.fields.NetworkField(
                         db_index=True,
-                        help_text='Subnet in CIDR notation, eg: "10.0.0.0/24" for IPv4 and "fdb6:21b:a477::9f7/64" for IPv6',
+                        help_text=(
+                            'Subnet in CIDR notation, eg: "10.0.0.0/24" '
+                            'for IPv4 and "fdb6:21b:a477::9f7/64" for IPv6'
+                        ),
                         max_length=43,
                     ),
                 ),
@@ -108,7 +115,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name='child_subnet_set',
-                        to=settings.OPENWISP_IPAM_SUBNET_MODEL,
+                        to=swapper.get_model_name('openwisp_ipam', 'Subnet'),
                     ),
                 ),
                 (
@@ -120,7 +127,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={'abstract': False, 'swappable': 'OPENWISP_IPAM_SUBNET_MODEL',},
+            options={
+                'abstract': False,
+                'swappable': swapper.swappable_setting('openwisp_ipam', 'Subnet'),
+            },
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
         migrations.AddField(
@@ -128,7 +138,7 @@ class Migration(migrations.Migration):
             name='subnet',
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                to=settings.OPENWISP_IPAM_SUBNET_MODEL,
+                to=swapper.get_model_name('openwisp_ipam', 'Subnet'),
             ),
         ),
         migrations.AddIndex(
