@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from swapper import load_model
 
 from . import CreateModelsMixin, PostDataMixin
@@ -13,13 +14,10 @@ Subnet = load_model('openwisp_ipam', 'Subnet')
 IpAddress = load_model('openwisp_ipam', 'IpAddress')
 
 
-class TestApi(CreateModelsMixin, PostDataMixin, TestCase):
+class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase):
     def setUp(self):
-        User.objects.create_superuser(
-            username='admin', password='tester', email='admin@admin.com'
-        )
-        self.client.login(username='admin', password='tester')
-        self._create_org()
+        super().setUp()
+        self._login()
 
     def test_ipv4_get_avaialble_api(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24')

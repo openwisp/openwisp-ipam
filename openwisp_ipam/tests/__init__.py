@@ -2,6 +2,7 @@ import json
 import os
 
 from openwisp_users.models import Organization
+from openwisp_users.tests.utils import TestOrganizationMixin
 from swapper import load_model
 
 Subnet = load_model('openwisp_ipam', 'Subnet')
@@ -14,23 +15,15 @@ class FileMixin(object):
         return os.path.join(d, file)
 
 
-class CreateModelsMixin(object):
+class CreateModelsMixin(TestOrganizationMixin):
     def _get_extra_fields(self, **kwargs):
-        # For adding mandatory extra fields
-        org = Organization.objects.get_or_create(name='test-organization')
-        options = dict(organization=org[0])
-        return options
-
-    def _create_org(self, **kwargs):
-        options = dict(name='test-organization')
-        options.update(kwargs)
-        org = Organization(**options)
-        org.save()
-        return org
+        if 'organization' not in kwargs:
+            kwargs['organization'] = self._get_org()
+        return kwargs
 
     def _create_subnet(self, **kwargs):
         options = dict(subnet='', description='',)
-        options.update(self._get_extra_fields())
+        options.update(self._get_extra_fields(**kwargs))
         options.update(kwargs)
         instance = Subnet(**options)
         instance.full_clean()
