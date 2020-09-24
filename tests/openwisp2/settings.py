@@ -90,3 +90,9 @@ if os.environ.get('SAMPLE_APP', False):
     INSTALLED_APPS.append('openwisp2.sample_ipam')
     OPENWISP_IPAM_IPADDRESS_MODEL = 'sample_ipam.IpAddress'
     OPENWISP_IPAM_SUBNET_MODEL = 'sample_ipam.Subnet'
+
+# local settings must be imported before test runner otherwise they'll be ignored
+try:
+    from openwisp2.local_settings import *
+except ImportError:
+    pass

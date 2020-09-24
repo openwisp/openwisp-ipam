@@ -1,5 +1,6 @@
 import os
 
+from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
 
@@ -25,3 +26,8 @@ else:
     urlpatterns += [
         url(r'^', include('openwisp_ipam.urls')),
     ]
+
+if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
+    import debug_toolbar
+
+    urlpatterns.append(url(r'^__debug__/', include(debug_toolbar.urls)))
