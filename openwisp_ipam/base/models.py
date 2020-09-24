@@ -6,7 +6,7 @@ import xlrd
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from openwisp_users.mixins import OrgMixin
+from openwisp_users.mixins import ShareableOrgMixin
 from openwisp_users.models import Organization
 from openwisp_utils.base import TimeStampedEditableModel
 from swapper import get_model_name, load_model
@@ -18,7 +18,7 @@ class CsvImportException(Exception):
     pass
 
 
-class AbstractSubnet(OrgMixin, TimeStampedEditableModel):
+class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     name = models.CharField(max_length=100, blank=True, db_index=True)
     subnet = NetworkField(
         db_index=True,
