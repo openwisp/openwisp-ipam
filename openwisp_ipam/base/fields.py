@@ -33,7 +33,7 @@ class IpNetworkFormField(forms.Field):
 
 class NetworkField(models.Field):
     empty_strings_allowed = False
-    description = "CIDR type network field"
+    description = 'CIDR type network field'
 
     def __init__(self, *args, **kwargs):
         kwargs['max_length'] = 43

@@ -46,7 +46,7 @@ class SubnetAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
             )
         # Get instances for all subnets for root master_subnet
         instance_subnets = Subnet.objects.filter(subnet=instance_root.subnet).values(
-            "master_subnet", "pk", "name", "subnet"
+            'master_subnet', 'pk', 'name', 'subnet'
         )
         # Make subnet tree
         collection_depth = 0
@@ -55,8 +55,8 @@ class SubnetAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
             instance_subnets = Subnet.objects.none()
             for slave_subnet in subnet_tree[collection_depth]:
                 instance_subnets = instance_subnets | Subnet.objects.filter(
-                    master_subnet=slave_subnet["pk"]
-                ).values("master_subnet", "pk", "name", "subnet")
+                    master_subnet=slave_subnet['pk']
+                ).values('master_subnet', 'pk', 'name', 'subnet')
             subnet_tree.append(instance_subnets)
             collection_depth += 1
 
@@ -195,10 +195,10 @@ class IpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
         if request.POST.get('_popup'):
             return HttpResponse(
                 f"""
-            <script type='text/javascript'>
-            opener.dismissAddAnotherPopup(window, '{request.POST.get('ip_address')}');
-            </script>
-            """
+                <script type='text/javascript'>
+                    opener.dismissAddAnotherPopup(window, '{request.POST.get('ip_address')}');
+                </script>
+                """
             )
         return response
 
@@ -210,9 +210,9 @@ class IpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
         if request.POST.get('_popup'):
             return HttpResponse(
                 """
-               <script type='text/javascript'>
-                  opener.dismissAddAnotherPopup(window);
-               </script>
+                <script type='text/javascript'>
+                    opener.dismissAddAnotherPopup(window);
+                </script>
              """
             )
         return response
