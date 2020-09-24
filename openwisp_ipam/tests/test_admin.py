@@ -316,3 +316,13 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         self.assertContains(response, "11.0.0.0/24 (Child#1)")
         self.assertContains(response, "11.0.1.0/24 (Child#2)")
         self.assertContains(response, "11.0.0.0/25 (Grantchild#1)")
+
+    def test_subnet_add_rendered(self):
+        url = reverse(f'admin:{self.app_label}_subnet_add')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_ipaddress_add_rendered(self):
+        url = reverse(f'admin:{self.app_label}_ipaddress_add')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)

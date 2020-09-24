@@ -11,7 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import path, re_path, reverse
 from django.utils.translation import gettext_lazy as _
-from openwisp_users.multitenancy import MultitenantAdminMixin
+from openwisp_users.multitenancy import MultitenantAdminMixin, MultitenantOrgFilter
 from openwisp_utils.admin import TimeReadonlyAdminMixin
 
 from .api.views import HostsSet
@@ -27,9 +27,19 @@ class SubnetAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
     app_label = 'openwisp_ipam'
     change_form_template = 'admin/openwisp-ipam/subnet/change_form.html'
     change_list_template = 'admin/openwisp-ipam/subnet/change_list.html'
-    list_display = ('name', 'subnet', 'master_subnet', 'description')
+    list_display = [
+        'name',
+        'organization',
+        'subnet',
+        'master_subnet',
+        'created',
+        'modified',
+    ]
+    list_filter = [('organization', MultitenantOrgFilter)]
     autocomplete_fields = ['master_subnet']
     search_fields = ['subnet', 'name']
+    list_select_related = ['organization', 'master_subnet']
+    save_on_top = True
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
         instance = Subnet.objects.get(pk=object_id)
@@ -163,17 +173,24 @@ class IpAddressAdminForm(forms.ModelForm):
 class IpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
     form = IpAddressAdminForm
     change_form_template = 'admin/openwisp-ipam/ip_address/change_form.html'
-    list_display = ('ip_address', 'subnet', 'description')
-    list_filter = ('subnet',)
+    list_display = ['ip_address', 'subnet', 'organization', 'created', 'modified']
+    list_filter = ['subnet', ('subnet__organization', MultitenantOrgFilter)]
     search_fields = ['ip_address']
     autocomplete_fields = ['subnet']
     multitenant_parent = 'subnet'
+    list_select_related = ['subnet', 'subnet__organization']
+    save_on_top = True
 
     class Media:
         js = (
             'admin/js/jquery.init.js',
             'openwisp-ipam/js/ip-request.js',
         )
+
+    def organization(self, obj):
+        return obj.subnet.organization
+
+    organization.short_description = _('organization')
 
     def get_extra_context(self):
         url = reverse('ipam:get_next_available_ip', args=['0000'])
