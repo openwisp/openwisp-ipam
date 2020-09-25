@@ -128,16 +128,64 @@ class TestModels(CreateModelsMixin, TestCase):
         else:
             self.fail('ValidationError not raised')
 
-    def test_invalid_master_subnet(self):
-        subnet = self._create_subnet(subnet='10.20.0.0/24')
-        try:
-            self._create_subnet(subnet='192.168.2.0/24', master_subnet=subnet)
-        except ValidationError as e:
-            self.assertTrue(
-                e.message_dict['master_subnet'] == ['Invalid master subnet']
+    def test_master_subnet_validation(self):
+        master = self._create_subnet(subnet='10.0.0.0/23')
+        org2 = self._create_org(name='org2', slug='org2')
+        error_message = (
+            'Please ensure that the organization of this subnet and '
+            'the organization of the related subnet match.'
+        )
+
+        with self.subTest('invalid master subnet'):
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(subnet='192.168.2.0/24', master_subnet=master)
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('master_subnet', message_dict)
+            self.assertIn('Invalid master subnet.', message_dict['master_subnet'])
+
+        with self.subTest('org1 master, org1 child: ok'):
+            self._create_subnet(
+                master_subnet=master,
+                subnet='10.0.0.0/24',
+                organization=master.organization,
             )
-        else:
-            self.fail('ValidationError not raised')
+            self._create_subnet(
+                master_subnet=master,
+                subnet='10.0.1.0/24',
+                organization=master.organization,
+            )
+            Subnet.objects.filter(master_subnet__isnull=False).delete()
+
+        with self.subTest('org1 master, org2 child: reject'):
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    master_subnet=master, subnet='10.0.0.0/24', organization=org2
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('master_subnet', message_dict)
+            self.assertIn(error_message, message_dict['master_subnet'])
+
+        with self.subTest('org1 master, shared child: reject'):
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    master_subnet=master, subnet='10.0.0.0/24', organization=None
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('master_subnet', message_dict)
+            self.assertIn(error_message, message_dict['master_subnet'])
+
+        with self.subTest('shared master, org1 children: rejected'):
+            org1 = master.organization
+            master.organization = None
+            master.full_clean()
+            master.save()
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    master_subnet=master, subnet='10.0.0.0/24', organization=org1,
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('master_subnet', message_dict)
+            self.assertIn(error_message, message_dict['master_subnet'])
 
     def test_valid_subnet_relation_tree(self):
         subnet1 = self._create_subnet(subnet='12.0.56.0/24')
@@ -154,7 +202,7 @@ class TestModels(CreateModelsMixin, TestCase):
             self._create_subnet(subnet='12.0.56.0/26', master_subnet=subnet1)
         except ValidationError as e:
             self.assertEqual(
-                e.message_dict['subnet'], ['Subnet overlaps with 12.0.56.0/25']
+                e.message_dict['subnet'], ['Subnet overlaps with 12.0.56.0/25.']
             )
         else:
             self.fail('ValidationError not raised')

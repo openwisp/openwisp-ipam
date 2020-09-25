@@ -50,8 +50,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         if not self.subnet:
             return
         self._validate_multitenant_uniqueness()
+        self._validate_multitenant_master_subnet()
         allowed_master = self._validate_overlapping_subnets()
-        self._validate_master_subnet(allowed_master)
+        self._validate_master_subnet_consistency(allowed_master)
 
     def _validate_multitenant_uniqueness(self):
         qs = self._meta.model.objects.exclude(pk=self.pk).filter(subnet=self.subnet)
@@ -75,6 +76,21 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 }
             )
 
+    def _validate_multitenant_master_subnet(self):
+        if not self.master_subnet:
+            return
+        if self.master_subnet.organization:
+            self._validate_org_relation('master_subnet', field_error='master_subnet')
+        elif self.organization:
+            raise ValidationError(
+                {
+                    'master_subnet': _(
+                        'Please ensure that the organization of this subnet and '
+                        'the organization of the related subnet match.'
+                    )
+                }
+            )
+
     def _validate_overlapping_subnets(self):
         allowed_master = None
         for subnet in self._meta.model.objects.filter().values():
@@ -91,20 +107,17 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                     allowed_master = subnet['subnet']
         return allowed_master
 
-    def _validate_master_subnet(self, allowed_master):
-        if self.master_subnet:
-            if not ip_network(self.subnet).subnet_of(
-                ip_network(self.master_subnet.subnet)
-            ):
-                raise ValidationError({'master_subnet': _('Invalid master subnet')})
-            if ip_network(
-                self.master_subnet.subnet
-            ) != allowed_master and not allowed_master.subnet_of(
-                ip_network(self.subnet)
-            ):
-                raise ValidationError(
-                    {'subnet': _('Subnet overlaps with %s') % allowed_master}
-                )
+    def _validate_master_subnet_consistency(self, allowed_master):
+        if not self.master_subnet:
+            return
+        if not ip_network(self.subnet).subnet_of(ip_network(self.master_subnet.subnet)):
+            raise ValidationError({'master_subnet': _('Invalid master subnet.')})
+        if ip_network(
+            self.master_subnet.subnet
+        ) != allowed_master and not allowed_master.subnet_of(ip_network(self.subnet)):
+            raise ValidationError(
+                {'subnet': _('Subnet overlaps with %s.') % allowed_master}
+            )
 
     def get_next_available_ip(self):
         ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
