@@ -118,15 +118,32 @@ class TestModels(CreateModelsMixin, TestCase):
             self.fail('ValidationError not raised')
 
     def test_overlapping_subnet(self):
-        self._create_subnet(subnet='192.168.2.0/24')
-        try:
-            self._create_subnet(subnet='192.168.2.0/25')
-        except ValidationError as e:
-            self.assertTrue(
-                e.message_dict['subnet'] == ['Subnet overlaps with 192.168.2.0/24']
-            )
-        else:
-            self.fail('ValidationError not raised')
+        with self.subTest('10.0.0.0/24 overlaps with 10.0.0.0/16'):
+            subnet1 = self._create_subnet(subnet='10.0.0.0/16')
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    subnet='10.0.0.0/24', organization=subnet1.organization
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('subnet', message_dict)
+            self.assertIn('Subnet overlaps with 10.0.0.0/16.', message_dict['subnet'])
+            subnet1.delete()
+
+        with self.subTest('10.0.0.0/16 overlaps with 10.0.0.0/24'):
+            subnet1 = self._create_subnet(subnet='10.0.0.0/24')
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    subnet='10.0.0.0/16', organization=subnet1.organization
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('subnet', message_dict)
+            self.assertIn('Subnet overlaps with 10.0.0.0/24.', message_dict['subnet'])
+            subnet1.delete()
+
+        with self.subTest('different orgs do not overlap'):
+            self._create_subnet(subnet='10.0.0.0/16')
+            org2 = self._create_org(name='org2', slug='org2')
+            self._create_subnet(subnet='10.0.0.0/24', organization=org2)
 
     def test_master_subnet_validation(self):
         master = self._create_subnet(subnet='10.0.0.0/23')
@@ -135,7 +152,6 @@ class TestModels(CreateModelsMixin, TestCase):
             'Please ensure that the organization of this subnet and '
             'the organization of the related subnet match.'
         )
-
         with self.subTest('invalid master subnet'):
             with self.assertRaises(ValidationError) as context_manager:
                 self._create_subnet(subnet='192.168.2.0/24', master_subnet=master)
@@ -149,6 +165,7 @@ class TestModels(CreateModelsMixin, TestCase):
                 subnet='10.0.0.0/24',
                 organization=master.organization,
             )
+
             self._create_subnet(
                 master_subnet=master,
                 subnet='10.0.1.0/24',

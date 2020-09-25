@@ -210,9 +210,9 @@ class IpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
         if request.POST.get('_popup'):
             return HttpResponse(
                 f"""
-                <script type='text/javascript'>
-                    opener.dismissAddAnotherPopup(window, '{request.POST.get('ip_address')}');
-                </script>
+<script type='text/javascript'>
+    opener.dismissAddAnotherPopup(window, '{request.POST.get('ip_address')}');
+</script>
                 """
             )
         return response
@@ -225,9 +225,9 @@ class IpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
         if request.POST.get('_popup'):
             return HttpResponse(
                 """
-                <script type='text/javascript'>
-                    opener.dismissAddAnotherPopup(window);
-                </script>
+<script type='text/javascript'>
+    opener.dismissAddAnotherPopup(window);
+</script>
              """
             )
         return response

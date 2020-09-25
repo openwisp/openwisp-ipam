@@ -51,8 +51,8 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             return
         self._validate_multitenant_uniqueness()
         self._validate_multitenant_master_subnet()
-        allowed_master = self._validate_overlapping_subnets()
-        self._validate_master_subnet_consistency(allowed_master)
+        self._validate_overlapping_subnets()
+        self._validate_master_subnet_consistency()
 
     def _validate_multitenant_uniqueness(self):
         qs = self._meta.model.objects.exclude(pk=self.pk).filter(subnet=self.subnet)
@@ -61,7 +61,8 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             raise ValidationError(
                 {
                     'subnet': _(
-                        'This subnet is already assigned for internal usage in the system.'
+                        'This subnet is already assigned for '
+                        'internal usage in the system.'
                     )
                 }
             )
@@ -92,32 +93,28 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             )
 
     def _validate_overlapping_subnets(self):
-        allowed_master = None
-        for subnet in self._meta.model.objects.filter().values():
-            if self.id == subnet['id']:
-                continue
-            if ip_network(self.subnet).overlaps(subnet['subnet']):
-                if not self.master_subnet and not subnet['subnet'].subnet_of(
-                    ip_network(self.subnet)
-                ):
-                    raise ValidationError(
-                        {'subnet': _('Subnet overlaps with %s') % subnet['subnet']}
-                    )
-                if not allowed_master or subnet['subnet'].subnet_of(allowed_master):
-                    allowed_master = subnet['subnet']
-        return allowed_master
+        qs = self._meta.model.objects.filter(organization=self.organization).only(
+            'subnet'
+        )
+        # exclude parent subnets
+        exclude = [self.pk]
+        parent_subnet = self.master_subnet
+        while parent_subnet:
+            exclude.append(parent_subnet.pk)
+            parent_subnet = parent_subnet.master_subnet
+        # exclude also identical subnets (handled by other checks)
+        qs = qs.exclude(pk__in=exclude).exclude(subnet=self.subnet)
+        for subnet in qs.iterator():
+            if ip_network(self.subnet).overlaps(subnet.subnet):
+                raise ValidationError(
+                    {'subnet': _('Subnet overlaps with %s.') % subnet.subnet}
+                )
 
-    def _validate_master_subnet_consistency(self, allowed_master):
+    def _validate_master_subnet_consistency(self):
         if not self.master_subnet:
             return
         if not ip_network(self.subnet).subnet_of(ip_network(self.master_subnet.subnet)):
             raise ValidationError({'master_subnet': _('Invalid master subnet.')})
-        if ip_network(
-            self.master_subnet.subnet
-        ) != allowed_master and not allowed_master.subnet_of(ip_network(self.subnet)):
-            raise ValidationError(
-                {'subnet': _('Subnet overlaps with %s.') % allowed_master}
-            )
 
     def get_next_available_ip(self):
         ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
