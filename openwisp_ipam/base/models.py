@@ -39,18 +39,45 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     class Meta:
         abstract = True
         indexes = [models.Index(fields=['subnet'], name='subnet_idx')]
+        unique_together = ('subnet', 'organization')
 
     def __str__(self):
         if self.name:
-            return '{0} {1}'.format(self.name, str(self.subnet))
-        else:
-            return str(self.subnet)
+            return f'{self.name} {self.subnet}'
+        return str(self.subnet)
 
     def clean(self):
         if not self.subnet:
             return
+        self._validate_multitenant_uniqueness()
+        allowed_master = self._validate_overlapping_subnets()
+        self._validate_master_subnet(allowed_master)
+
+    def _validate_multitenant_uniqueness(self):
+        qs = self._meta.model.objects.exclude(pk=self.pk).filter(subnet=self.subnet)
+        # find out if there's an identical subnet (shared)
+        if qs.filter(organization=None).exists():
+            raise ValidationError(
+                {
+                    'subnet': _(
+                        'This subnet is already assigned for internal usage in the system.'
+                    )
+                }
+            )
+        # if adding a shared subnet, ensure the subnet
+        # is not already taken by another org
+        if not self.organization and qs.filter(organization__isnull=False).exists():
+            raise ValidationError(
+                {
+                    'subnet': _(
+                        'This subnet is already assigned to another organization.'
+                    )
+                }
+            )
+
+    def _validate_overlapping_subnets(self):
         allowed_master = None
-        for subnet in load_model('openwisp_ipam', 'Subnet').objects.filter().values():
+        for subnet in self._meta.model.objects.filter().values():
             if self.id == subnet['id']:
                 continue
             if ip_network(self.subnet).overlaps(subnet['subnet']):
@@ -62,7 +89,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                     )
                 if not allowed_master or subnet['subnet'].subnet_of(allowed_master):
                     allowed_master = subnet['subnet']
+        return allowed_master
 
+    def _validate_master_subnet(self, allowed_master):
         if self.master_subnet:
             if not ip_network(self.subnet).subnet_of(
                 ip_network(self.master_subnet.subnet)
@@ -208,10 +237,9 @@ class AbstractIpAddress(TimeStampedEditableModel):
         addresses = (
             load_model('openwisp_ipam', 'IpAddress')
             .objects.filter(subnet=self.subnet_id)
+            .exclude(pk=self.pk)
             .values()
         )
         for ip in addresses:
-            if self.id == ip['id']:
-                continue
             if ip_address(self.ip_address) == ip_address(ip['ip_address']):
                 raise ValidationError({'ip_address': _('IP address already used.')})

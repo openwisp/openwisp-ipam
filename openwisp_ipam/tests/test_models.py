@@ -10,7 +10,7 @@ Subnet = load_model('openwisp_ipam', 'Subnet')
 IpAddress = load_model('openwisp_ipam', 'IpAddress')
 
 
-class TestModel(CreateModelsMixin, TestCase):
+class TestModels(CreateModelsMixin, TestCase):
     def test_ip_address_string_representation(self):
         ipaddress = IpAddress(ip_address='entry ip_address')
         self.assertEqual(str(ipaddress), ipaddress.ip_address)
@@ -212,3 +212,61 @@ class TestModel(CreateModelsMixin, TestCase):
             )
         else:
             self.fail('TypeError not raised')
+
+    def test_unique_subnet_multitenancy(self):
+        subnet1 = self._create_subnet(subnet='10.0.0.0/24')
+
+        with self.subTest('validation idempotent'):
+            subnet1.full_clean()
+
+        with self.subTest('same org'):
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    subnet='10.0.0.0/24', organization=subnet1.organization
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn(
+                'Subnet with this Subnet and Organization already exists.',
+                str(message_dict),
+            )
+
+        shared = self._create_subnet(subnet='10.0.1.0/24', organization=None)
+
+        with self.subTest('validation on shared indempotent'):
+            shared.full_clean()
+
+        with self.subTest('duplicate subnet within shared org'):
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(subnet=shared.subnet, organization=None)
+            message_dict = context_manager.exception.message_dict
+            self.assertIn(
+                'This subnet is already assigned for internal usage in the system',
+                str(message_dict),
+            )
+
+        with self.subTest('duplicate subnet between shared org and non shared'):
+            self._create_subnet(subnet='10.0.2.0/24', organization=None)
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    subnet='10.0.2.0/24', organization=subnet1.organization
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn(
+                'This subnet is already assigned for internal usage in the system',
+                str(message_dict),
+            )
+
+        with self.subTest('duplicate subnet between non shared and shared org'):
+            self._create_subnet(subnet='10.0.3.0/24', organization=subnet1.organization)
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(subnet='10.0.3.0/24', organization=None)
+            message_dict = context_manager.exception.message_dict
+            self.assertIn(
+                'This subnet is already assigned to another organization',
+                str(message_dict),
+            )
+
+        with self.subTest('different org should be accepted'):
+            org2 = self._create_org(name='org2', slug='org2')
+            subnet2 = self._create_subnet(subnet='10.0.0.0/24', organization=org2)
+            self.assertEqual(subnet2.organization, org2)

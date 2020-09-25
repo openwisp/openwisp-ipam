@@ -4,7 +4,7 @@ from openwisp_ipam.tests.test_admin import TestAdmin as BaseTestAdmin
 from openwisp_ipam.tests.test_api import TestApi as BaseTestApi
 from openwisp_ipam.tests.test_commands import TestCommands as BaseTestCommands
 from openwisp_ipam.tests.test_forms import TestForms as BaseTestForms
-from openwisp_ipam.tests.test_models import TestModel as BaseTestModel
+from openwisp_ipam.tests.test_models import TestModels as BaseTestModels
 from openwisp_ipam.tests.test_multitenant import (
     TestMultitenantAdmin as BaseTestMultitenantAdmin,
 )
@@ -26,7 +26,7 @@ class TestForms(BaseTestForms):
     pass
 
 
-class TestModel(BaseTestModel):
+class TestModels(BaseTestModels):
     pass
 
 
@@ -43,6 +43,6 @@ del BaseTestAdmin
 del BaseTestApi
 del BaseTestCommands
 del BaseTestForms
-del BaseTestModel
+del BaseTestModels
 del BaseTestMultitenantAdmin
 del BaseTestUsersAdmin
