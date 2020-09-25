@@ -326,3 +326,12 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         url = reverse(f'admin:{self.app_label}_ipaddress_add')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_change_view_master_multitenant(self):
+        master1 = self._create_subnet(subnet='10.0.0.0/16')
+        child1 = self._create_subnet(subnet='10.0.0.0/24', master_subnet=master1)
+        org2 = self._create_org(name='org2', slug='org2')
+        self._create_subnet(subnet='10.0.0.0/16', organization=org2)
+        url = reverse(f'admin:{self.app_label}_subnet_change', args=[child1.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)

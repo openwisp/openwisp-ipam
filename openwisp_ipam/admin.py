@@ -51,13 +51,11 @@ class SubnetAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
         # Find root master_subnet for subnet tree
         instance_root = instance
         while instance_root.master_subnet:
-            instance_root = Subnet.objects.get(
-                subnet=instance_root.master_subnet.subnet
-            )
+            instance_root = instance_root.master_subnet
         # Get instances for all subnets for root master_subnet
-        instance_subnets = Subnet.objects.filter(subnet=instance_root.subnet).values(
-            'master_subnet', 'pk', 'name', 'subnet'
-        )
+        instance_subnets = Subnet.objects.filter(
+            subnet=instance_root.subnet, organization=instance_root.organization
+        ).values('master_subnet', 'pk', 'name', 'subnet')
         # Make subnet tree
         collection_depth = 0
         subnet_tree = [instance_subnets]
