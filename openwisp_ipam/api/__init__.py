@@ -33,7 +33,9 @@ def get_api_urls(api_views):
         url(r'^subnet/$', api_views.subnet_list_create, name='subnet_list_create'),
         url(r'^subnet/(?P<pk>[^/]+)$', api_views.subnet, name='subnet'),
         url(
-            r'^subnet/(?P<subnet_id>[^/]+)/hosts$', api_views.subnet_hosts, name='hosts'
+            r'^subnet/(?P<subnet_id>[^/]+)/hosts/$',
+            api_views.subnet_hosts,
+            name='hosts',
         ),
         url(r'^ip-address/(?P<pk>[^/]+)/$', api_views.ip_address, name='ip_address'),
     ]

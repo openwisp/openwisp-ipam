@@ -34,7 +34,7 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
     var renderedPages = 5,
         fetchedPages = [],
         busy = false,
-        nextPageUrl = '/api/v1/subnet/' + current_subnet + '/hosts',
+        nextPageUrl = '/api/v1/subnet/' + current_subnet + '/hosts/',
         lastRenderedPage = 0; //1 based indexing (0 -> no page rendered)
     function addressListItem(addr) {
         var id = normalizeIP(addr.address);
