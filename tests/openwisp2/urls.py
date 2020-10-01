@@ -1,11 +1,11 @@
 import os
 
 from django.conf import settings
-from django.conf.urls import include, url
 from django.contrib import admin
+from django.urls import include, path
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
 ]
 
 if os.environ.get('SAMPLE_APP', False):
@@ -17,17 +17,17 @@ if os.environ.get('SAMPLE_APP', False):
     from .sample_ipam import views as api_views
 
     urlpatterns += [
-        url(r'^', include(get_urls(api_views))),
+        path('', include(get_urls(api_views))),
     ]
 else:
     # Load openwisp_ipam api views: This can be used
     # when you are extending the app but not making
     # any changes in the API views.
     urlpatterns += [
-        url(r'^', include('openwisp_ipam.urls')),
+        path('', include('openwisp_ipam.urls')),
     ]
 
 if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
     import debug_toolbar
 
-    urlpatterns.append(url(r'^__debug__/', include(debug_toolbar.urls)))
+    urlpatterns.append(path('__debug__/', include(debug_toolbar.urls)))
