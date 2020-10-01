@@ -1,4 +1,4 @@
-from django.urls import include, path
+from django.urls import path
 
 
 def get_api_urls(api_views):
