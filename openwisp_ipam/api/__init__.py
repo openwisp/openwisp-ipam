@@ -9,7 +9,11 @@ def get_api_urls(api_views):
     """
 
     return [
-        path('import-subnet/', api_views.import_subnet, name='import-subnet'),
+        path(
+            'import-subnet/',
+            api_views.import_subnet,
+            name='import-subnet'
+        ),
         path(
             'subnet/<str:subnet_id>/get-next-available-ip/',
             api_views.get_next_available_ip,
@@ -30,12 +34,23 @@ def get_api_urls(api_views):
             api_views.subnet_list_ipaddress,
             name='list_create_ip_address',
         ),
-        path('subnet/', api_views.subnet_list_create, name='subnet_list_create'),
-        path('subnet/<str:pk>/', api_views.subnet, name='subnet'),
+        path(
+            'subnet/', api_views.subnet_list_create,
+            name='subnet_list_create'
+        ),
+        path(
+            'subnet/<str:pk>/',
+            api_views.subnet,
+            name='subnet'
+        ),
         path(
             'subnet/<str:subnet_id>/hosts/',
             api_views.subnet_hosts,
             name='hosts',
         ),
-        path('ip-address/<str:pk>/', api_views.ip_address, name='ip_address'),
+        path(
+            'ip-address/<str:pk>/',
+            api_views.ip_address,
+            name='ip_address'
+        ),
     ]
