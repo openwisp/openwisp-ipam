@@ -15,6 +15,4 @@ def get_urls(api_views):
     ]
 
 
-urlpatterns = [
-    path('', include(get_urls(ipam_api_views)))
-]
+urlpatterns = [path('', include(get_urls(ipam_api_views)))]
