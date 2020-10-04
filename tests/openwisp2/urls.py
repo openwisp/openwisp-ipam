@@ -6,6 +6,7 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/', include('openwisp_utils.api.urls')),
 ]
 
 if os.environ.get('SAMPLE_APP', False):
