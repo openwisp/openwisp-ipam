@@ -156,6 +156,13 @@ This authentication scheme uses Django's default session backend for authenticat
 
     http -a username:password <HTTP verb> <api url>
 
+See openwisp-users: `authenticating with the user token
+<https://github.com/openwisp/openwisp-users#authenticating-with-the-user-token>`_.
+
+When browsing the API via the `Live documentation <#live-documentation>`_
+or the `Browsable web page <#browsable-web-interface>`_, you can also use
+the session authentication by logging in the django admin.
+
 Pagination
 ==========
 

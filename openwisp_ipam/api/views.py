@@ -4,8 +4,9 @@ from collections import OrderedDict
 import swapper
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
+from openwisp_users.api.authentication import BearerAuthentication
 from rest_framework import pagination, serializers, status
-from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -139,7 +140,7 @@ class HostsSet:
 class AvailableIpView(RetrieveAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
 
     def get(self, request, *args, **kwargs):
@@ -150,7 +151,7 @@ class AvailableIpView(RetrieveAPIView):
 class IpAddressListCreateView(ListCreateAPIView):
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
     pagination_class = ListViewPagination
 
@@ -161,7 +162,7 @@ class IpAddressListCreateView(ListCreateAPIView):
 
 class SubnetListCreateView(ListCreateAPIView):
     serializer_class = SubnetSerializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
     pagination_class = ListViewPagination
     queryset = Subnet.objects.all()
@@ -169,14 +170,14 @@ class SubnetListCreateView(ListCreateAPIView):
 
 class SubnetView(RetrieveUpdateDestroyAPIView):
     serializer_class = SubnetSerializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
     queryset = Subnet.objects.all()
 
 
 class IpAddressView(RetrieveUpdateDestroyAPIView):
     serializer_class = IpAddressSerializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
     queryset = IpAddress.objects.all()
 
@@ -185,7 +186,7 @@ class RequestIPView(CreateAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
     serializer_class = IpRequestSerializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
@@ -205,7 +206,7 @@ class ImportSubnetView(CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = ImportSubnetSerializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
@@ -223,7 +224,7 @@ class ExportSubnetView(CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
@@ -238,7 +239,7 @@ class SubnetHostsView(ListAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = HostsResponseSerializer
-    authentication_classes = (SessionAuthentication, BasicAuthentication)
+    authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
     pagination_class = HostsListPagination
 

@@ -251,6 +251,26 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         self.assertEqual(self.client.get(response.data['previous']).status_code, 200)
         self.assertIsNone(response.data['next'])
 
+    def test_bearer_auth(self):
+        self._logout()
+        self._create_user(username='tester', password='tester', is_superuser=True)
+        params = {'username': 'tester', 'password': 'tester'}
+        url = reverse('users:user_auth_token')
+        r = self.client.post(url, params)
+        token = r.data['token']
+        subnet = self._create_subnet(subnet='10.0.0.0/24')
+        self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
+        post_data = self._post_data(subnet=str(subnet.id), description='Testing')
+        response = self.client.post(
+            reverse('ipam:request_ip', args=(subnet.id,)),
+            data=post_data,
+            content_type='application/json',
+            HTTP_AUTHORIZATION=f'Bearer {token}',
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['ip_address'], '10.0.0.2')
+        self._login()
+
     def test_unauthorized_api_access(self):
         self.client.logout()
         subnet = self._create_subnet(subnet='10.0.0.0/24')
@@ -259,13 +279,13 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         response = self.client.get(
             reverse('ipam:list_create_ip_address', args=(subnet.id,))
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
 
         response = self.client.delete(reverse('ipam:subnet', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
 
         response = self.client.delete(reverse('ipam:ip_address', args=(ip_address.id,)))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)
 
         response = self.client.post(
             reverse('ipam:subnet_list_create'),
@@ -274,4 +294,4 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
             ),
             content_type='application/json',
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 401)

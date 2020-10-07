@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     # rest framework
     'rest_framework',
+    'rest_framework.authtoken',
     # Only for developement
     'django_extensions',
     'drf_yasg',
@@ -80,6 +81,7 @@ USE_L10N = True
 USE_TZ = True
 STATIC_URL = '/static/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+OPENWISP_USERS_AUTH_API = True
 
 if TESTING:
     OPENWISP_ORGANIZATION_USER_ADMIN = True
