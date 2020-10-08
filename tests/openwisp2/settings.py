@@ -82,8 +82,8 @@ STATIC_URL = '/static/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 if TESTING:
-    OPENWISP_ORGANIZATON_USER_ADMIN = True
-    OPENWISP_ORGANIZATON_OWNER_ADMIN = True
+    OPENWISP_ORGANIZATION_USER_ADMIN = True
+    OPENWISP_ORGANIZATION_OWNER_ADMIN = True
 
 if os.environ.get('SAMPLE_APP', False):
     INSTALLED_APPS.remove('openwisp_ipam')
