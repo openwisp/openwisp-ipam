@@ -128,6 +128,24 @@ openwisp-ipam provides a graphical representation of a subnet which shows the av
 REST API
 ********
 
+Live documentation
+==================
+
+.. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/images/api-docs.png
+
+A general live API documentation (following the OpenAPI specification) is available at ``/api/v1/docs/``.
+
+Browsable web interface
+=======================
+
+.. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/images/api-ui.png
+
+Additionally, opening any of the endpoints `listed below <#list-of-endpoints>`_
+directly in the browser will show the `browsable API interface of Django-REST-Framework
+<https://www.django-rest-framework.org/topics/browsable-api/>`_,
+which makes it even easier to find out the details of each endpoint.
+
+
 API Authentication
 ==================
 
@@ -141,13 +159,21 @@ This authentication scheme uses Django's default session backend for authenticat
 Pagination
 ==========
 
-API pagination is provided with the help `page` parameter.
-The default page size is 10 which can be overridden using the `page_size` parameter.
+All *list* endpoints support the ``page_size`` parameter that allows paginating
+the results in conjunction with the ``page`` parameter.
 
 .. code-block:: text
 
-    /api/v1/<api endpoint url>/?page=1&page_size=10
+    GET /api/v1/<api endpoint url>/?page_size=10
+    GET /api/v1/<api endpoint url>/?page_size=10&page=2
 
+List of endpoints
+=================
+
+Since the detailed explanation is contained in the `Live documentation <#live-documentation>`_
+and in the `Browsable web page <#browsable-web-interface>`_ of each endpoint,
+here we'll provide just a list of the available endpoints,
+for further information please open the URL of the endpoint in your browser.
 
 Get Next Available IP
 =====================

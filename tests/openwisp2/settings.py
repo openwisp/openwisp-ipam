@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'rest_framework',
     # Only for developement
     'django_extensions',
+    'drf_yasg',
 ]
 
 SITE_ID = 1
