@@ -26,12 +26,12 @@ def get_api_urls(api_views):
             name='export-subnet',
         ),
         path(
-            'subnet/(<str:subnet_id>/ip-address/',
+            'subnet/<str:subnet_id>/ip-address/',
             api_views.subnet_list_ipaddress,
             name='list_create_ip_address',
         ),
         path('subnet/', api_views.subnet_list_create, name='subnet_list_create'),
         path('subnet/<str:pk>/', api_views.subnet, name='subnet'),
-        path('subnet/<str:subnet_id>/hosts/', api_views.subnet_hosts, name='hosts',),
+        path('subnet/<str:subnet_id>/hosts/', api_views.subnet_hosts, name='hosts'),
         path('ip-address/<str:pk>/', api_views.ip_address, name='ip_address'),
     ]
