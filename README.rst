@@ -131,14 +131,14 @@ REST API
 Live documentation
 ==================
 
-.. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/images/api-docs.png
+.. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/api-docs.png
 
 A general live API documentation (following the OpenAPI specification) is available at ``/api/v1/docs/``.
 
 Browsable web interface
 =======================
 
-.. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/images/api-ui.png
+.. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/api-ui.png
 
 Additionally, opening any of the endpoints `listed below <#list-of-endpoints>`_
 directly in the browser will show the `browsable API interface of Django-REST-Framework
