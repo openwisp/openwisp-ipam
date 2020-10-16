@@ -452,10 +452,10 @@ Follow the following structure while creating `csv` file to import data.
     <ip-address>,<optional-description>
     <ip-address>,<optional-description>
 
-Setup (Integrate into other Apps)
-*********************************
+Setup (integrate in an existing Django project)
+***********************************************
 
-Add ``openwisp_ipam`` to ``INSTALLED_APPS``:
+The ``settings.py`` of your project should contain the following:
 
 .. code-block:: python
 
@@ -467,18 +467,31 @@ Add ``openwisp_ipam`` to ``INSTALLED_APPS``:
         'django.contrib.admin',
         # rest framework
         'rest_framework',
+        'drf_yasg',
     ]
+
+    AUTH_USER_MODEL = 'openwisp_users.User'
 
 Add the URLs to your main ``urls.py``:
 
 .. code-block:: python
 
+    from django.conf.urls import url
+    from django.contrib import admin
+    from django.urls import include, path
+    from openwisp_users.api.urls import get_api_urls as get_users_api_urls
+
     urlpatterns = [
-        # ... other urls in your project ...
-        url(r'^admin/', admin.site.urls),
-        # openwisp-ipam urls
-        url(r'^', include('openwisp_ipam.urls')),
+        # admin URLs
+        path('admin/', admin.site.urls),
+        # IPAM API
+        path('', include('openwisp_ipam.urls')),
+        # OpenAPI docs
+        path('api/v1/', include('openwisp_utils.api.urls')),
+        # Bearer Authentication API URL
+        url(r'^api/v1/', include((get_users_api_urls(), 'users'), namespace='users')),
     ]
+
 
 Then run:
 
