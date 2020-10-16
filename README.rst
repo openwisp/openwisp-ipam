@@ -145,16 +145,8 @@ directly in the browser will show the `browsable API interface of Django-REST-Fr
 <https://www.django-rest-framework.org/topics/browsable-api/>`_,
 which makes it even easier to find out the details of each endpoint.
 
-
-API Authentication
-==================
-
-The API authentication is based on session based authentication via  REST framework.
-This authentication scheme uses Django's default session backend for authentication.
-
-.. code-block:: text
-
-    http -a username:password <HTTP verb> <api url>
+Authentication
+==============
 
 See openwisp-users: `authenticating with the user token
 <https://github.com/openwisp/openwisp-users#authenticating-with-the-user-token>`_.
