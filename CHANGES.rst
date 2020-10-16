@@ -1,6 +1,34 @@
 Changelog
 =========
 
+Version 0.2.0 [2020-10-16]
+--------------------------
+
+Features
+~~~~~~~~
+
+- Added organization in list display, possibility to filter by organization,
+  and other minor improvements
+- Added OpenAPI documentation (a.k.a. REST swagger) for the REST API
+- Added bearer token authentication to REST API
+
+Changes
+~~~~~~~
+
+- Allow subnets to be shared
+- Changed hosts API endpoint for consistency
+- Added trailing slash to endpoints for consistency
+
+Bugfixes
+~~~~~~~~
+
+- Fixed master subnet multitenant validation
+- Fixed master subnet multitenant validation
+- Fixed admin multitenancy issue in hierarchical view
+- Fixed integration tests with openwisp-users 0.4.1
+- Fixed wrong API URL for ``list_create_ip_address``
+- Add MANIFEST to fix missing admin templates from python package
+
 Version 0.1.1 [2020-09-03]
 --------------------------
 
