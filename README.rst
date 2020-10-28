@@ -556,6 +556,8 @@ ensuring also that ``openwisp_ipam`` has been removed:
         'django.contrib.admin',
         # rest framework
         'rest_framework',
+        # Other dependencies
+        'reversion',
     ]
 
 For more information about how to work with django projects and django apps,
