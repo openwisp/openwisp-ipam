@@ -35,6 +35,7 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
         fetchedPages = [],
         busy = false,
         nextPageUrl = '/api/v1/subnet/' + current_subnet + '/hosts/',
+        searchQuery = '',
         lastRenderedPage = 0; //1 based indexing (0 -> no page rendered)
     function addressListItem(addr) {
         var id = normalizeIP(addr.address);
@@ -57,6 +58,42 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
             div.append(addressListItem(address));
         });
         return div;
+    }
+    function validateIp(ip_address, callback) {
+        if (ip_address === '') {
+            callback(true);
+            return;
+        }
+        $.ajax({
+            type: 'GET',
+            url: '/api/v1/subnet/' + current_subnet + '/hosts/?start=' + ip_address,
+            success: function (res) {
+                callback(res.results[0].address === ip_address);
+            },
+            error: function (error) {
+                callback(false);
+                throw error;
+            },
+        });
+    }
+    function goTo() {
+        var input = $("#goto-input").val().toLowerCase().trim();
+        validateIp(input, function (isValid) {
+            if (isValid) {
+                $("#invalid-address").hide();
+                if (input !== searchQuery) {
+                    searchQuery = input;
+                    nextPageUrl = '/api/v1/subnet/' + current_subnet + '/hosts/?start=' + searchQuery;
+                    $('#subnet-visual').empty();
+                    fetchedPages = [];
+                    lastRenderedPage = 0;
+                    busy = false;
+                    onUpdate();
+                }
+            } else {
+                $("#invalid-address").show();
+            }
+        });
     }
     function appendPage() {
         $('.subnet-visual').append(pageContainer(fetchedPages[lastRenderedPage]));
@@ -117,6 +154,9 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
             }
         }
     }
+    $("#goto-button").on("click", function () {
+        goTo();
+    });
     $('.subnet-visual').scroll(onUpdate);
     onUpdate();
 }

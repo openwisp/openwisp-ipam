@@ -28,7 +28,16 @@
 <div id="graph"></div>
 
 <h3>{% trans 'Subnet Visual Display' %}</h3>
-<section class="subnet-visual{% if original.subnet.version == 6 %} ipv6{% endif %}">
+<div>
+  <form onsubmit="return false">
+    <input id="goto-input" onkeypress="return event.keyCode != 13;" placeholder="Jump to" />
+    <input id="goto-button" type="button" value="Go" />
+  </form>
+  <ul id="invalid-address" class="errorlist" style="display:none;">
+    <li>Address not valid for subnet</li>
+  </ul>
+</div>
+<section id="subnet-visual" class="subnet-visual{% if original.subnet.version == 6 %} ipv6{% endif %}">
 </section>
 {% endif %}
 {% endblock %}
@@ -37,6 +46,12 @@
 {{ block.super }}
 {% if original and not is_popup %}
 <script type="text/javascript">
+  document.querySelector("#goto-input").addEventListener("keyup", function (event) {
+    event.preventDefault();
+    if (event.key == "Enter") {
+      document.querySelector("#goto-button").click();
+    }
+  });
   var current_subnet = '{{ original.pk }}';
   var IpAddUrl = '{% url ipaddress_add_url %}'
   var IpChangeUrl = '{% url ipaddress_change_url "1234" %}'
