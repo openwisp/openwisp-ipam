@@ -27,14 +27,14 @@
 
 <div id="graph"></div>
 
-<h3>{% trans 'Subnet Visual Display' %}</h3>
-<div>
+<h3 class="subnet-visual">{% trans 'Subnet Visual Display' %}</h3>
+<div class="subnet-visual">
   <form onsubmit="return false">
     <input id="goto-input" onkeypress="return event.keyCode != 13;" placeholder="Jump to" />
     <input id="goto-button" type="button" value="Go" />
   </form>
   <ul id="invalid-address" class="errorlist" style="display:none;">
-    <li>Address not valid for subnet</li>
+    <li>{% trans 'Address not valid for subnet' %}</li>
   </ul>
 </div>
 <section id="subnet-visual" class="subnet-visual{% if original.subnet.version == 6 %} ipv6{% endif %}">
@@ -46,18 +46,12 @@
 {{ block.super }}
 {% if original and not is_popup %}
 <script type="text/javascript">
-  document.querySelector("#goto-input").addEventListener("keyup", function (event) {
-    event.preventDefault();
-    if (event.key == "Enter") {
-      document.querySelector("#goto-button").click();
-    }
-  });
   var current_subnet = '{{ original.pk }}';
-  var IpAddUrl = '{% url ipaddress_add_url %}'
-  var IpChangeUrl = '{% url ipaddress_change_url "1234" %}'
+  var ipAddUrl = '{% url ipaddress_add_url %}'
+  var ipChangeUrl = '{% url ipaddress_change_url "1234" %}'
   django.jQuery(document).ready(function () {
-    initHostsInfiniteScroll(django.jQuery, current_subnet, IpAddUrl, IpChangeUrl, {{ ip_uuid| safe}})
-    });
+    initHostsInfiniteScroll(django.jQuery, current_subnet, ipAddUrl, ipChangeUrl, {{ ip_uuid| safe}})
+  });
   // Nested Subnet Tree
   subnet_tree = [];
   subnet_tree.push(

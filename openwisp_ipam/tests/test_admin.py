@@ -59,7 +59,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         )
         response = self.client.get(url)
         self.assertContains(response, 'ok')
-        self.assertContains(response, '<h3>Subnet Visual Display</h3>')
+        self.assertContains(
+            response, '<h3 class="subnet-visual">Subnet Visual Display</h3>'
+        )
 
     def test_ipv6_subnet_change(self):
         subnet = self._create_subnet(
@@ -72,7 +74,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
             follow=True,
         )
         self.assertContains(response, 'ok')
-        self.assertContains(response, '<h3>Subnet Visual Display</h3>')
+        self.assertContains(
+            response, '<h3 class="subnet-visual">Subnet Visual Display</h3>'
+        )
 
     def test_subnet_invalid_entry(self):
         post_data = self._post_data(

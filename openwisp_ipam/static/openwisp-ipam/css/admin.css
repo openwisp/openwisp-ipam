@@ -5,6 +5,9 @@
 .subnet-visual{
   margin: 10px 20px 0;
   padding: 0;
+}
+
+section.subnet-visual{
   overflow-anchor: none;
   overflow-y: scroll;
   height: 700px;
@@ -15,7 +18,7 @@
   width: 120px;
   text-align: center;
   padding: 5px 0;
-  margin: 0 5px 10px 5px;
+  margin: 0 10px 10px 0px;
   border-radius: 0;
   color: #fff;
   background: rgba(20, 102, 26, 0.9);
@@ -47,3 +50,6 @@
 }
 
 .subnet-visual .page{ display: inline }
+
+#goto-input{ padding: 5px 10px }
+#goto-button{ padding: 7px 10px }

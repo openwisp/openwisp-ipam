@@ -26,6 +26,14 @@ django.jQuery(function ($) {
         // Open the specific subnet page that used clicked on.
         document.location.href = data.node.a_attr.href;
     });
+
+    // go to keyup
+    $('#goto-input').on('keyup', function (event) {
+        event.preventDefault();
+        if (event.key === 'Enter') {
+            django.jQuery('#goto-button').trigger('click');
+        }
+    });
 });
 
 
@@ -96,10 +104,10 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
         });
     }
     function appendPage() {
-        $('.subnet-visual').append(pageContainer(fetchedPages[lastRenderedPage]));
+        $('#subnet-visual').append(pageContainer(fetchedPages[lastRenderedPage]));
         if (lastRenderedPage >= renderedPages) {
-            var removedDiv = $('.subnet-visual div:first');
-            $('.subnet-visual').scrollTop($('.subnet-visual').scrollTop() - removedDiv.height());
+            var removedDiv = $('#subnet-visual div:first');
+            $('#subnet-visual').scrollTop($('#subnet-visual').scrollTop() - removedDiv.height());
             removedDiv.remove();
         }
         lastRenderedPage += 1;
@@ -134,19 +142,19 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
     function pageUp() {
         busy = true;
         if (lastRenderedPage > renderedPages) {
-            $('.subnet-visual div:last').remove();
+            $('#subnet-visual div:last').remove();
             var addedDiv = pageContainer(fetchedPages[lastRenderedPage - renderedPages - 1]);
-            $('.subnet-visual').prepend(addedDiv);
-            $('.subnet-visual').scrollTop($('.subnet-visual').scrollTop() + addedDiv.height());
+            $('#subnet-visual').prepend(addedDiv);
+            $('#subnet-visual').scrollTop($('#subnet-visual').scrollTop() + addedDiv.height());
             lastRenderedPage -= 1;
         }
         busy = false;
     }
     function onUpdate() {
         if (!busy) {
-            var scrollTop = $('.subnet-visual').scrollTop(),
-                scrollBottom = scrollTop + $('.subnet-visual').innerHeight(),
-                height = $('.subnet-visual')[0].scrollHeight;
+            var scrollTop = $('#subnet-visual').scrollTop(),
+                scrollBottom = scrollTop + $('#subnet-visual').innerHeight(),
+                height = $('#subnet-visual')[0].scrollHeight;
             if (height * 0.75 <= scrollBottom) {
                 pageDown();
             } else if (height * 0.25 >= scrollTop) {
@@ -157,6 +165,6 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
     $("#goto-button").on("click", function () {
         goTo();
     });
-    $('.subnet-visual').scroll(onUpdate);
+    $('#subnet-visual').scroll(onUpdate);
     onUpdate();
 }
