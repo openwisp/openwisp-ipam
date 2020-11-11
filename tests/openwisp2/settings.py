@@ -19,6 +19,8 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    # Other dependencies
+    'reversion',
     # openwisp2 modules
     'openwisp_users',
     'openwisp_ipam',

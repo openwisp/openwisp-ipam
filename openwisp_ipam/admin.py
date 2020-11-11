@@ -13,6 +13,7 @@ from django.urls import path, re_path, reverse
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.multitenancy import MultitenantAdminMixin, MultitenantOrgFilter
 from openwisp_utils.admin import TimeReadonlyAdminMixin
+from reversion.admin import VersionAdmin
 
 from .api.views import HostsSet
 from .base.forms import IpAddressImportForm
@@ -23,7 +24,9 @@ IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
 
 
 @admin.register(Subnet)
-class SubnetAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
+class SubnetAdmin(
+    VersionAdmin, MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin
+):
     app_label = 'openwisp_ipam'
     change_form_template = 'admin/openwisp-ipam/subnet/change_form.html'
     change_list_template = 'admin/openwisp-ipam/subnet/change_list.html'
@@ -168,7 +171,9 @@ class IpAddressAdminForm(forms.ModelForm):
 
 
 @admin.register(IpAddress)
-class IpAddressAdmin(MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin):
+class IpAddressAdmin(
+    VersionAdmin, MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin
+):
     form = IpAddressAdminForm
     change_form_template = 'admin/openwisp-ipam/ip_address/change_form.html'
     list_display = ['ip_address', 'subnet', 'organization', 'created', 'modified']
