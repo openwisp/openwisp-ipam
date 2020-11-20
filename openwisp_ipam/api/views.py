@@ -133,7 +133,7 @@ class HostsSet:
     def index_of(self, address):
         index = int(self.subnet.subnet._address_class(address)) - self.network - 1
         if index < 0 or index >= self.count():  # pragma: no cover
-            raise IndexError
+            raise serializers.ValidationError({'detail': _('Invalid Address')})
         return index
 
 

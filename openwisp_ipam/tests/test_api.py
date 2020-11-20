@@ -45,6 +45,23 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, None)
 
+    def test_ipv4_invalid_host(self):
+        subnet = self._create_subnet(subnet='10.0.0.0/16')
+        response = self.client.get(
+            reverse('ipam:hosts', args=(subnet.id,)), {'start': '10.255.0.0'}
+        )
+        self.assertEqual(str(response.data['detail']), 'Invalid Address')
+        self.assertEqual(response.status_code, 400)
+
+    def test_ipv6_invalid_host(self):
+        subnet = self._create_subnet(subnet='fdb6:21b:a477::/64')
+        response = self.client.get(
+            reverse('ipam:hosts', args=(subnet.id,)),
+            {'start': 'fdb6:21b:a477:1:fff::fff'},
+        )
+        self.assertEqual(str(response.data['detail']), 'Invalid Address')
+        self.assertEqual(response.status_code, 400)
+
     def test_ipv4_request_api(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24')
         self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
