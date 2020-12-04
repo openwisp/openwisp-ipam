@@ -5,9 +5,10 @@ import swapper
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.api.authentication import BearerAuthentication
-from openwisp_users.api.permissions import IsOrganizationMember
+from openwisp_users.api.permissions import IsOrganizationManager
 from rest_framework import pagination, serializers, status
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -29,10 +30,28 @@ from .serializers import (
     IpRequestSerializer,
     SubnetSerializer,
 )
-from .utils import OrgPermissionMixin
+from .utils import FilterByOrganizationManaged
 
 IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
+Organization = swapper.load_model('openwisp_users', 'Organization')
+
+
+class DispatchOrgMixin(object):
+    def dispatch(self, *args, **kwargs):
+        self.organization = get_object_or_404(
+            self.subnet_model, pk=self.kwargs['subnet_id']
+        ).organization
+        return super().dispatch(*args, **kwargs)
+
+    def validate_membership(self, user):
+        if not (
+            user.is_superuser
+            or IsOrganizationManager.validate_membership(self, user, self.organization)
+        ):
+            raise PermissionDenied(
+                "User does not have access to the specified organization"
+            )
 
 
 class ListViewPagination(pagination.PageNumberPagination):
@@ -139,26 +158,19 @@ class HostsSet:
         return index
 
 
-class AvailableIpView(OrgPermissionMixin, RetrieveAPIView):
+class AvailableIpView(DispatchOrgMixin, RetrieveAPIView):
     subnet_model = Subnet
+    queryset = IpAddress.objects.none()
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
 
-    def get_queryset(self):
-        queryset = IpAddress.objects.none()
-        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        user = self.request.user
-        self.validate_permission(user, subnet.organization)
-        return queryset
-
     def get(self, request, *args, **kwargs):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        user = self.request.user
-        self.validate_permission(user, subnet.organization)
+        self.validate_membership(self.request.user)
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(OrgPermissionMixin, ListCreateAPIView):
+class IpAddressListCreateView(DispatchOrgMixin, ListCreateAPIView):
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
@@ -167,30 +179,23 @@ class IpAddressListCreateView(OrgPermissionMixin, ListCreateAPIView):
 
     def get_queryset(self):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        user = self.request.user
-        self.validate_permission(user, subnet.organization)
+        self.validate_membership(self.request.user)
         return subnet.ipaddress_set.all().order_by('ip_address')
 
 
-class SubnetListCreateView(ListCreateAPIView):
+class SubnetListCreateView(FilterByOrganizationManaged, ListCreateAPIView):
     serializer_class = SubnetSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
     pagination_class = ListViewPagination
-
-    def get_queryset(self):
-        queryset = Subnet.objects.all()
-        user = self.request.user
-        if not user.is_superuser:
-            queryset = Subnet.objects.filter(organization__in=user.organizations_dict)
-        return queryset
+    queryset = Subnet.objects.all()
 
 
 class SubnetView(RetrieveUpdateDestroyAPIView):
     serializer_class = SubnetSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (
-        IsOrganizationMember,
+        IsOrganizationManager,
         DjangoModelPermissions,
     )
     queryset = Subnet.objects.all()
@@ -200,29 +205,24 @@ class IpAddressView(RetrieveUpdateDestroyAPIView):
     serializer_class = IpAddressSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (
-        IsOrganizationMember,
+        IsOrganizationManager,
         DjangoModelPermissions,
     )
     queryset = IpAddress.objects.all()
     organization_field = 'subnet__organization'
 
 
-class RequestIPView(OrgPermissionMixin, CreateAPIView):
+class RequestIPView(DispatchOrgMixin, CreateAPIView):
     subnet_model = Subnet
+    queryset = IpAddress.objects.none()
     serializer_class = IpRequestSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
 
-    def get_queryset(self):
-        queryset = IpAddress.objects.none()
-        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        user = self.request.user
-        self.validate_permission(user, subnet.organization)
-        return queryset
-
     def post(self, request, *args, **kwargs):
         options = {'description': request.data.get('description')}
         subnet = get_object_or_404(self.subnet_model, pk=kwargs['subnet_id'])
+        self.validate_membership(self.request.user)
         ip_address = subnet.request_ip(options)
         if ip_address:
             serializer = IpAddressSerializer(ip_address)
@@ -242,17 +242,16 @@ class ImportSubnetView(CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         file = request.FILES['csvfile']
-        user = self.request.user
         if not file.name.endswith(('.csv', '.xls', '.xlsx')):
             return Response({'error': _('File type not supported.')}, status=400)
         try:
-            self.subnet_model().import_csv(file, user)
+            self.subnet_model().import_csv(file, self.request.user)
         except CsvImportException as e:
             return Response({'error': _(str(e))}, status=400)
         return Response({'detail': _('Data imported successfully.')})
 
 
-class ExportSubnetView(OrgPermissionMixin, CreateAPIView):
+class ExportSubnetView(DispatchOrgMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
@@ -260,9 +259,7 @@ class ExportSubnetView(OrgPermissionMixin, CreateAPIView):
     permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
-        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        user = self.request.user
-        self.validate_permission(user, subnet.organization)
+        self.validate_membership(self.request.user)
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="ip_address.csv"'
         writer = csv.writer(response)
@@ -270,8 +267,9 @@ class ExportSubnetView(OrgPermissionMixin, CreateAPIView):
         return response
 
 
-class SubnetHostsView(OrgPermissionMixin, ListAPIView):
+class SubnetHostsView(DispatchOrgMixin, ListAPIView):
     subnet_model = Subnet
+    queryset = Subnet.objects.none()
     serializer_class = HostsResponseSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
@@ -280,8 +278,7 @@ class SubnetHostsView(OrgPermissionMixin, ListAPIView):
     def get_queryset(self):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
         qs = HostsSet(subnet)
-        user = self.request.user
-        self.validate_permission(user, subnet.organization)
+        self.validate_membership(self.request.user)
         return qs
 
 

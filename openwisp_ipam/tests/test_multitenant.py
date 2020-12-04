@@ -10,6 +10,7 @@ from . import CreateModelsMixin, PostDataMixin
 User = get_user_model()
 IpAddress = load_model('openwisp_ipam', 'IPAddress')
 Subnet = load_model('openwisp_ipam', 'Subnet')
+OrganizationUser = load_model('openwisp_users', 'OrganizationUser')
 
 
 class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCase):
@@ -63,16 +64,20 @@ class TestMultitenantApi(
             username='user_a',
             email='usera@tester.com',
             password='tester',
-            is_superuser=False,
+            is_staff=True,
         )
+        ou = OrganizationUser.objects.create(user=user_a, organization=org_a)
+        ou.is_admin = True
+        ou.save()
         user_b = self._create_operator(
             username='user_b',
             email='userb@tester.com',
             password='tester',
-            is_superuser=False,
+            is_staff=True,
         )
-        self._create_org_user(user=user_a, organization=org_a, is_admin=True)
-        self._create_org_user(user=user_b, organization=org_b)
+        ou = OrganizationUser.objects.create(user=user_b, organization=org_b)
+        ou.is_admin = True
+        ou.save()
         # Creates a superuser
         self._create_operator(
             username='superuser',
@@ -80,7 +85,6 @@ class TestMultitenantApi(
             password='tester',
             is_superuser=True,
         )
-        self._login()
 
     def test_subnet(self):
         org_a = self._get_org(org_name='org_a')
