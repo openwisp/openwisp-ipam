@@ -57,7 +57,7 @@ class TestMultitenantApi(
 ):
     def setUp(self):
         super().setUp()
-        # Creates a user for each of org_a and org_b
+        # Creates a manager for each of org_a and org_b
         org_a = self._create_org(name='org_a', slug='org_a')
         org_b = self._create_org(name='org_b', slug='org_b')
         user_a = self._create_operator(
@@ -116,7 +116,7 @@ class TestMultitenantApi(
         self.assertEqual(response.status_code, 200)
         self._login(username='user_b', password='tester')
         response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_subnet_list_ipaddress(self):
         org_a = self._get_org(org_name='org_a')
@@ -143,7 +143,7 @@ class TestMultitenantApi(
         response = self.client.get(
             reverse('ipam:list_create_ip_address', args=(subnet.id,))
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_ipaddress(self):
         org_a = self._get_org(org_name='org_a')
@@ -179,7 +179,7 @@ class TestMultitenantApi(
         response = self.client.get(
             reverse('ipam:get_next_available_ip', args=(subnet.id,))
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_subnet_list(self):
         org_a = self._get_org(org_name='org_a')
@@ -220,7 +220,7 @@ class TestMultitenantApi(
             data=post_data,
             content_type='application/json',
         )
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)
 
     def test_import_subnet(self):
         csv_data = """Monachers - Matera,
@@ -268,4 +268,4 @@ class TestMultitenantApi(
         self.assertEqual(response.content, csv_data)
         self._login(username='user_b', password='tester')
         response = self.client.post(reverse('ipam:export-subnet', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 404)

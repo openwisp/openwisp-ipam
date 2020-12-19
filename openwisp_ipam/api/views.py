@@ -8,7 +8,6 @@ from openwisp_users.api.authentication import BearerAuthentication
 from openwisp_users.api.permissions import IsOrganizationManager
 from rest_framework import pagination, serializers, status
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -30,28 +29,17 @@ from .serializers import (
     IpRequestSerializer,
     SubnetSerializer,
 )
-from .utils import FilterByOrganizationManaged
+from .utils import FilterByOrganizationManaged, FilterByParentManaged
 
 IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
 Organization = swapper.load_model('openwisp_users', 'Organization')
 
 
-class DispatchOrgMixin(object):
-    def dispatch(self, *args, **kwargs):
-        self.organization = get_object_or_404(
-            self.subnet_model, pk=self.kwargs['subnet_id']
-        ).organization
-        return super().dispatch(*args, **kwargs)
-
-    def validate_membership(self, user):
-        if not (
-            user.is_superuser
-            or IsOrganizationManager.validate_membership(self, user, self.organization)
-        ):
-            raise PermissionDenied(
-                "User does not have access to the specified organization"
-            )
+class IpAddressOrgMixin(FilterByParentManaged):
+    def get_parent_queryset(self):
+        qs = Subnet.objects.filter(pk=self.kwargs['subnet_id'])
+        return qs
 
 
 class ListViewPagination(pagination.PageNumberPagination):
@@ -158,7 +146,7 @@ class HostsSet:
         return index
 
 
-class AvailableIpView(DispatchOrgMixin, RetrieveAPIView):
+class AvailableIpView(IpAddressOrgMixin, RetrieveAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
     authentication_classes = (BearerAuthentication, SessionAuthentication)
@@ -166,11 +154,11 @@ class AvailableIpView(DispatchOrgMixin, RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        self.validate_membership(self.request.user)
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(DispatchOrgMixin, ListCreateAPIView):
+class IpAddressListCreateView(IpAddressOrgMixin, ListCreateAPIView):
+    queryset = IpAddress.objects.none()
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
@@ -179,7 +167,7 @@ class IpAddressListCreateView(DispatchOrgMixin, ListCreateAPIView):
 
     def get_queryset(self):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
-        self.validate_membership(self.request.user)
+        super().get_queryset()
         return subnet.ipaddress_set.all().order_by('ip_address')
 
 
@@ -212,7 +200,7 @@ class IpAddressView(RetrieveUpdateDestroyAPIView):
     organization_field = 'subnet__organization'
 
 
-class RequestIPView(DispatchOrgMixin, CreateAPIView):
+class RequestIPView(IpAddressOrgMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
     serializer_class = IpRequestSerializer
@@ -222,7 +210,6 @@ class RequestIPView(DispatchOrgMixin, CreateAPIView):
     def post(self, request, *args, **kwargs):
         options = {'description': request.data.get('description')}
         subnet = get_object_or_404(self.subnet_model, pk=kwargs['subnet_id'])
-        self.validate_membership(self.request.user)
         ip_address = subnet.request_ip(options)
         if ip_address:
             serializer = IpAddressSerializer(ip_address)
@@ -251,7 +238,7 @@ class ImportSubnetView(CreateAPIView):
         return Response({'detail': _('Data imported successfully.')})
 
 
-class ExportSubnetView(DispatchOrgMixin, CreateAPIView):
+class ExportSubnetView(IpAddressOrgMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
@@ -259,7 +246,6 @@ class ExportSubnetView(DispatchOrgMixin, CreateAPIView):
     permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
-        self.validate_membership(self.request.user)
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="ip_address.csv"'
         writer = csv.writer(response)
@@ -267,7 +253,7 @@ class ExportSubnetView(DispatchOrgMixin, CreateAPIView):
         return response
 
 
-class SubnetHostsView(DispatchOrgMixin, ListAPIView):
+class SubnetHostsView(IpAddressOrgMixin, ListAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = HostsResponseSerializer
@@ -276,9 +262,9 @@ class SubnetHostsView(DispatchOrgMixin, ListAPIView):
     pagination_class = HostsListPagination
 
     def get_queryset(self):
+        super().get_queryset()
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
         qs = HostsSet(subnet)
-        self.validate_membership(self.request.user)
         return qs
 
 
