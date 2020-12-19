@@ -1,6 +1,7 @@
 import json
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
@@ -339,3 +340,32 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         url = reverse(f'admin:{self.app_label}_subnet_change', args=[child1.pk])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_admin_group_permission(self):
+        admin = Group.objects.get(name="Administrator")
+        admin_permissions = [
+            'add_ipaddress',
+            'change_ipaddress',
+            'delete_ipaddress',
+            'view_ipaddress',
+            'add_subnet',
+            'change_subnet',
+            'delete_subnet',
+            'view_subnet',
+        ]
+        perms = list(admin.permissions.values_list('codename', flat=True))
+        for p in admin_permissions:
+            self.assertIn(p, perms)
+
+    def test_operator_group_permission(self):
+        operator = Group.objects.get(name="Operator")
+        operator_permissions = [
+            'add_ipaddress',
+            'change_ipaddress',
+            'delete_ipaddress',
+            'view_ipaddress',
+            'view_subnet',
+        ]
+        perms = list(operator.permissions.values_list('codename', flat=True))
+        for p in operator_permissions:
+            self.assertIn(p, perms)
