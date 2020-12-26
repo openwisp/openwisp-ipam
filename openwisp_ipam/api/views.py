@@ -33,6 +33,12 @@ IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
 
 
+class ProtectedAPIMixin(object):
+    authentication_classes = [BearerAuthentication, SessionAuthentication]
+    permission_classes = [DjangoModelPermissions]
+    throttle_scope = 'ipam'
+
+
 class ListViewPagination(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -137,22 +143,18 @@ class HostsSet:
         return index
 
 
-class AvailableIpView(RetrieveAPIView):
+class AvailableIpView(ProtectedAPIMixin, RetrieveAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def get(self, request, *args, **kwargs):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(ListCreateAPIView):
+class IpAddressListCreateView(ProtectedAPIMixin, ListCreateAPIView):
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     pagination_class = ListViewPagination
 
     def get_queryset(self):
@@ -160,34 +162,26 @@ class IpAddressListCreateView(ListCreateAPIView):
         return subnet.ipaddress_set.all().order_by('ip_address')
 
 
-class SubnetListCreateView(ListCreateAPIView):
+class SubnetListCreateView(ProtectedAPIMixin, ListCreateAPIView):
     serializer_class = SubnetSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     pagination_class = ListViewPagination
     queryset = Subnet.objects.all()
 
 
-class SubnetView(RetrieveUpdateDestroyAPIView):
+class SubnetView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = SubnetSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     queryset = Subnet.objects.all()
 
 
-class IpAddressView(RetrieveUpdateDestroyAPIView):
+class IpAddressView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = IpAddressSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     queryset = IpAddress.objects.all()
 
 
-class RequestIPView(CreateAPIView):
+class RequestIPView(ProtectedAPIMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
     serializer_class = IpRequestSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
         options = {'description': request.data.get('description')}
@@ -202,12 +196,10 @@ class RequestIPView(CreateAPIView):
         return Response(None)
 
 
-class ImportSubnetView(CreateAPIView):
+class ImportSubnetView(ProtectedAPIMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = ImportSubnetSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
         file = request.FILES['csvfile']
@@ -220,12 +212,10 @@ class ImportSubnetView(CreateAPIView):
         return Response({'detail': _('Data imported successfully.')})
 
 
-class ExportSubnetView(CreateAPIView):
+class ExportSubnetView(ProtectedAPIMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
         response = HttpResponse(content_type='text/csv')
@@ -235,12 +225,10 @@ class ExportSubnetView(CreateAPIView):
         return response
 
 
-class SubnetHostsView(ListAPIView):
+class SubnetHostsView(ProtectedAPIMixin, ListAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = HostsResponseSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     pagination_class = HostsListPagination
 
     def get_queryset(self):
