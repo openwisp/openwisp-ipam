@@ -369,3 +369,21 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         perms = list(operator.permissions.values_list('codename', flat=True))
         for p in operator_permissions:
             self.assertIn(p, perms)
+
+    def test_admin_menu_items(self):
+        # Test menu items (openwisp-utils menu) for Subnet and IpAddress models
+        response = self.client.get(reverse('admin:index'))
+        self.assertContains(
+            response,
+            '<a href="{}" class="subnet">subnets</a>'.format(
+                reverse(f'admin:{self.app_label}_subnet_changelist')
+            ),
+            html=True,
+        )
+        self.assertContains(
+            response,
+            '<a href="{}" class="ipaddress">ip addresss</a>'.format(
+                reverse(f'admin:{self.app_label}_ipaddress_changelist')
+            ),
+            html=True,
+        )
