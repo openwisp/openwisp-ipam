@@ -89,139 +89,190 @@ class TestMultitenantApi(
 
     def test_subnet(self):
         org_a = self._get_org(org_name='org_a')
-        self._login(username='user_a', password='tester')
-
-        # Subnet to be accessible by superusers and org_a users
         subnet = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
-        response = self.client.get(reverse('ipam:subnet', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['id'], str(subnet.id))
-        self._login(username='superuser', password='tester')
-        response = self.client.get(reverse('ipam:subnet', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['id'], str(subnet.id))
 
-        # Should throw PermissionError for users from other organizations
-        self._login(username='user_b', password='tester')
-        response = self.client.get(reverse('ipam:subnet', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 403)
+        with self.subTest('Test subnet accessible by org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(reverse('ipam:subnet', args=(subnet.id,)))
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['id'], str(subnet.id))
+
+        with self.subTest('Test subnet accessible by superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.get(reverse('ipam:subnet', args=(subnet.id,)))
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['id'], str(subnet.id))
+
+        with self.subTest('Test subnet NOT accessible by members of other orgs'):
+            self._login(username='user_b', password='tester')
+            response = self.client.get(reverse('ipam:subnet', args=(subnet.id,)))
+            self.assertEqual(response.status_code, 403)
 
     def test_subnet_hosts(self):
         org_a = self._get_org(org_name='org_a')
         subnet = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
-        self._login(username='user_a', password='tester')
-        response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 200)
-        self._login(username='superuser', password='tester')
-        response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 200)
-        self._login(username='user_b', password='tester')
-        response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 404)
+
+        with self.subTest('Test hosts list for org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test hosts list for superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test hosts list for non org manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
+            self.assertEqual(response.status_code, 404)
 
     def test_subnet_list_ipaddress(self):
         org_a = self._get_org(org_name='org_a')
         subnet = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
-        self._login(username='superuser', password='tester')
         post_data = self._post_data(ip_address='10.0.0.5', subnet=str(subnet.id))
-        response = self.client.post(
-            reverse('ipam:list_create_ip_address', args=(subnet.id,)),
-            data=post_data,
-            content_type='application/json',
-        )
-        self.assertEqual(response.status_code, 201)
-        response = self.client.get(
-            reverse('ipam:list_create_ip_address', args=(subnet.id,))
-        )
-        self.assertEqual(response.status_code, 200)
-        self._login(username='user_a', password='tester')
-        response = self.client.get(
-            reverse('ipam:list_create_ip_address', args=(subnet.id,))
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['results'][0]['ip_address'], '10.0.0.5')
-        self._login(username='user_b', password='tester')
-        response = self.client.get(
-            reverse('ipam:list_create_ip_address', args=(subnet.id,))
-        )
-        self.assertEqual(response.status_code, 404)
+
+        with self.subTest('Test ipaddress list for org manager'):
+            self._login(username='superuser', password='tester')
+            self.client.post(
+                reverse('ipam:list_create_ip_address', args=(subnet.id,)),
+                data=post_data,
+                content_type='application/json',
+            )
+            response = self.client.get(
+                reverse('ipam:list_create_ip_address', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test ipaddress list for superuser'):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(
+                reverse('ipam:list_create_ip_address', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['results'][0]['ip_address'], '10.0.0.5')
+
+        with self.subTest('Test ipaddress list not accessible by non org manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.get(
+                reverse('ipam:list_create_ip_address', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 404)
 
     def test_ipaddress(self):
         org_a = self._get_org(org_name='org_a')
         subnet = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
         ip_address = self._create_ipaddress(ip_address='10.0.0.5', subnet=subnet)
-        self._login(username='superuser', password='tester')
-        response = self.client.get(reverse('ipam:ip_address', args=(ip_address.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['ip_address'], '10.0.0.5')
-        self._login(username='user_a', password='tester')
-        response = self.client.get(reverse('ipam:ip_address', args=(ip_address.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['ip_address'], '10.0.0.5')
-        self._login(username='user_b', password='tester')
-        response = self.client.get(reverse('ipam:ip_address', args=(ip_address.id,)))
-        self.assertEqual(response.status_code, 403)
+
+        with self.subTest('Test ipaddress accessible by superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.get(
+                reverse('ipam:ip_address', args=(ip_address.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['ip_address'], '10.0.0.5')
+
+        with self.subTest('Test ipaddress accessible by org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(
+                reverse('ipam:ip_address', args=(ip_address.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['ip_address'], '10.0.0.5')
+
+        with self.subTest('Test ipaddress NOT accessible by non org manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.get(
+                reverse('ipam:ip_address', args=(ip_address.id,))
+            )
+            self.assertEqual(response.status_code, 403)
 
     def test_next_available_ip(self):
         org_a = self._get_org(org_name='org_a')
         subnet = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
         self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
-        self._login(username='user_a', password='tester')
-        response = self.client.get(
-            reverse('ipam:get_next_available_ip', args=(subnet.id,))
-        )
-        self.assertEqual(response.status_code, 200)
-        self._login(username='superuser', password='tester')
-        response = self.client.get(
-            reverse('ipam:get_next_available_ip', args=(subnet.id,))
-        )
-        self.assertEqual(response.status_code, 200)
-        self._login(username='user_b', password='tester')
-        response = self.client.get(
-            reverse('ipam:get_next_available_ip', args=(subnet.id,))
-        )
-        self.assertEqual(response.status_code, 404)
+
+        with self.subTest('Test next ip accessible by org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(
+                reverse('ipam:get_next_available_ip', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test next ip accessible by superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.get(
+                reverse('ipam:get_next_available_ip', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test next ip NOT accessible by org manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.get(
+                reverse('ipam:get_next_available_ip', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 404)
 
     def test_subnet_list(self):
         org_a = self._get_org(org_name='org_a')
         org_b = self._get_org(org_name='org_b')
         subnet1 = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
         subnet2 = self._create_subnet(subnet='10.10.0.0/24', organization=org_b)
-        self._login(username='user_a', password='tester')
-        response = self.client.get(reverse('ipam:subnet_list_create'),)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['count'], 1)
-        self.assertEqual(response.data['results'][0]['id'], str(subnet1.id))
-        self._login(username='superuser', password='tester')
-        response = self.client.get(reverse('ipam:subnet_list_create'),)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['count'], 2)
-        self._login(username='user_b', password='tester')
-        response = self.client.get(reverse('ipam:subnet_list_create'),)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['count'], 1)
-        self.assertEqual(response.data['results'][0]['id'], str(subnet2.id))
+
+        with self.subTest('Test subnet list filtered accorfingly for org_a manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(reverse('ipam:subnet_list_create'),)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['count'], 1)
+            self.assertEqual(response.data['results'][0]['id'], str(subnet1.id))
+
+        with self.subTest('Test subnet list filtered accorfingly for tester'):
+            self._login(username='superuser', password='tester')
+            response = self.client.get(reverse('ipam:subnet_list_create'),)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['count'], 2)
+
+        with self.subTest('Test subnet list filtered accorfingly for org_b manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.get(reverse('ipam:subnet_list_create'),)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data['count'], 1)
+            self.assertEqual(response.data['results'][0]['id'], str(subnet2.id))
 
     def test_request_ip(self):
         org_a = self._get_org(org_name='org_a')
         subnet = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
         self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
         post_data = self._post_data(subnet=str(subnet.id), description='Testing')
-        self._login(username='user_a', password='tester')
-        response = self.client.post(
-            reverse('ipam:request_ip', args=(subnet.id,)),
-            data=post_data,
-            content_type='application/json',
-        )
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.data['ip_address'], '10.0.0.2')
-        self._login(username='user_b', password='tester')
-        response = self.client.post(
-            reverse('ipam:request_ip', args=(subnet.id,)),
-            data=post_data,
-            content_type='application/json',
-        )
-        self.assertEqual(response.status_code, 404)
+
+        with self.subTest('Test request ip for org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.post(
+                reverse('ipam:request_ip', args=(subnet.id,)),
+                data=post_data,
+                content_type='application/json',
+            )
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.data['ip_address'], '10.0.0.2')
+
+        with self.subTest('Test request ip for superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.post(
+                reverse('ipam:request_ip', args=(subnet.id,)),
+                data=post_data,
+                content_type='application/json',
+            )
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.data['ip_address'], '10.0.0.3')
+
+        with self.subTest('Test request ip rejected for non org manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.post(
+                reverse('ipam:request_ip', args=(subnet.id,)),
+                data=post_data,
+                content_type='application/json',
+            )
+            self.assertEqual(response.status_code, 404)
 
     def test_import_subnet(self):
         csv_data = """Monachers - Matera,
@@ -230,18 +281,30 @@ class TestMultitenantApi(
         ip address,description
         10.27.1.1,Monachers
         10.27.1.254,Nano Beam 5 19AC"""
-        csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
-        self._login(username='user_a', password='tester')
-        response = self.client.post(reverse('ipam:import-subnet'), {'csvfile': csvfile})
-        self.assertEqual(response.status_code, 200)
-        self._login(username='user_b', password='tester')
-        csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
-        response = self.client.post(reverse('ipam:import-subnet'), {'csvfile': csvfile})
-        self.assertEqual(response.status_code, 403)
-        self._login(username='superuser', password='tester')
-        csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
-        response = self.client.post(reverse('ipam:import-subnet'), {'csvfile': csvfile})
-        self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test import subnet successful for org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.post(
+                reverse('ipam:import-subnet'),
+                {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test import subnet successful for superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.post(
+                reverse('ipam:import-subnet'),
+                {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+            )
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest('Test import subnet unsuccessful for non org manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.post(
+                reverse('ipam:import-subnet'),
+                {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+            )
+            self.assertEqual(response.status_code, 403)
 
     def test_import_subnet_new_org(self):
         csv_data = """Monachers - Matera,
@@ -280,10 +343,26 @@ class TestMultitenantApi(
         10.0.0.2,Testing\r
         """
         csv_data = bytes(csv_data.replace('        ', ''), 'utf-8')
-        self._login(username='user_a', password='tester')
-        response = self.client.post(reverse('ipam:export-subnet', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.content, csv_data)
-        self._login(username='user_b', password='tester')
-        response = self.client.post(reverse('ipam:export-subnet', args=(subnet.id,)))
-        self.assertEqual(response.status_code, 404)
+
+        with self.subTest('Test export subnet successful for org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.post(
+                reverse('ipam:export-subnet', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, csv_data)
+
+        with self.subTest('Test export subnet successful for superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.post(
+                reverse('ipam:export-subnet', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.content, csv_data)
+
+        with self.subTest('Test export subnet unsuccessful for non org manager'):
+            self._login(username='user_b', password='tester')
+            response = self.client.post(
+                reverse('ipam:export-subnet', args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 404)
