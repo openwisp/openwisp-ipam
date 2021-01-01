@@ -1,5 +1,6 @@
 import csv
 from collections import OrderedDict
+from copy import deepcopy
 
 import swapper
 from django.http import HttpResponse
@@ -29,7 +30,11 @@ from .serializers import (
     IpRequestSerializer,
     SubnetSerializer,
 )
-from .utils import FilterByOrganizationManaged, FilterByParentManaged
+from .utils import (
+    AuthorizeCSVOrgManaged,
+    FilterByOrganizationManaged,
+    FilterByParentManaged,
+)
 
 IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
@@ -40,6 +45,15 @@ class IpAddressOrgMixin(FilterByParentManaged):
     def get_parent_queryset(self):
         qs = Subnet.objects.filter(pk=self.kwargs['subnet_id'])
         return qs
+
+
+class ImportSubnetCSVMixin(AuthorizeCSVOrgManaged):
+    def get_csv_organization(self):
+        data = self.subnet_model._get_csv_reader(
+            self, deepcopy(self.request.FILES['csvfile'])
+        )
+        org = Organization.objects.get(name=list(data)[2][0].strip())
+        return org
 
 
 class ListViewPagination(pagination.PageNumberPagination):
@@ -220,7 +234,7 @@ class RequestIPView(IpAddressOrgMixin, CreateAPIView):
         return Response(None)
 
 
-class ImportSubnetView(CreateAPIView):
+class ImportSubnetView(ImportSubnetCSVMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = ImportSubnetSerializer
@@ -228,11 +242,12 @@ class ImportSubnetView(CreateAPIView):
     permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
+        super().post(request)
         file = request.FILES['csvfile']
         if not file.name.endswith(('.csv', '.xls', '.xlsx')):
             return Response({'error': _('File type not supported.')}, status=400)
         try:
-            self.subnet_model().import_csv(file, self.request.user)
+            self.subnet_model().import_csv(file)
         except CsvImportException as e:
             return Response({'error': _(str(e))}, status=400)
         return Response({'detail': _('Data imported successfully.')})

@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.contrib.auth.models import Permission
 from django.test import TestCase
 from django.urls import reverse
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
@@ -225,7 +226,6 @@ class TestMultitenantApi(
     def test_import_subnet(self):
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
-        Monachers,
         org_a,
         ip address,description
         10.27.1.1,Monachers
@@ -242,6 +242,24 @@ class TestMultitenantApi(
         csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
         response = self.client.post(reverse('ipam:import-subnet'), {'csvfile': csvfile})
         self.assertEqual(response.status_code, 200)
+
+    def test_import_subnet_new_org(self):
+        csv_data = """Monachers - Matera,
+        10.27.1.0/24,
+        new_org,
+        ip address,description
+        10.27.1.1,Monachers
+        10.27.1.254,Nano Beam 5 19AC"""
+        user_a = User.objects.get(username='user_a')
+        user_a.permissions.add(Permission.objects.get(codename='add_organization'))
+
+        with self.subTest('Test import subnet successful for org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.post(
+                reverse('ipam:import-subnet'),
+                {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+            )
+            self.assertEqual(response.status_code, 200)
 
     def test_export_subnet_api(self):
         org_a = self._get_org(org_name='org_a')

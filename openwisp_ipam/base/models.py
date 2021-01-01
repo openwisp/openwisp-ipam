@@ -3,7 +3,7 @@ from io import StringIO
 from ipaddress import ip_address, ip_network
 
 import xlrd
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.mixins import ShareableOrgMixin
@@ -136,11 +136,11 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         ip_address.save()
         return ip_address
 
-    def _read_subnet_data(self, reader, *user):
+    def _read_subnet_data(self, reader):
         subnet_model = load_model('openwisp_ipam', 'Subnet')
         subnet_name = next(reader)[0].strip()
         subnet_value = next(reader)[0].strip()
-        subnet_org = self._get_or_create_org(next(reader)[0].strip(), *user)
+        subnet_org = self._get_or_create_org(next(reader)[0].strip())
         try:
             subnet = subnet_model.objects.get(
                 subnet=subnet_value, organization=subnet_org
@@ -178,7 +178,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         for ip in ipaddress_list:
             ip.save()
 
-    def import_csv(self, file, *user):
+    def _get_csv_reader(self, file):
         if file.name.endswith(('.xls', '.xlsx')):
             book = xlrd.open_workbook(file_contents=file.read())
             sheet = book.sheet_by_index(0)
@@ -188,16 +188,14 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             reader = iter(row)
         else:
             reader = csv.reader(StringIO(file.read().decode('utf-8')), delimiter=',')
-        subnet = self._read_subnet_data(reader, *user)
+        return reader
+
+    def import_csv(self, file):
+        reader = self._get_csv_reader(file)
+        subnet = self._read_subnet_data(reader)
         next(reader)
         next(reader)
         self._read_ipaddress_data(reader, subnet)
-
-    def validate_permission(self, org, user):
-        if not (user.is_superuser or user.is_manager(org)):
-            raise PermissionDenied(
-                "User does not have access to the specified organization"
-            )
 
     def export_csv(self, subnet_id, writer):
         ipaddress_model = load_model('openwisp_ipam', 'IpAddress')
@@ -216,11 +214,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 row.append(str(getattr(obj, field.name)))
             writer.writerow(row)
 
-    def _get_or_create_org(self, org_name, *user):
+    def _get_or_create_org(self, org_name):
         try:
             instance = Organization.objects.get(name=org_name)
-            if user:
-                self.validate_permission(instance, *user)
         except ValidationError as e:
             raise CsvImportException(str(e))
         except Organization.DoesNotExist:
