@@ -2,6 +2,8 @@ from openwisp_utils.api.serializers import ValidatedModelSerializer
 from rest_framework import serializers
 from swapper import load_model
 
+from .utils import FilterSerializerByOrgManaged
+
 IpAddress = load_model('openwisp_ipam', 'IpAddress')
 Subnet = load_model('openwisp_ipam', 'Subnet')
 
@@ -13,14 +15,14 @@ class IpRequestSerializer(ValidatedModelSerializer):
         read_only_fields = ('created', 'modified')
 
 
-class IpAddressSerializer(ValidatedModelSerializer):
+class IpAddressSerializer(FilterSerializerByOrgManaged, ValidatedModelSerializer):
     class Meta:
         model = IpAddress
         fields = '__all__'
         read_only_fields = ('created', 'modified')
 
 
-class SubnetSerializer(ValidatedModelSerializer):
+class SubnetSerializer(FilterSerializerByOrgManaged, ValidatedModelSerializer):
     class Meta:
         model = Subnet
         fields = '__all__'

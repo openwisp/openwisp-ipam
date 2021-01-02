@@ -56,6 +56,11 @@ class ImportSubnetCSVMixin(AuthorizeCSVOrgManaged):
         return org
 
 
+class SerializerContextMixin:
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+
 class ListViewPagination(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -171,7 +176,9 @@ class AvailableIpView(IpAddressOrgMixin, RetrieveAPIView):
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(IpAddressOrgMixin, ListCreateAPIView):
+class IpAddressListCreateView(
+    IpAddressOrgMixin, ListCreateAPIView, SerializerContextMixin
+):
     queryset = IpAddress.objects.none()
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
@@ -185,7 +192,9 @@ class IpAddressListCreateView(IpAddressOrgMixin, ListCreateAPIView):
         return subnet.ipaddress_set.all().order_by('ip_address')
 
 
-class SubnetListCreateView(FilterByOrganizationManaged, ListCreateAPIView):
+class SubnetListCreateView(
+    FilterByOrganizationManaged, ListCreateAPIView, SerializerContextMixin
+):
     serializer_class = SubnetSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
@@ -193,7 +202,7 @@ class SubnetListCreateView(FilterByOrganizationManaged, ListCreateAPIView):
     queryset = Subnet.objects.all()
 
 
-class SubnetView(RetrieveUpdateDestroyAPIView):
+class SubnetView(RetrieveUpdateDestroyAPIView, SerializerContextMixin):
     serializer_class = SubnetSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (
@@ -203,7 +212,7 @@ class SubnetView(RetrieveUpdateDestroyAPIView):
     queryset = Subnet.objects.all()
 
 
-class IpAddressView(RetrieveUpdateDestroyAPIView):
+class IpAddressView(RetrieveUpdateDestroyAPIView, SerializerContextMixin):
     serializer_class = IpAddressSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (
@@ -226,7 +235,9 @@ class RequestIPView(IpAddressOrgMixin, CreateAPIView):
         subnet = get_object_or_404(self.subnet_model, pk=kwargs['subnet_id'])
         ip_address = subnet.request_ip(options)
         if ip_address:
-            serializer = IpAddressSerializer(ip_address)
+            serializer = IpAddressSerializer(
+                ip_address, context={'request': self.request}
+            )
             headers = self.get_success_headers(serializer.data)
             return Response(
                 serializer.data, status=status.HTTP_201_CREATED, headers=headers

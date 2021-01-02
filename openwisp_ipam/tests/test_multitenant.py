@@ -366,3 +366,59 @@ class TestMultitenantApi(
                 reverse('ipam:export-subnet', args=(subnet.id,))
             )
             self.assertEqual(response.status_code, 404)
+
+    def test_browsable_api_subnet_list(self):
+        # Ensures the correct filtering of `SubnetSerializer`
+        org_a = self._get_org(org_name='org_a')
+        org_b = self._get_org(org_name='org_b')
+        self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
+        self._create_subnet(subnet='10.10.0.0/24', organization=org_b)
+
+        with self.subTest(
+            'Test `Organization` and `Master subnet` field filter for org manager'
+        ):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(
+                f'{reverse("ipam:subnet_list_create")}?format=api'
+            )
+            self.assertContains(response, 'org_a</option>')
+            self.assertContains(response, '10.0.0.0/24</option>')
+            self.assertNotContains(response, 'org_b</option>')
+            self.assertNotContains(response, '10.10.0.0/24</option>')
+
+        with self.subTest(
+            'Test `Organization` and `Master subnet` field filter for superuser'
+        ):
+            self._login(username='superuser', password='tester')
+            response = self.client.get(
+                f'{reverse("ipam:subnet_list_create")}?format=api'
+            )
+            self.assertContains(response, 'org_a</option>')
+            self.assertContains(response, '10.0.0.0/24</option>')
+            self.assertContains(response, 'org_b</option>')
+            self.assertContains(response, '10.10.0.0/24</option>')
+
+    def test_browsable_api_ipaddress_list(self):
+        # Ensures the correct filtering of `IpAddressSerializer`
+        org_a = self._get_org(org_name='org_a')
+        org_b = self._get_org(org_name='org_b')
+        subnet_a = self._create_subnet(subnet='10.0.0.0/24', organization=org_a)
+        self._create_subnet(subnet='10.10.0.0/24', organization=org_b)
+
+        with self.subTest('Test `Subnet` dropdown filter for org manager'):
+            self._login(username='user_a', password='tester')
+            response = self.client.get(
+                f'{reverse("ipam:list_create_ip_address", args=(subnet_a.id,))}'
+                '?format=api'
+            )
+            self.assertContains(response, '10.0.0.0/24</option>')
+            self.assertNotContains(response, '10.10.0.0/24</option>')
+
+        with self.subTest('Test `Subnet` dropdown filter for superuser'):
+            self._login(username='superuser', password='tester')
+            response = self.client.get(
+                f'{reverse("ipam:list_create_ip_address", args=(subnet_a.id,))}'
+                '?format=api'
+            )
+            self.assertContains(response, '10.0.0.0/24</option>')
+            self.assertContains(response, '10.10.0.0/24</option>')

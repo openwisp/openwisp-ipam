@@ -83,3 +83,32 @@ class AuthorizeCSVImport:
 class AuthorizeCSVOrgManaged(AuthorizeCSVImport):
     def get_user_organizations(self):
         return self.request.user.organizations_managed
+
+
+class FilterSerializerByOrganization:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.context['request'].user.is_superuser:
+            return
+        self.filter_fields()
+
+    def filter_fields(self):
+        raise NotImplementedError()
+
+
+class FilterSerializerByOrgManaged(FilterSerializerByOrganization):
+    def filter_fields(self):
+        user = self.context['request'].user
+        organization_filter = user.organizations_managed
+        for field in self.fields:
+            if field == 'organization':
+                self.fields[field].queryset = self.fields[field].queryset.filter(
+                    pk__in=organization_filter
+                )
+            else:
+                try:
+                    self.fields[field].queryset = self.fields[field].queryset.filter(
+                        organization__in=organization_filter
+                    )
+                except AttributeError:
+                    pass
