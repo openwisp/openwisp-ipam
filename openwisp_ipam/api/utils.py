@@ -5,6 +5,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 
 Organization = swapper.load_model('openwisp_users', 'Organization')
 
+
 class FilterByOrganization:
     def get_queryset(self):
         qs = super().get_queryset()
@@ -64,11 +65,13 @@ class AuthorizeCSVImport:
         try:
             organization = self.get_csv_organization()
             if str(organization.pk) in self.get_user_organizations():
-                    return
+                return
         except Organization.DoesNotExist:
             # if organization in CSV doesn't exist, then check if
             # user can create new organizations
-            permission = Permission.objects.filter(user=request.user).filter(codename='add_organization')
+            permission = Permission.objects.filter(user=request.user).filter(
+                codename='add_organization'
+            )
             if permission.exists():
                 return
         raise PermissionDenied()

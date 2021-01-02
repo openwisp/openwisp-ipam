@@ -1,10 +1,17 @@
 from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth.models import Permission
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from swapper import load_model
+
+from openwisp_ipam.api.utils import (
+    AuthorizeCSVImport,
+    FilterByOrganization,
+    FilterByParent,
+    FilterSerializerByOrganization,
+)
 
 from . import CreateModelsMixin, PostDataMixin
 
@@ -422,3 +429,22 @@ class TestMultitenantApi(
             )
             self.assertContains(response, '10.0.0.0/24</option>')
             self.assertContains(response, '10.10.0.0/24</option>')
+
+    def test_not_implemented_error(self):
+        with self.assertRaises(NotImplementedError):
+            FilterByOrganization.get_organization_queryset(self)
+
+        with self.assertRaises(NotImplementedError):
+            FilterByParent.get_parent_queryset(self)
+
+        with self.assertRaises(NotImplementedError):
+            FilterByParent.get_organization_queryset(self)
+
+        with self.assertRaises(NotImplementedError):
+            AuthorizeCSVImport.get_csv_organization(self)
+
+        with self.assertRaises(NotImplementedError):
+            AuthorizeCSVImport.get_user_organizations(self)
+
+        with self.assertRaises(NotImplementedError):
+            FilterSerializerByOrganization.filter_fields(self)
