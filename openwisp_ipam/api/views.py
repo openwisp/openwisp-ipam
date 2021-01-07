@@ -47,20 +47,6 @@ class IpAddressOrgMixin(FilterByParentManaged):
         return qs
 
 
-class ImportSubnetCSVMixin(AuthorizeCSVOrgManaged):
-    def get_csv_organization(self):
-        data = self.subnet_model._get_csv_reader(
-            self, deepcopy(self.request.FILES['csvfile'])
-        )
-        org = Organization.objects.get(name=list(data)[2][0].strip())
-        return org
-
-
-class SerializerContextMixin:
-    def get_serializer_context(self):
-        return {'request': self.request}
-
-
 class ListViewPagination(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -176,9 +162,7 @@ class AvailableIpView(IpAddressOrgMixin, RetrieveAPIView):
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(
-    IpAddressOrgMixin, ListCreateAPIView, SerializerContextMixin
-):
+class IpAddressListCreateView(IpAddressOrgMixin, ListCreateAPIView):
     queryset = IpAddress.objects.none()
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
@@ -192,9 +176,7 @@ class IpAddressListCreateView(
         return subnet.ipaddress_set.all().order_by('ip_address')
 
 
-class SubnetListCreateView(
-    FilterByOrganizationManaged, ListCreateAPIView, SerializerContextMixin
-):
+class SubnetListCreateView(FilterByOrganizationManaged, ListCreateAPIView):
     serializer_class = SubnetSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
@@ -202,7 +184,7 @@ class SubnetListCreateView(
     queryset = Subnet.objects.all()
 
 
-class SubnetView(RetrieveUpdateDestroyAPIView, SerializerContextMixin):
+class SubnetView(RetrieveUpdateDestroyAPIView):
     serializer_class = SubnetSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (
@@ -212,7 +194,7 @@ class SubnetView(RetrieveUpdateDestroyAPIView, SerializerContextMixin):
     queryset = Subnet.objects.all()
 
 
-class IpAddressView(RetrieveUpdateDestroyAPIView, SerializerContextMixin):
+class IpAddressView(RetrieveUpdateDestroyAPIView):
     serializer_class = IpAddressSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (
@@ -245,15 +227,22 @@ class RequestIPView(IpAddressOrgMixin, CreateAPIView):
         return Response(None)
 
 
-class ImportSubnetView(ImportSubnetCSVMixin, CreateAPIView):
+class ImportSubnetView(CreateAPIView, AuthorizeCSVOrgManaged):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = ImportSubnetSerializer
     authentication_classes = (BearerAuthentication, SessionAuthentication)
     permission_classes = (DjangoModelPermissions,)
 
+    def get_csv_organization(self):
+        data = self.subnet_model._get_csv_reader(
+            self, deepcopy(self.request.FILES['csvfile'])
+        )
+        org = Organization.objects.get(name=list(data)[2][0].strip())
+        return org
+
     def post(self, request, *args, **kwargs):
-        super().post(request)
+        self.assert_organization_permissions(request)
         file = request.FILES['csvfile']
         if not file.name.endswith(('.csv', '.xls', '.xlsx')):
             return Response({'error': _('File type not supported.')}, status=400)

@@ -56,9 +56,6 @@ class FilterByParentManaged(FilterByParent):
 
 
 class AuthorizeCSVImport:
-    def post(self, request):
-        self.assert_organization_permissions(request)
-
     def assert_organization_permissions(self, request):
         if request.user.is_superuser:
             return
@@ -108,10 +105,10 @@ class FilterSerializerByOrgManaged(FilterSerializerByOrganization):
                 self.fields[field].queryset = self.fields[field].queryset.filter(
                     pk__in=organization_filter
                 )
-            else:
-                try:
-                    self.fields[field].queryset = self.fields[field].queryset.filter(
-                        organization__in=organization_filter
-                    )
-                except AttributeError:
-                    pass
+                continue
+            try:
+                self.fields[field].queryset = self.fields[field].queryset.filter(
+                    organization__in=organization_filter
+                )
+            except AttributeError:
+                pass
