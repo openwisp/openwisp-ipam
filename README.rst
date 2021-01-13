@@ -174,6 +174,22 @@ and in the `Browsable web page <#browsable-web-interface>`_ of each endpoint,
 here we'll provide just a list of the available endpoints,
 for further information please open the URL of the endpoint in your browser.
 
+API Throttling
+==============
+
+To override the default API throttling settings, add the following to your ``settings.py`` file:
+
+.. code-block:: python
+
+    REST_FRAMEWORK = {
+        'DEFAULT_THROTTLE_RATES': {
+            'ipam': '100/hour',
+        }
+    }
+
+The rate descriptions used in ``DEFAULT_THROTTLE_RATES`` may include
+``second``, ``minute``, ``hour`` or ``day`` as the throttle period.
+
 Get Next Available IP
 =====================
 
