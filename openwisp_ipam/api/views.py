@@ -47,6 +47,12 @@ class IpAddressOrgMixin(FilterByParentManaged):
         return qs
 
 
+class ProtectedAPIMixin(object):
+    authentication_classes = [BearerAuthentication, SessionAuthentication]
+    permission_classes = [IsOrganizationManager, DjangoModelPermissions]
+    throttle_scope = 'ipam'
+
+
 class ListViewPagination(pagination.PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -151,23 +157,19 @@ class HostsSet:
         return index
 
 
-class AvailableIpView(IpAddressOrgMixin, RetrieveAPIView):
+class AvailableIpView(IpAddressOrgMixin, ProtectedAPIMixin, RetrieveAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def get(self, request, *args, **kwargs):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(IpAddressOrgMixin, ListCreateAPIView):
+class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAPIView):
     queryset = IpAddress.objects.none()
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     pagination_class = ListViewPagination
 
     def get_queryset(self):
@@ -176,41 +178,27 @@ class IpAddressListCreateView(IpAddressOrgMixin, ListCreateAPIView):
         return subnet.ipaddress_set.all().order_by('ip_address')
 
 
-class SubnetListCreateView(FilterByOrganizationManaged, ListCreateAPIView):
+class SubnetListCreateView(FilterByOrganizationManaged, ProtectedAPIMixin, ListCreateAPIView):
     serializer_class = SubnetSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     pagination_class = ListViewPagination
     queryset = Subnet.objects.all()
 
 
-class SubnetView(RetrieveUpdateDestroyAPIView):
+class SubnetView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = SubnetSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (
-        IsOrganizationManager,
-        DjangoModelPermissions,
-    )
     queryset = Subnet.objects.all()
 
 
-class IpAddressView(RetrieveUpdateDestroyAPIView):
+class IpAddressView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = IpAddressSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (
-        IsOrganizationManager,
-        DjangoModelPermissions,
-    )
     queryset = IpAddress.objects.all()
     organization_field = 'subnet__organization'
 
 
-class RequestIPView(IpAddressOrgMixin, CreateAPIView):
+class RequestIPView(IpAddressOrgMixin, ProtectedAPIMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
     serializer_class = IpRequestSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
         options = {'description': request.data.get('description')}
@@ -227,12 +215,10 @@ class RequestIPView(IpAddressOrgMixin, CreateAPIView):
         return Response(None)
 
 
-class ImportSubnetView(CreateAPIView, AuthorizeCSVOrgManaged):
+class ImportSubnetView(ProtectedAPIMixin, CreateAPIView, AuthorizeCSVOrgManaged):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = ImportSubnetSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def get_csv_organization(self):
         data = self.subnet_model._get_csv_reader(
@@ -253,12 +239,10 @@ class ImportSubnetView(CreateAPIView, AuthorizeCSVOrgManaged):
         return Response({'detail': _('Data imported successfully.')})
 
 
-class ExportSubnetView(IpAddressOrgMixin, CreateAPIView):
+class ExportSubnetView(IpAddressOrgMixin, ProtectedAPIMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
 
     def post(self, request, *args, **kwargs):
         response = HttpResponse(content_type='text/csv')
@@ -268,12 +252,10 @@ class ExportSubnetView(IpAddressOrgMixin, CreateAPIView):
         return response
 
 
-class SubnetHostsView(IpAddressOrgMixin, ListAPIView):
+class SubnetHostsView(IpAddressOrgMixin, ProtectedAPIMixin, ListAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = HostsResponseSerializer
-    authentication_classes = (BearerAuthentication, SessionAuthentication)
-    permission_classes = (DjangoModelPermissions,)
     pagination_class = HostsListPagination
 
     def get_queryset(self):
