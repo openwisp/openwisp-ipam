@@ -6,6 +6,7 @@ import swapper
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.api.authentication import BearerAuthentication
+from openwisp_users.api.mixins import FilterByOrganizationManaged, FilterByParentManaged
 from openwisp_users.api.permissions import IsOrganizationManager
 from rest_framework import pagination, serializers, status
 from rest_framework.authentication import SessionAuthentication
@@ -30,11 +31,7 @@ from .serializers import (
     IpRequestSerializer,
     SubnetSerializer,
 )
-from .utils import (
-    AuthorizeCSVOrgManaged,
-    FilterByOrganizationManaged,
-    FilterByParentManaged,
-)
+from .utils import AuthorizeCSVOrgManaged
 
 IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
@@ -178,7 +175,9 @@ class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAP
         return subnet.ipaddress_set.all().order_by('ip_address')
 
 
-class SubnetListCreateView(FilterByOrganizationManaged, ProtectedAPIMixin, ListCreateAPIView):
+class SubnetListCreateView(
+    FilterByOrganizationManaged, ProtectedAPIMixin, ListCreateAPIView
+):
     serializer_class = SubnetSerializer
     pagination_class = ListViewPagination
     queryset = Subnet.objects.all()

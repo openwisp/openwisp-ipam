@@ -1,8 +1,7 @@
+from openwisp_users.api.mixins import FilterSerializerByOrgManaged
 from openwisp_utils.api.serializers import ValidatedModelSerializer
 from rest_framework import serializers
 from swapper import load_model
-
-from .utils import FilterSerializerByOrgManaged
 
 IpAddress = load_model('openwisp_ipam', 'IpAddress')
 Subnet = load_model('openwisp_ipam', 'Subnet')
