@@ -178,7 +178,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         for ip in ipaddress_list:
             ip.save()
 
-    def import_csv(self, file):
+    def _get_csv_reader(self, file):
         if file.name.endswith(('.xls', '.xlsx')):
             book = xlrd.open_workbook(file_contents=file.read())
             sheet = book.sheet_by_index(0)
@@ -188,6 +188,10 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             reader = iter(row)
         else:
             reader = csv.reader(StringIO(file.read().decode('utf-8')), delimiter=',')
+        return reader
+
+    def import_csv(self, file):
+        reader = self._get_csv_reader(file)
         subnet = self._read_subnet_data(reader)
         next(reader)
         next(reader)

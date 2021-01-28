@@ -104,3 +104,6 @@ ENV/
 
 # Generated CSV files
 data_*.csv
+
+# IDE settings
+.vscode/
