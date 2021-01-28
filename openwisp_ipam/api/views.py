@@ -180,7 +180,7 @@ class SubnetListCreateView(
 ):
     serializer_class = SubnetSerializer
     pagination_class = ListViewPagination
-    queryset = Subnet.objects.all()
+    queryset = Subnet.objects.all().order_by('subnet')
 
 
 class SubnetView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
