@@ -154,7 +154,7 @@ class HostsSet:
         return index
 
 
-class AvailableIpView(IpAddressOrgMixin, ProtectedAPIMixin, RetrieveAPIView):
+class AvailableIpView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
 
@@ -194,7 +194,7 @@ class IpAddressView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
     organization_field = 'subnet__organization'
 
 
-class RequestIPView(IpAddressOrgMixin, ProtectedAPIMixin, CreateAPIView):
+class RequestIPView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
     serializer_class = IpRequestSerializer
@@ -238,7 +238,7 @@ class ImportSubnetView(ProtectedAPIMixin, CreateAPIView, AuthorizeCSVOrgManaged)
         return Response({'detail': _('Data imported successfully.')})
 
 
-class ExportSubnetView(IpAddressOrgMixin, ProtectedAPIMixin, CreateAPIView):
+class ExportSubnetView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
