@@ -2,9 +2,9 @@
 openwisp-ipam
 =============
 
-.. image:: https://travis-ci.org/openwisp/openwisp-ipam.svg
-  :target: https://travis-ci.org/openwisp/openwisp-ipam
-  :alt: Build
+.. image:: https://github.com/openwisp/openwisp-ipam/actions/workflows/ci.yml/badge.svg?branch=master
+  :target: https://github.com/openwisp/openwisp-ipam/actions/workflows/ci.yml?query=workflow%3AOpenWISP+Ipam+CI+Build%22
+  :alt: CI Build status
 
 .. image:: https://coveralls.io/repos/openwisp/openwisp-ipam/badge.svg
   :target: https://coveralls.io/r/openwisp/openwisp-ipam
