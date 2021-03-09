@@ -45,7 +45,7 @@ jobs:
         run: pip install -e .
 
       - name: Install jslint
-        run: sudo npm install -g jslint
+        run: sudo npm install -g jslint stylelint
 
       - name: QA checks
         run: ./run-qa-checks
