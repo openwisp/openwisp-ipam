@@ -1,5 +1,12 @@
+import swapper
 from django.contrib.auth.management import create_permissions
 from django.contrib.auth.models import Permission
+
+
+def get_swapped_model(apps, app_name, model_name):
+    model_path = swapper.get_model_name(app_name, model_name)
+    app, model = swapper.split(model_path)
+    return apps.get_model(app, model)
 
 
 def create_default_permissions(apps, schema_editor):
@@ -14,7 +21,7 @@ def assign_permissions_to_groups(apps, schema_editor):
     admins_can_manage = ['subnet', 'ipaddress']
     operators_can_manage = ['ipaddress']
     manage_operations = ['add', 'change', 'delete', 'view']
-    Group = apps.get_model('openwisp_users', 'Group')
+    Group = get_swapped_model(apps, 'openwisp_users', 'Group')
 
     try:
         admin = Group.objects.get(name='Administrator')

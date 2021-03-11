@@ -7,6 +7,7 @@ import django.utils.timezone
 import model_utils.fields
 import openwisp_users.mixins
 import swapper
+from django.conf import settings
 from django.db import migrations, models
 
 import openwisp_ipam.base.fields
@@ -17,7 +18,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('openwisp_users', '0007_unique_email'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -77,7 +78,7 @@ class Migration(migrations.Migration):
                     'organization',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='openwisp_users.Organization',
+                        to=swapper.get_model_name('openwisp_users', 'Organization'),
                         verbose_name='organization',
                     ),
                 ),
@@ -120,7 +121,7 @@ class Migration(migrations.Migration):
                     'organization',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='openwisp_users.Organization',
+                        to=swapper.get_model_name('openwisp_users', 'Organization'),
                         verbose_name='organization',
                     ),
                 ),

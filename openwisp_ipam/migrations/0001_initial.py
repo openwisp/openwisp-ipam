@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('openwisp_users', '0002_auto_20180508_2017'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
