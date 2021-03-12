@@ -29,6 +29,7 @@ else:
     # any changes in the API views.
     urlpatterns += [
         path('', include('openwisp_ipam.urls')),
+        path('accounts/', include('openwisp_users.accounts.urls')),
     ]
 
 if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
