@@ -3,6 +3,7 @@
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
+from swapper import get_model_name
 
 
 class Migration(migrations.Migration):
@@ -20,7 +21,7 @@ class Migration(migrations.Migration):
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to='openwisp_users.organization',
+                to=get_model_name('openwisp_users', 'Organization'),
                 verbose_name='organization',
             ),
         ),
