@@ -61,8 +61,8 @@ TEMPLATES = [
         'OPTIONS': {
             'loaders': [
                 'django.template.loaders.filesystem.Loader',
-                'django.template.loaders.app_directories.Loader',
                 'openwisp_utils.loaders.DependencyLoader',
+                'django.template.loaders.app_directories.Loader',
             ],
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -86,7 +86,7 @@ STATIC_URL = '/static/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENWISP_USERS_AUTH_API = True
 
-if os.environ.get('SAMPLE_APP', False) and TESTING:
+if TESTING:
     OPENWISP_ORGANIZATION_USER_ADMIN = True
     OPENWISP_ORGANIZATION_OWNER_ADMIN = True
 

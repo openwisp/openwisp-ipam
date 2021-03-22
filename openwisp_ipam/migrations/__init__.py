@@ -23,11 +23,8 @@ def assign_permissions_to_groups(apps, schema_editor):
     manage_operations = ['add', 'change', 'delete', 'view']
     Group = get_swapped_model(apps, 'openwisp_users', 'Group')
 
-    try:
-        admin = Group.objects.get(name='Administrator')
-        operator = Group.objects.get(name='Operator')
-    except Group.DoesNotExist:
-        return
+    admin = Group.objects.get(name='Administrator')
+    operator = Group.objects.get(name='Operator')
 
     # Administrator - Can managae both ipaddress and subnet
     for model_name in admins_can_manage:
