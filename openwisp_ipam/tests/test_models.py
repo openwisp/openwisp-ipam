@@ -145,6 +145,22 @@ class TestModels(CreateModelsMixin, TestCase):
             org2 = self._create_org(name='org2', slug='org2')
             self._create_subnet(subnet='10.0.0.0/24', organization=org2)
 
+        with self.subTest('shared orgs overlaps with non shared'):
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(subnet='10.0.0.0/8', organization=None)
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('subnet', message_dict)
+            self.assertIn('Subnet overlaps with 10.0.0.0/16.', message_dict['subnet'])
+
+        with self.subTest('non shared subnet overlaps with shared'):
+            Subnet.objects.all().delete()
+            self._create_subnet(subnet='10.0.0.0/8', organization=None)
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(subnet='10.0.0.0/16')
+            message_dict = context_manager.exception.message_dict
+            self.assertIn('subnet', message_dict)
+            self.assertIn('Subnet overlaps with 10.0.0.0/8.', message_dict['subnet'])
+
     def test_master_subnet_validation(self):
         master = self._create_subnet(subnet='10.0.0.0/23')
         org2 = self._create_org(name='org2', slug='org2')

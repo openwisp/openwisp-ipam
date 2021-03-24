@@ -5,6 +5,7 @@ from ipaddress import ip_address, ip_network
 import xlrd
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.mixins import ShareableOrgMixin
 from openwisp_utils.base import TimeStampedEditableModel
@@ -92,9 +93,13 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             )
 
     def _validate_overlapping_subnets(self):
-        qs = self._meta.model.objects.filter(organization=self.organization).only(
-            'subnet'
-        )
+        qs = self._meta.model.objects.only('subnet', 'master_subnet')
+        # if the subnet is not shared, include shared subnets in the overlap check
+        if self.organization:
+            conditions = Q(organization__isnull=True) | Q(
+                organization=self.organization
+            )
+            qs = qs.filter(conditions)
         # exclude parent subnets
         exclude = [self.pk]
         parent_subnet = self.master_subnet
