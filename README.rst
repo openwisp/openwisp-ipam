@@ -85,7 +85,7 @@ Install ``openwisp-ipam`` for development using following commands:
 
     git clone https://github.com/openwisp/openwisp-ipam.git
     cd openwisp-ipam
-    python setup.py develop
+    pip install -e .
     pip install -r requirements-test.txt
 
 Launch the development sever:
