@@ -26,5 +26,6 @@ SAMPLE_APP=1 openwisp-qa-check \
               --skip-checkmigrations \
               --skip-checkendline \
               --skip-checkcommit \
-              --migration-path ./tests/openwisp2/sample_ipam/migrations \
-              --migration-module sample_ipam
+              --migration-path "./tests/openwisp2/sample_ipam/migrations
+                                ./tests/openwisp2/sample_users/migrations"
+

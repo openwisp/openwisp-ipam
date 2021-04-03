@@ -61,8 +61,8 @@ TEMPLATES = [
         'OPTIONS': {
             'loaders': [
                 'django.template.loaders.filesystem.Loader',
-                'django.template.loaders.app_directories.Loader',
                 'openwisp_utils.loaders.DependencyLoader',
+                'django.template.loaders.app_directories.Loader',
             ],
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -91,11 +91,22 @@ if TESTING:
     OPENWISP_ORGANIZATION_OWNER_ADMIN = True
 
 if os.environ.get('SAMPLE_APP', False):
+    ipam_index = INSTALLED_APPS.index('openwisp_ipam')
     INSTALLED_APPS.remove('openwisp_ipam')
-    EXTENDED_APPS = ['openwisp_ipam']
-    INSTALLED_APPS.append('openwisp2.sample_ipam')
+    INSTALLED_APPS.insert(ipam_index, 'openwisp2.sample_ipam')
+    # Replace Openwisp_Users
+    users_index = INSTALLED_APPS.index('openwisp_users')
+    INSTALLED_APPS.remove('openwisp_users')
+    INSTALLED_APPS.insert(users_index, 'openwisp2.sample_users')
+    EXTENDED_APPS = ['openwisp_ipam', 'openwisp_users']
     OPENWISP_IPAM_IPADDRESS_MODEL = 'sample_ipam.IpAddress'
     OPENWISP_IPAM_SUBNET_MODEL = 'sample_ipam.Subnet'
+    # Swapper
+    AUTH_USER_MODEL = 'sample_users.User'
+    OPENWISP_USERS_GROUP_MODEL = 'sample_users.Group'
+    OPENWISP_USERS_ORGANIZATION_MODEL = 'sample_users.Organization'
+    OPENWISP_USERS_ORGANIZATIONUSER_MODEL = 'sample_users.OrganizationUser'
+    OPENWISP_USERS_ORGANIZATIONOWNER_MODEL = 'sample_users.OrganizationOwner'
 
 # local settings must be imported before test runner otherwise they'll be ignored
 try:

@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.mixins import ShareableOrgMixin
-from openwisp_users.models import Organization
 from openwisp_utils.base import TimeStampedEditableModel
 from swapper import get_model_name, load_model
 
@@ -215,6 +214,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             writer.writerow(row)
 
     def _get_or_create_org(self, org_name):
+        Organization = load_model('openwisp_users', 'Organization')
         try:
             instance = Organization.objects.get(name=org_name)
         except ValidationError as e:

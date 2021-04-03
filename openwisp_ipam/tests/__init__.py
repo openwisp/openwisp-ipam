@@ -1,12 +1,12 @@
 import json
 import os
 
-from openwisp_users.models import Organization
 from openwisp_users.tests.utils import TestOrganizationMixin
 from swapper import load_model
 
 Subnet = load_model('openwisp_ipam', 'Subnet')
 IpAddress = load_model('openwisp_ipam', 'IpAddress')
+Organization = load_model('openwisp_users', 'Organization')
 
 
 class FileMixin(object):
