@@ -150,7 +150,10 @@ class TestModels(CreateModelsMixin, TestCase):
                 self._create_subnet(subnet='10.0.0.0/8', organization=None)
             message_dict = context_manager.exception.message_dict
             self.assertIn('subnet', message_dict)
-            self.assertIn('Subnet overlaps with 10.0.0.0/16.', message_dict['subnet'])
+            self.assertIn(
+                'Subnet overlaps with a subnet of another organization.',
+                message_dict['subnet'],
+            )
 
         with self.subTest('non shared subnet overlaps with shared'):
             Subnet.objects.all().delete()
@@ -204,21 +207,51 @@ class TestModels(CreateModelsMixin, TestCase):
                     master_subnet=master, subnet='10.0.0.0/24', organization=None
                 )
             message_dict = context_manager.exception.message_dict
-            self.assertIn('master_subnet', message_dict)
             self.assertIn(error_message, message_dict['master_subnet'])
 
-        with self.subTest('shared master, org1 children: rejected'):
+        with self.subTest('shared master, org1 children: ok'):
             org1 = master.organization
             master.organization = None
             master.full_clean()
             master.save()
+            org1_subnet = self._create_subnet(
+                master_subnet=master, subnet='10.0.0.0/24', organization=org1,
+            )
+            org1_subnet.delete()
+
+        with self.subTest(
+            'shared master, org1 children, org2 overlapping children: reject'
+        ):
+            overlap_error_message = (
+                'Subnet overlaps with a subnet of another organization.'
+            )
+            duplicate_error_message = (
+                'This subnet is already assigned to another organization.'
+            )
+            org1 = self._get_org()
+            org2 = self._create_org(name='test')
+            master.organization = None
+            master.full_clean()
+            master.save()
+            org1_subnet = self._create_subnet(
+                master_subnet=master, subnet='10.0.0.0/24', organization=org1,
+            )
+            # Tests for overlapping subnets
             with self.assertRaises(ValidationError) as context_manager:
                 self._create_subnet(
-                    master_subnet=master, subnet='10.0.0.0/24', organization=org1,
+                    master_subnet=master, subnet='10.0.0.0/25', organization=org2
                 )
             message_dict = context_manager.exception.message_dict
-            self.assertIn('master_subnet', message_dict)
-            self.assertIn(error_message, message_dict['master_subnet'])
+            self.assertIn(overlap_error_message, message_dict['subnet'])
+            # Tests for duplicate subnet
+            with self.assertRaises(ValidationError) as context_manager:
+                self._create_subnet(
+                    master_subnet=master, subnet='10.0.0.0/24', organization=org2
+                )
+            message_dict = context_manager.exception.message_dict
+            self.assertIn(duplicate_error_message, message_dict['subnet'])
+
+            org1_subnet.delete()
 
     def test_valid_subnet_relation_tree(self):
         subnet1 = self._create_subnet(subnet='12.0.56.0/24')
@@ -351,3 +384,16 @@ class TestModels(CreateModelsMixin, TestCase):
             org2 = self._create_org(name='org2', slug='org2')
             subnet2 = self._create_subnet(subnet='10.0.0.0/24', organization=org2)
             self.assertEqual(subnet2.organization, org2)
+
+    def test_nested_overlapping_subnets(self):
+        # Tests overlapping validation for nested subnets
+        shared_level_0_subnet = self._create_subnet(
+            subnet='10.0.0.0/16', organization=None
+        )
+        shared_level_1_subnet = self._create_subnet(
+            subnet='10.0.1.0/24', master_subnet=shared_level_0_subnet, organization=None
+        )
+        org1_level_2_subnet = self._create_subnet(
+            subnet='10.0.1.0/28', master_subnet=shared_level_1_subnet
+        )
+        self._create_subnet(subnet='10.0.1.0/31', master_subnet=org1_level_2_subnet)

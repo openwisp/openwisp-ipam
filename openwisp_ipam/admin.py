@@ -162,12 +162,13 @@ class SubnetAdmin(
 
 
 class IpAddressAdminForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['subnet'].help_text = _(
-            'Select a subnet and the first available IP address '
-            'will be automatically suggested in the ip address field'
-        )
+    class Meta:
+        help_texts = {
+            'subnet': _(
+                'Select a subnet and the first available IP address '
+                'will be automatically suggested in the ip address field'
+            )
+        }
 
 
 @admin.register(IpAddress)

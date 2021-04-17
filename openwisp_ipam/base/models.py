@@ -51,6 +51,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             return
         self._validate_multitenant_uniqueness()
         self._validate_multitenant_master_subnet()
+        self._validate_multitenant_unique_child_subnet()
         self._validate_overlapping_subnets()
         self._validate_master_subnet_consistency()
 
@@ -82,24 +83,36 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             return
         if self.master_subnet.organization:
             self._validate_org_relation('master_subnet', field_error='master_subnet')
-        elif self.organization:
+
+    def _validate_multitenant_unique_child_subnet(self):
+        if self.master_subnet is None or self.master_subnet.organization_id is not None:
+            return
+        qs = self._meta.model.objects.exclude(id=self.pk).filter(subnet=self.subnet)
+        if qs.exists():
             raise ValidationError(
                 {
-                    'master_subnet': _(
-                        'Please ensure that the organization of this subnet and '
-                        'the organization of the related subnet match.'
+                    'subnet': _(
+                        'This subnet is already assigned to another organization.'
                     )
                 }
             )
 
     def _validate_overlapping_subnets(self):
-        qs = self._meta.model.objects.only('subnet', 'master_subnet')
-        # if the subnet is not shared, include shared subnets in the overlap check
-        if self.organization:
-            conditions = Q(organization__isnull=True) | Q(
-                organization=self.organization
-            )
-            qs = qs.filter(conditions)
+        organization_query = Q(organization_id=self.organization_id) | Q(
+            organization_id__isnull=True
+        )
+        error_message = _('Subnet overlaps with {0}.')
+        if (
+            self.master_subnet and self.master_subnet.organization_id is None
+        ) or self.organization is None:
+            # The execution of above code implicitly ensures that
+            # organization of both master_subnet and current subnet are
+            # same. Otherwise, self._validate_multitenant_master_subnet
+            # would have raised a validation error
+            organization_query = Q()
+            error_message = _('Subnet overlaps with a subnet of another organization.')
+
+        qs = self._meta.model.objects.filter(organization_query).only('subnet')
         # exclude parent subnets
         exclude = [self.pk]
         parent_subnet = self.master_subnet
@@ -110,9 +123,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         qs = qs.exclude(pk__in=exclude).exclude(subnet=self.subnet)
         for subnet in qs.iterator():
             if ip_network(self.subnet).overlaps(subnet.subnet):
-                raise ValidationError(
-                    {'subnet': _('Subnet overlaps with %s.') % subnet.subnet}
-                )
+                raise ValidationError({'subnet': error_message.format(subnet.subnet)})
 
     def _validate_master_subnet_consistency(self):
         if not self.master_subnet:
