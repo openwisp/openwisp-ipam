@@ -10,8 +10,8 @@ class AuthorizeCSVImport:
         if request.user.is_superuser:
             return
         try:
-            organization = self.get_csv_organization()
-            if str(organization.pk) in self.get_user_organizations():
+            organization = self.get_csv_organization(request)
+            if str(organization.pk) in self.get_user_organizations(request):
                 return
         except Organization.DoesNotExist:
             # if organization in CSV doesn't exist, then check if
@@ -31,5 +31,5 @@ class AuthorizeCSVImport:
 
 
 class AuthorizeCSVOrgManaged(AuthorizeCSVImport):
-    def get_user_organizations(self):
-        return self.request.user.organizations_managed
+    def get_user_organizations(self, request):
+        return request.user.organizations_managed

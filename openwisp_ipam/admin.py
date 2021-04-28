@@ -1,5 +1,6 @@
 import csv
 from collections import OrderedDict
+from copy import deepcopy
 
 import swapper
 from django import forms
@@ -13,19 +14,26 @@ from django.urls import path, re_path, reverse
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.multitenancy import MultitenantAdminMixin, MultitenantOrgFilter
 from openwisp_utils.admin import TimeReadonlyAdminMixin
+from rest_framework.exceptions import PermissionDenied
 from reversion.admin import VersionAdmin
 
+from .api.utils import AuthorizeCSVOrgManaged
 from .api.views import HostsSet
 from .base.forms import IpAddressImportForm
 from .base.models import CsvImportException
 
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
 IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
+Organization = swapper.load_model('openwisp_users', 'Organization')
 
 
 @admin.register(Subnet)
 class SubnetAdmin(
-    VersionAdmin, MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin
+    VersionAdmin,
+    MultitenantAdminMixin,
+    TimeReadonlyAdminMixin,
+    ModelAdmin,
+    AuthorizeCSVOrgManaged,
 ):
     app_label = 'openwisp_ipam'
     change_form_template = 'admin/openwisp-ipam/subnet/change_form.html'
@@ -133,6 +141,14 @@ class SubnetAdmin(
             context['form'] = form
             if form.is_valid():
                 file = request.FILES['csvfile']
+                try:
+                    self.assert_organization_permissions(request)
+                except PermissionDenied:
+                    messages.error(
+                        request,
+                        _('You do not have permission to import for this organization'),
+                    )
+                    return redirect(f'/admin/{self.app_label}/subnet')
                 if not file.name.endswith(('.csv', '.xls', '.xlsx')):
                     messages.error(request, _('File type not supported.'))
                     return render(request, form_template, context)
@@ -144,6 +160,11 @@ class SubnetAdmin(
                 messages.success(request, _('Successfully imported data.'))
                 return redirect('/admin/{0}/subnet'.format(self.app_label))
         return render(request, form_template, context)
+
+    def get_csv_organization(self, request):
+        data = Subnet._get_csv_reader(self, deepcopy(request.FILES['csvfile']))
+        org = Organization.objects.get(name=list(data)[2][0].strip())
+        return org
 
     class Media:
         js = (

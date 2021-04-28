@@ -219,9 +219,9 @@ class ImportSubnetView(ProtectedAPIMixin, CreateAPIView, AuthorizeCSVOrgManaged)
     queryset = Subnet.objects.none()
     serializer_class = ImportSubnetSerializer
 
-    def get_csv_organization(self):
+    def get_csv_organization(self, request):
         data = self.subnet_model._get_csv_reader(
-            self, deepcopy(self.request.FILES['csvfile'])
+            self, deepcopy(request.FILES['csvfile'])
         )
         org = Organization.objects.get(name=list(data)[2][0].strip())
         return org
