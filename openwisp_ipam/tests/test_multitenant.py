@@ -54,6 +54,41 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
             hidden=[data['subnet2']],
         )
 
+    def test_import_subnet_permission(self):
+        self._create_multitenancy_test_env()
+        self.client.login(username='operator', password='tester')
+
+        with self.subTest('Import successful'):
+            csv_data = """Monachers - Matera,
+            10.27.1.0/24,
+            Monachers,
+            test1organization,
+            ip address,description
+            10.27.1.1,Monachers"""
+            csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
+            self.assertEqual(Subnet.objects.count(), 2)
+            response = self.client.post(
+                reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            )
+            self.assertContains(response, '<li class="success">Successfully imported')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(Subnet.objects.count(), 3)
+            self.assertEqual(str(Subnet.objects.all()[2].subnet), '10.27.1.0/24')
+
+        with self.subTest('Import unsuccessful'):
+            csv_data = """Monachers - Matera,
+            10.27.1.0/24,
+            Monachers,
+            test2organization,
+            ip address,description
+            10.27.1.1,Monachers"""
+            csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
+            response = self.client.post(
+                reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            )
+            self.assertContains(response, '<li class="error">You do not have')
+            self.assertEqual(Subnet.objects.count(), 3)
+
 
 class TestMultitenantApi(
     TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase
