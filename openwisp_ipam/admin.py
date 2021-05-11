@@ -148,7 +148,9 @@ class SubnetAdmin(
                         request,
                         _('You do not have permission to import for this organization'),
                     )
-                    return redirect(f'/admin/{self.app_label}/subnet')
+                    return redirect(
+                        f'/admin/{self.app_label}/{Subnet._meta.model_name}'
+                    )
                 if not file.name.endswith(('.csv', '.xls', '.xlsx')):
                     messages.error(request, _('File type not supported.'))
                     return render(request, form_template, context)
@@ -158,7 +160,7 @@ class SubnetAdmin(
                     messages.error(request, str(e))
                     return render(request, form_template, context)
                 messages.success(request, _('Successfully imported data.'))
-                return redirect('/admin/{0}/subnet'.format(self.app_label))
+                return redirect(f'/admin/{self.app_label}/{Subnet._meta.model_name}')
         return render(request, form_template, context)
 
     def get_csv_organization(self, request):

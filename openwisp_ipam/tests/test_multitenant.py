@@ -73,7 +73,9 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
             self.assertContains(response, '<li class="success">Successfully imported')
             self.assertEqual(response.status_code, 200)
             self.assertEqual(Subnet.objects.count(), 3)
-            self.assertEqual(str(Subnet.objects.all()[2].subnet), '10.27.1.0/24')
+            self.assertEqual(
+                Subnet.objects.filter(subnet='10.27.1.0/24').exists(), True
+            )
 
         with self.subTest('Import unsuccessful'):
             csv_data = """Monachers - Matera,
