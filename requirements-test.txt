@@ -1,4 +1,5 @@
 coveralls
 django-extensions>=2.0.7
 # TODO: change this when next version of openwisp_utils is released
+
 openwisp-utils[qa] @ https://github.com/openwisp/openwisp-utils/tarball/master
