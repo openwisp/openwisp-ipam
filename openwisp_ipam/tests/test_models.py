@@ -397,3 +397,28 @@ class TestModels(CreateModelsMixin, TestCase):
             subnet='10.0.1.0/28', master_subnet=shared_level_1_subnet
         )
         self._create_subnet(subnet='10.0.1.0/31', master_subnet=org1_level_2_subnet)
+
+    def test_validation_nested_child_subnets(self):
+        # Tests child subnets are excluded from overlapping validation
+        master_subnet = self._create_subnet(subnet='10.0.0.0/16')
+
+        # Level 1 nesting
+        a_level_1 = self._create_subnet(
+            subnet='10.0.1.0/24', master_subnet=master_subnet
+        )
+        b_level_1 = self._create_subnet(
+            subnet='10.0.2.0/24', master_subnet=master_subnet
+        )
+
+        # Level 2 nesting
+        a_level_2 = self._create_subnet(subnet='10.0.1.8/29', master_subnet=a_level_1)
+        self._create_subnet(subnet='10.0.1.16/29', master_subnet=a_level_1)
+        b_level_2 = self._create_subnet(subnet='10.0.2.8/29', master_subnet=b_level_1)
+        self._create_subnet(subnet='10.0.2.16/29', master_subnet=b_level_1)
+
+        # Level 3 nesting
+        self._create_subnet(subnet='10.0.1.8/31', master_subnet=a_level_2)
+        self._create_subnet(subnet='10.0.2.8/31', master_subnet=b_level_2)
+
+        master_subnet.full_clean()
+        master_subnet.save()

@@ -119,6 +119,15 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         while parent_subnet:
             exclude.append(parent_subnet.pk)
             parent_subnet = parent_subnet.master_subnet
+        # exclude child subnets
+        child_subnets = list(self.child_subnet_set.values_list('pk', flat=True))
+        while child_subnets:
+            exclude += child_subnets
+            child_subnets = list(
+                self._meta.model.objects.filter(
+                    master_subnet__in=child_subnets
+                ).values_list('pk', flat=True)
+            )
         # exclude also identical subnets (handled by other checks)
         qs = qs.exclude(pk__in=exclude).exclude(subnet=self.subnet)
         for subnet in qs.iterator():
