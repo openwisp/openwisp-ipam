@@ -130,7 +130,7 @@ class SubnetAdmin(
     def import_view(self, request):
         form = IpAddressImportForm()
         form_template = 'admin/openwisp-ipam/subnet/import.html'
-        subnet_list_url = 'admin:{0}_subnet_changelist'.format(self.app_label)
+        subnet_list_url = f'admin:{self.app_label}_{Subnet._meta.model_name}_changelist'
         context = {
             'form': form,
             'subnet_list_url': subnet_list_url,
@@ -146,11 +146,12 @@ class SubnetAdmin(
                 except PermissionDenied:
                     messages.error(
                         request,
-                        _('You do not have permission to import for this organization'),
+                        _(
+                            'You do not have permission to import data into this '
+                            'organization'
+                        ),
                     )
-                    return redirect(
-                        f'/admin/{self.app_label}/{Subnet._meta.model_name}'
-                    )
+                    return redirect(reverse(context['subnet_list_url']))
                 if not file.name.endswith(('.csv', '.xls', '.xlsx')):
                     messages.error(request, _('File type not supported.'))
                     return render(request, form_template, context)
@@ -160,7 +161,7 @@ class SubnetAdmin(
                     messages.error(request, str(e))
                     return render(request, form_template, context)
                 messages.success(request, _('Successfully imported data.'))
-                return redirect(f'/admin/{self.app_label}/{Subnet._meta.model_name}')
+                return redirect(reverse(context['subnet_list_url']))
         return render(request, form_template, context)
 
     def get_csv_organization(self, request):
