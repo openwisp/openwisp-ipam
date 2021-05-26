@@ -12,7 +12,7 @@ def get_urls(api_views):
     """
     return [
         path(
-            'api/v1/ipam', include((get_api_urls(api_views), 'ipam'), namespace='ipam')
+            'api/v1/ipam/', include((get_api_urls(api_views), 'ipam'), namespace='ipam')
         ),
         path('accounts/', include('openwisp_users.accounts.urls')),
     ]
