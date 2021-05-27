@@ -42,7 +42,7 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
     var renderedPages = 5,
         fetchedPages = [],
         busy = false,
-        nextPageUrl = '/api/v1/subnet/' + current_subnet + '/hosts/',
+        nextPageUrl = '/api/v1/ipam/subnet/' + current_subnet + '/hosts/',
         searchQuery = '',
         lastRenderedPage = 0; //1 based indexing (0 -> no page rendered)
     function addressListItem(addr) {
@@ -74,7 +74,7 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
         }
         $.ajax({
             type: 'GET',
-            url: '/api/v1/subnet/' + current_subnet + '/hosts/?start=' + ip_address,
+            url: '/api/v1/ipam/subnet/' + current_subnet + '/hosts/?start=' + ip_address,
             success: function (res) {
                 callback(res.results[0].address === ip_address);
             },
@@ -91,7 +91,7 @@ function initHostsInfiniteScroll($, current_subnet, address_add_url, address_cha
                 $("#invalid-address").hide();
                 if (input !== searchQuery) {
                     searchQuery = input;
-                    nextPageUrl = '/api/v1/subnet/' + current_subnet + '/hosts/?start=' + searchQuery;
+                    nextPageUrl = '/api/v1/ipam/subnet/' + current_subnet + '/hosts/?start=' + searchQuery;
                     $('#subnet-visual').empty();
                     fetchedPages = [];
                     lastRenderedPage = 0;

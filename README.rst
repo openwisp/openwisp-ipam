@@ -202,7 +202,7 @@ Returns the next available IP address under a subnet.
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet_id>/get-next-available-ip/
+    /api/v1/ipam/subnet/<subnet_id>/get-next-available-ip/
 
 Request IP
 ^^^^^^^^^^
@@ -216,7 +216,7 @@ Creates a record for next available IP address and returns JSON data of that rec
 
 .. code-block:: text
 
-    POST /api/v1/subnet/<subnet_id>/request-ip/
+    POST /api/v1/ipam/subnet/<subnet_id>/request-ip/
 
 ===========    ========================================
 Param          Description
@@ -240,7 +240,7 @@ Response
 IpAddress-Subnet List and Create View
 =====================================
 
-An api enpoint to retrieve or create IP addresses under a specific subnet.
+An api endpoint to retrieve or create IP addresses under a specific subnet.
 
 GET
 ---
@@ -249,7 +249,7 @@ Returns the list of IP addresses under a particular subnet.
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet_id>/ip-address/
+    /api/v1/ipam/subnet/<subnet_id>/ip-address/
 
 POST
 ----
@@ -258,7 +258,7 @@ Create a new ``IP Address``.
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet_id>/ip-address/
+    /api/v1/ipam/subnet/<subnet_id>/ip-address/
 
 ===========    ========================================
 Param          Description
@@ -280,7 +280,7 @@ Returns the list of ``Subnet`` instances.
 
 .. code-block:: text
 
-    /api/v1/subnet/
+    /api/v1/ipam/subnet/
 
 POST
 ----
@@ -289,7 +289,7 @@ Create a new ``Subnet``.
 
 .. code-block:: text
 
-    /api/v1/subnet/
+    /api/v1/ipam/subnet/
 
 =============    ========================================
 Param            Description
@@ -311,7 +311,7 @@ Get details of a ``Subnet`` instance
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>/
+    /api/v1/ipam/subnet/<subnet-id>/
 
 DELETE
 ------
@@ -320,7 +320,7 @@ Delete a ``Subnet`` instance
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>/
+    /api/v1/ipam/subnet/<subnet-id>/
 
 PUT
 ---
@@ -329,7 +329,7 @@ Update details of a ``Subnet`` instance.
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>/
+    /api/v1/ipam/subnet/<subnet-id>/
 
 =============    ========================================
 Param            Description
@@ -342,7 +342,7 @@ description      Optional description for the IP address
 IP Address View
 ===============
 
-An api enpoint for retrieving, updating or deleting a IP address instance.
+An api endpoint for retrieving, updating or deleting a IP address instance.
 
 GET
 ---
@@ -351,7 +351,7 @@ Get details of an ``IP address`` instance.
 
 .. code-block:: text
 
-    /api/v1/ip-address/<ip_address-id>/
+    /api/v1/ipam/ip-address/<ip_address-id>/
 
 DELETE
 ------
@@ -360,7 +360,7 @@ Delete an ``IP address`` instance.
 
 .. code-block:: text
 
-    /api/v1/ip-address/<ip_address-id>/
+    /api/v1/ipam/ip-address/<ip_address-id>/
 
 PUT
 ---
@@ -369,7 +369,7 @@ Update details of an ``IP address`` instance.
 
 .. code-block:: text
 
-    /api/v1/ip-address/<ip_address-id>/
+    /api/v1/ipam/ip-address/<ip_address-id>/
 
 ===========    ========================================
 Param          Description
@@ -389,7 +389,7 @@ POST
 
 .. code-block:: text
 
-    /api/v1/subnet/<subnet-id>/export/
+    /api/v1/ipam/subnet/<subnet-id>/export/
 
 Import Subnet View
 ==================
@@ -401,7 +401,7 @@ POST
 
 .. code-block:: text
 
-    /api/v1/import-subnet/
+    /api/v1/ipam/import-subnet/
 
 
 Exporting and Importing Subnet
