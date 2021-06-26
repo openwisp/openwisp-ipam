@@ -1,5 +1,7 @@
+from django.utils.translation import gettext_lazy as _
+from openwisp_utils.admin_theme.menu import register_menu_group
 from openwisp_utils.api.apps import ApiAppConfig
-from openwisp_utils.utils import default_or_test, register_menu_items
+from openwisp_utils.utils import default_or_test
 from swapper import get_model_name
 
 from .compat import patch_ipaddress_lib
@@ -17,8 +19,27 @@ class OpenWispIpamConfig(ApiAppConfig):
     def ready(self, *args, **kwargs):
         super().ready(*args, **kwargs)
         patch_ipaddress_lib()
-        items = [
-            {'model': get_model_name('openwisp_ipam', 'Subnet')},
-            {'model': get_model_name('openwisp_ipam', 'IpAddress')},
-        ]
-        register_menu_items(items, name_menu='OPENWISP_DEFAULT_ADMIN_MENU_ITEMS')
+        self.register_menu_groups()
+
+    def register_menu_groups(self):
+        register_menu_group(
+            position=40,
+            config={
+                'label': _('IPAM'),
+                'items': {
+                    1: {
+                        'label': _('IP Addresses'),
+                        'model': get_model_name(self.name, 'IpAddress'),
+                        'name': 'changelist',
+                        'icon': 'ip-address',
+                    },
+                    2: {
+                        'label': _('Subnets'),
+                        'model': get_model_name(self.name, 'Subnet'),
+                        'name': 'changelist',
+                        'icon': 'subnet',
+                    },
+                },
+                'icon': 'ipam',
+            },
+        )
