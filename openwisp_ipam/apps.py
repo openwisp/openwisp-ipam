@@ -23,23 +23,23 @@ class OpenWispIpamConfig(ApiAppConfig):
 
     def register_menu_groups(self):
         register_menu_group(
-            position=40,
+            position=90,
             config={
-                'label': _('IPAM'),
+                'label': _('Ipam'),
                 'items': {
                     1: {
                         'label': _('IP Addresses'),
-                        'model': get_model_name(self.name, 'IpAddress'),
+                        'model': get_model_name('openwisp_ipam', 'IpAddress'),
                         'name': 'changelist',
-                        'icon': 'ip-address',
+                        'icon': 'ow-ip-address',
                     },
                     2: {
                         'label': _('Subnets'),
-                        'model': get_model_name(self.name, 'Subnet'),
+                        'model': get_model_name('openwisp_ipam', 'Subnet'),
                         'name': 'changelist',
-                        'icon': 'subnet',
+                        'icon': 'ow-subnet',
                     },
                 },
-                'icon': 'ipam',
+                'icon': 'ow-ipam',
             },
         )
