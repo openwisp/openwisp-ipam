@@ -1,7 +1,7 @@
 # TODO: change this when next version of openwisp_users is released
-openwisp-users @ https://github.com/openwisp/openwisp-users/tarball/issues/253-register-menu-groups
+openwisp-users @ https://github.com/openwisp/openwisp-users/tarball/master
 # TODO: change this when next version of openwisp_utils is released
-openwisp-utils[rest] @ https://github.com/niteshsinha17/openwisp-utils/tarball/gsoc/new-navigation-menu-design
+openwisp-utils[rest] @ https://github.com/openwisp/openwisp-utils/tarball/master
 django>=3.0,<3.2
 swapper~=1.1
 xlrd~=1.1
