@@ -372,18 +372,16 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
 
     def test_admin_menu_items(self):
         # Test menu items (openwisp-utils menu) for Subnet and IpAddress models
+        models = [
+            'ipaddress',
+            'subnet',
+        ]
         response = self.client.get(reverse('admin:index'))
-        self.assertContains(
-            response,
-            '<a href="{}" class="subnet">subnets</a>'.format(
-                reverse(f'admin:{self.app_label}_subnet_changelist')
-            ),
-            html=True,
-        )
-        self.assertContains(
-            response,
-            '<a href="{}" class="ipaddress">ip addresss</a>'.format(
-                reverse(f'admin:{self.app_label}_ipaddress_changelist')
-            ),
-            html=True,
-        )
+        for model in models:
+            with self.subTest(f'test_admin_group_for_{model}_model'):
+                url = reverse(f'admin:{self.app_label}_{model}_changelist')
+                self.assertContains(response, f'<a class="mg-link" href="{url}">')
+        with self.subTest('test_ipam_group_is_registered'):
+            self.assertContains(
+                response, '<div class="mg-dropdown-label">Ipam </div>', html=True,
+            )
