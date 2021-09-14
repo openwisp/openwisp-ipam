@@ -1,14 +1,14 @@
 import csv
 from collections import OrderedDict
 from copy import deepcopy
-
+from functools import update_wrapper
 import swapper
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin import ModelAdmin
 from django.db.models import TextField
 from django.db.models.functions import Cast
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from django.urls import path, re_path, reverse
 from django.utils.translation import gettext_lazy as _
@@ -107,15 +107,39 @@ class SubnetAdmin(
         }
         return super().change_view(request, object_id, form_url, extra_context)
 
+    def only_admin_view(self, view):
+        admin_site = self.admin_site
+
+        def inner(request, *args, **kwargs):
+            if not (request.user.is_active and request.user.is_superuser):
+                if request.path == reverse('admin:logout', current_app=admin_site.name):
+                    index_path = reverse('admin:index', current_app=admin_site.name)
+                    return HttpResponseRedirect(index_path)
+
+                from django.contrib.auth.views import redirect_to_login
+
+                return redirect_to_login(
+                    request.get_full_path(),
+                    reverse('admin:login', current_app=admin_site.name),
+                )
+            return view(request, *args, **kwargs)
+
+        return update_wrapper(inner, view)
+
     def get_urls(self):
         urls = super().get_urls()
+        admin_view = self.only_admin_view
         custom_urls = [
             re_path(
                 r'^(?P<subnet_id>[^/]+)/export-subnet/',
-                self.export_view,
+                admin_view(self.export_view),
                 name='ipam_export_subnet',
             ),
-            path('import-subnet/', self.import_view, name='ipam_import_subnet'),
+            path(
+                'import-subnet/',
+                admin_view(self.import_view),
+                name='ipam_import_subnet',
+            ),
         ]
         return custom_urls + urls
 

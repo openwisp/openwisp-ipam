@@ -388,3 +388,20 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
             self.assertContains(
                 response, '<div class="mg-dropdown-label">Ipam </div>', html=True,
             )
+
+    def test_operator_import_subnet(self):
+        user = User.objects.create_user(
+            username="operator",
+            password="tester",
+            is_staff=True,
+            email="tester@openwisp.org",
+        )
+        Group.objects.filter(name="Operator").first().user_set.add(user)
+        self.client.login(username='operator', password='tester')
+        response = self.client.get(reverse('admin:ipam_import_subnet'))
+        self.assertEqual(response.status_code, 302)
+        subnet = self._create_subnet(subnet='10.0.0.0/24', name='Test Subnet')
+        response = self.client.get(
+            reverse('admin:ipam_export_subnet', args=[subnet.id])
+        )
+        self.assertEqual(response.status_code, 302)
