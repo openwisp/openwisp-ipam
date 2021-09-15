@@ -380,7 +380,7 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         for model in models:
             with self.subTest(f'test_admin_group_for_{model}_model'):
                 url = reverse(f'admin:{self.app_label}_{model}_changelist')
-                self.assertContains(response, f'<a class="mg-link" href="{url}">')
+                self.assertContains(response, f'class="mg-link" href="{url}"')
         with self.subTest('test_ipam_group_is_registered'):
             self.assertContains(
                 response, '<div class="mg-dropdown-label">Ipam </div>', html=True,
