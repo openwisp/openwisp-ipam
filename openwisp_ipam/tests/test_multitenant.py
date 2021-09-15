@@ -295,7 +295,7 @@ class TestMultitenantApi(
         10.27.1.1,Monachers
         10.27.1.254,Nano Beam 5 19AC"""
         user_a = User.objects.get(username='user_a')
-        user_a.permissions.add(Permission.objects.get(codename='add_organization'))
+        user_a.user_permissions.add(Permission.objects.get(codename='add_organization'))
 
         with self.subTest('Test import subnet successful for org manager'):
             self._login(username='user_a', password='tester')
