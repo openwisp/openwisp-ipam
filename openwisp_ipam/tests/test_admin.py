@@ -389,7 +389,14 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
                 response, '<div class="mg-dropdown-label">Ipam </div>', html=True,
             )
 
-    def test_operator_import_subnet(self):
+    def test_operator_import_export_subnet(self):
+        def assert_response(response):
+            self.assertEqual(response.redirect_chain[1], (reverse('admin:index'), 302))
+            self.assertEqual(response.status_code, 200)
+            self.assertInHTML(
+                'You don\'t have permissions to access.', response.content.decode()
+            )
+
         user = User.objects.create_user(
             username="operator",
             password="tester",
@@ -398,10 +405,12 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         )
         Group.objects.filter(name="Operator").first().user_set.add(user)
         self.client.login(username='operator', password='tester')
-        response = self.client.get(reverse('admin:ipam_import_subnet'))
-        self.assertEqual(response.status_code, 302)
+        with self.subTest('test_operator_subnet_import'):
+            response = self.client.get(reverse('admin:ipam_import_subnet'), follow=True)
+            assert_response(response)
         subnet = self._create_subnet(subnet='10.0.0.0/24', name='Test Subnet')
-        response = self.client.get(
-            reverse('admin:ipam_export_subnet', args=[subnet.id])
-        )
-        self.assertEqual(response.status_code, 302)
+        with self.subTest('test_operator_subnet_export'):
+            response = self.client.get(
+                reverse('admin:ipam_export_subnet', args=[subnet.id]), follow=True
+            )
+            assert_response(response)

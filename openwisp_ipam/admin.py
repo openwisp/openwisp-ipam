@@ -6,9 +6,10 @@ import swapper
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin import ModelAdmin
+from django.contrib.auth.views import redirect_to_login
 from django.db.models import TextField
 from django.db.models.functions import Cast
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import path, re_path, reverse
 from django.utils.translation import gettext_lazy as _
@@ -111,13 +112,8 @@ class SubnetAdmin(
         admin_site = self.admin_site
 
         def inner(request, *args, **kwargs):
-            if not (request.user.is_active and request.user.is_superuser):
-                if request.path == reverse('admin:logout', current_app=admin_site.name):
-                    index_path = reverse('admin:index', current_app=admin_site.name)
-                    return HttpResponseRedirect(index_path)
-
-                from django.contrib.auth.views import redirect_to_login
-
+            if not request.user.has_perm('subnet:add'):
+                messages.error(request, _('You don\'t have permissions to access.'))
                 return redirect_to_login(
                     request.get_full_path(),
                     reverse('admin:login', current_app=admin_site.name),
