@@ -391,19 +391,16 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
 
     def test_operator_import_export_subnet(self):
         def assert_response(response):
-            self.assertEqual(response.redirect_chain[1], (reverse('admin:index'), 302))
+            self.assertEqual(response.redirect_chain[0], (reverse('admin:index'), 302))
             self.assertEqual(response.status_code, 200)
-            self.assertInHTML(
-                'You don\'t have permissions to access.', response.content.decode()
-            )
 
-        user = User.objects.create_user(
+        operator = User.objects.create_user(
             username="operator",
             password="tester",
             is_staff=True,
             email="tester@openwisp.org",
         )
-        Group.objects.filter(name="Operator").first().user_set.add(user)
+        Group.objects.filter(name="Operator").first().user_set.add(operator)
         self.client.login(username='operator', password='tester')
         with self.subTest('test_operator_subnet_import'):
             response = self.client.get(reverse('admin:ipam_import_subnet'), follow=True)

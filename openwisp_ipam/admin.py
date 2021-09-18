@@ -6,7 +6,6 @@ import swapper
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin import ModelAdmin
-from django.contrib.auth.views import redirect_to_login
 from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.http import HttpResponse
@@ -113,11 +112,7 @@ class SubnetAdmin(
 
         def inner(request, *args, **kwargs):
             if not request.user.has_perm('subnet:add'):
-                messages.error(request, _('You don\'t have permissions to access.'))
-                return redirect_to_login(
-                    request.get_full_path(),
-                    reverse('admin:login', current_app=admin_site.name),
-                )
+                return redirect(reverse('admin:index', current_app=admin_site.name),)
             return view(request, *args, **kwargs)
 
         return update_wrapper(inner, view)
