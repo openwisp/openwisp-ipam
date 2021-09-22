@@ -262,6 +262,8 @@ class AbstractIpAddress(TimeStampedEditableModel):
 
     class Meta:
         abstract = True
+        verbose_name = _('IP address')
+        verbose_name_plural = _('IP addresses')
 
     def __str__(self):
         return self.ip_address

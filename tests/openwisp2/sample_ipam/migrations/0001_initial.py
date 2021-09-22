@@ -133,7 +133,11 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={'abstract': False},
+            options={
+                'abstract': False,
+                'verbose_name': 'IP address',
+                'verbose_name_plural': 'IP addresses',
+            },
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
         migrations.AddIndex(

@@ -64,6 +64,8 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
                 'swappable': swapper.swappable_setting('openwisp_ipam', 'Ipaddress'),
+                'verbose_name': 'IP address',
+                'verbose_name_plural': 'IP addresses',
             },
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
