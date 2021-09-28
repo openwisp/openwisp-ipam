@@ -1,10 +1,14 @@
+import csv
+from io import StringIO
 from ipaddress import IPv4Network, IPv6Network
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 from swapper import load_model
 
-from . import CreateModelsMixin
+from openwisp_ipam.base.models import CsvImportException
+
+from . import CreateModelsMixin, Organization
 
 Subnet = load_model('openwisp_ipam', 'Subnet')
 IpAddress = load_model('openwisp_ipam', 'IpAddress')
@@ -422,3 +426,33 @@ class TestModels(CreateModelsMixin, TestCase):
 
         master_subnet.full_clean()
         master_subnet.save()
+
+    def test_read_row(self):
+        data = "\n"
+        reader = csv.reader(data, delimiter=',')
+        self.assertEqual(Subnet()._read_row(reader), None)
+        data = """subnet_name,
+        subnet_value,
+        org_slug,
+        """
+        buffer = StringIO()
+        buffer.write(data)
+        buffer.seek(0)
+        reader = csv.reader(buffer, delimiter=',')
+        self.assertEqual(Subnet()._read_row(reader), 'subnet_name')
+        self.assertEqual(Subnet()._read_row(reader), 'subnet_value')
+        self.assertEqual(Subnet()._read_row(reader), 'org_slug')
+
+    def test_get_or_create_org(self):
+        method = Subnet()._get_or_create_org
+        self.assertEqual(method(None), None)
+        self.assertEqual(method(''), None)
+        with self.assertRaises(CsvImportException) as context_manager:
+            method('invalid slug')
+        self.assertEqual(
+            str(context_manager.exception),
+            "['Enter a valid “slug” consisting of letters,"
+            " numbers, underscores or hyphens.']",
+        )
+        instance = method('new-org')
+        self.assertEqual(instance, Organization.objects.filter(slug='new-org').first())

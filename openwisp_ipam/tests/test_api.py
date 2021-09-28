@@ -204,6 +204,7 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         )
         csv_data = """Sample Subnet\r
         10.0.0.0/24\r
+        test-org\r
         \r
         ip_address,description\r
         10.0.0.1,Testing\r

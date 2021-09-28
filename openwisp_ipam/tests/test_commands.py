@@ -38,7 +38,7 @@ class TestCommands(CreateModelsMixin, FileMixin, TestCase):
             )
         self.assertEqual(Subnet.objects.all().count(), 0)
         self.assertEqual(IpAddress.objects.all().count(), 0)
-        call_command('import_subnet', file=self._get_path('static/import_data.xls'))
+        call_command('import_subnet', file=self._get_path('static/import_data.xlsx'))
         self.assertEqual(Subnet.objects.all().count(), 1)
         self.assertEqual(IpAddress.objects.all().count(), 8)
         with self.assertRaises(CommandError):

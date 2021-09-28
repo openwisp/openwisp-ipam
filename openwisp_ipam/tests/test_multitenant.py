@@ -318,6 +318,7 @@ class TestMultitenantApi(
         )
         csv_data = """Sample Subnet\r
         10.0.0.0/24\r
+        org_a\r
         \r
         ip_address,description\r
         10.0.0.1,Testing\r

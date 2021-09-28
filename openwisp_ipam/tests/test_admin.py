@@ -207,7 +207,7 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         )
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
-        ,
+        test-org,
         ip address,description
         10.27.1.1,Monachers
         10.27.1.252,NanoStation M5
@@ -284,6 +284,7 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
 
         csv_data = """Sample Subnet\r
         10.0.0.0/24\r
+        test-org\r
         \r
         ip_address,description\r
         10.0.0.1,Testing\r
