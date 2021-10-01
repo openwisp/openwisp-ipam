@@ -111,7 +111,7 @@ class SubnetAdmin(
         admin_site = self.admin_site
 
         def inner(request, *args, **kwargs):
-            if not request.user.has_perm('subnet:add'):
+            if not request.user.has_perm('openwisp_ipam.add_subnet'):
                 return redirect(reverse('admin:index', current_app=admin_site.name),)
             return view(request, *args, **kwargs)
 
