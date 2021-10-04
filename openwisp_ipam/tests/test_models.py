@@ -8,7 +8,7 @@ from swapper import load_model
 
 from openwisp_ipam.base.models import CsvImportException
 
-from . import CreateModelsMixin, Organization
+from . import CreateModelsMixin
 
 Subnet = load_model('openwisp_ipam', 'Subnet')
 IpAddress = load_model('openwisp_ipam', 'IpAddress')
@@ -444,7 +444,7 @@ class TestModels(CreateModelsMixin, TestCase):
         self.assertEqual(Subnet()._read_row(reader), 'org_slug')
 
     def test_get_or_create_org(self):
-        method = Subnet()._get_or_create_org
+        method = Subnet()._get_org
         self.assertEqual(method(None), None)
         self.assertEqual(method(''), None)
         with self.assertRaises(CsvImportException) as context_manager:
@@ -454,5 +454,11 @@ class TestModels(CreateModelsMixin, TestCase):
             "['Enter a valid “slug” consisting of letters,"
             " numbers, underscores or hyphens.']",
         )
-        instance = method('new-org')
-        self.assertEqual(instance, Organization.objects.filter(slug='new-org').first())
+        with self.assertRaises(CsvImportException) as context_manager:
+            method('new-org')
+        self.assertEqual(
+            str(context_manager.exception),
+            "We didn't import subnets because it belongs to organizations"
+            " that are not present in the system. To import subnets create"
+            " an organization with slug - “new-org”.",
+        )

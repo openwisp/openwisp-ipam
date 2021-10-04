@@ -32,6 +32,7 @@ class TestCommands(CreateModelsMixin, FileMixin, TestCase):
             call_command('export_subnet', '11.0.0.0/24')
 
     def test_import_subnet_command(self):
+        self._create_org(name='Ham Ninux', slug='ham-ninux')
         with self.assertRaises(CommandError):
             call_command(
                 'import_subnet', file=self._get_path('static/invalid_data.csv')

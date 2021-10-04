@@ -172,7 +172,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         subnet_name = self._read_row(reader)
         subnet_value = self._read_row(reader)
         org_slug = self._read_row(reader)
-        subnet_org = self._get_or_create_org(org_slug)
+        subnet_org = self._get_org(org_slug)
         try:
             subnet = subnet_model.objects.get(
                 subnet=subnet_value, organization=subnet_org
@@ -247,7 +247,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 row.append(str(getattr(obj, field.name)))
             writer.writerow(row)
 
-    def _get_or_create_org(self, org_slug):
+    def _get_org(self, org_slug):
         Organization = load_model('openwisp_users', 'Organization')
         if org_slug in [None, '']:
             return None
@@ -257,8 +257,11 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         except ValidationError as e:
             raise CsvImportException(str(e))
         except Organization.DoesNotExist:
-            instance = Organization(name=org_slug, slug=org_slug)
-            instance.save()
+            raise CsvImportException(
+                'We didn\'t import subnets because it belongs to organizations that '
+                'are not present in the system. To import subnets create an '
+                f'organization with slug - “{org_slug}”.'
+            )
         return instance
 
 

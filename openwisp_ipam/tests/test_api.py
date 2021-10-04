@@ -216,9 +216,10 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         self.assertEqual(response.content, csv_data)
 
     def test_import_subnet_api(self):
+        self._create_org(name='Monachers', slug='monacherrs')
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
-        Monachers,
+        monachers,
         ,
         ip address,description
         10.27.1.1,Monachers

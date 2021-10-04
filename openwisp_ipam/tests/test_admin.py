@@ -180,9 +180,10 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         self.assertContains(response, 'opener.dismissAddAnotherPopup(window);')
 
     def test_csv_upload(self):
+        self._create_org(name='Monachers', slug='monachers')
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
-        Monachers,
+        monachers,
         ,
         ip address,description
         10.27.1.1,Monachers
@@ -255,9 +256,10 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         self.assertContains(response, 'does not appear to be an IPv4 or IPv6 network')
 
     def test_invalid_ipaddress_csv_data(self):
+        self._create_org(name='Monachers', slug='monachers')
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
-        Monachers,
+        monachers,
         ,
         ip address,description
         10123142131,Monachers
