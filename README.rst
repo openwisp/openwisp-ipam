@@ -14,8 +14,8 @@ openwisp-ipam
   :target: https://pypi.org/project/openwisp-ipam
   :alt: PyPI
 
-.. image:: https://requires.io/github/openwisp/openwisp-ipam/requirements.svg?branch=master
-  :target: https://requires.io/github/openwisp/openwisp-ipam/requirements/?branch=master
+.. image:: https://img.shields.io/librariesio/release/github/openwisp/openwisp-ipam
+  :target: https://libraries.io/github/openwisp/openwisp-ipam#dependencies
   :alt: Requirements Status
 
 .. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/subnet_demo.gif
