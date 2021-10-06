@@ -444,21 +444,18 @@ class TestModels(CreateModelsMixin, TestCase):
         self.assertEqual(Subnet()._read_row(reader), 'org_slug')
 
     def test_get_or_create_org(self):
-        method = Subnet()._get_org
-        self.assertEqual(method(None), None)
-        self.assertEqual(method(''), None)
+        _get_org = Subnet()._get_org
+        self.assertEqual(_get_org(None), None)
+        self.assertEqual(_get_org(''), None)
         with self.assertRaises(CsvImportException) as context_manager:
-            method('invalid slug')
+            _get_org('invalid slug')
         self.assertEqual(
             str(context_manager.exception),
             "['Enter a valid “slug” consisting of letters,"
             " numbers, underscores or hyphens.']",
         )
         with self.assertRaises(CsvImportException) as context_manager:
-            method('new-org')
-        self.assertEqual(
-            str(context_manager.exception),
-            "We didn't import subnets because it belongs to organizations"
-            " that are not present in the system. To import subnets create"
-            " an organization with slug - “new-org”.",
+            _get_org('new-org')
+        self.assertIn(
+            '“new-org”', str(context_manager.exception),
         )

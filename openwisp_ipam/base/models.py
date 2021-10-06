@@ -258,9 +258,10 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             raise CsvImportException(str(e))
         except Organization.DoesNotExist:
             raise CsvImportException(
-                'We didn\'t import subnets because it belongs to organizations that '
-                'are not present in the system. To import subnets create an '
-                f'organization with slug - “{org_slug}”.'
+                'The import operation failed because the data being imported '
+                f'belongs to an organization which is not recognized: “{org_slug}”. '
+                'Please create this organization or adapt the CSV file being imported '
+                'by pointing the data to another organization.'
             )
         return instance
 
