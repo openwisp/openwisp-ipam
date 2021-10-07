@@ -4,6 +4,7 @@ from ipaddress import ip_address, ip_network
 
 import xlrd
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_slug
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -160,11 +161,18 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         ip_address.save()
         return ip_address
 
+    def _read_row(self, reader):
+        value = next(reader)
+        if len(value) > 0:
+            return value[0].strip()
+        return None
+
     def _read_subnet_data(self, reader):
         subnet_model = load_model('openwisp_ipam', 'Subnet')
-        subnet_name = next(reader)[0].strip()
-        subnet_value = next(reader)[0].strip()
-        subnet_org = self._get_or_create_org(next(reader)[0].strip())
+        subnet_name = self._read_row(reader)
+        subnet_value = self._read_row(reader)
+        org_slug = self._read_row(reader)
+        subnet_org = self._get_org(org_slug)
         try:
             subnet = subnet_model.objects.get(
                 subnet=subnet_value, organization=subnet_org
@@ -226,6 +234,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         subnet = load_model('openwisp_ipam', 'Subnet').objects.get(pk=subnet_id)
         writer.writerow([subnet.name])
         writer.writerow([subnet.subnet])
+        writer.writerow([subnet.organization.slug] if subnet.organization else '')
         writer.writerow('')
         fields = [
             ipaddress_model._meta.get_field('ip_address'),
@@ -238,18 +247,22 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 row.append(str(getattr(obj, field.name)))
             writer.writerow(row)
 
-    def _get_or_create_org(self, org_name):
+    def _get_org(self, org_slug):
         Organization = load_model('openwisp_users', 'Organization')
+        if org_slug in [None, '']:
+            return None
         try:
-            instance = Organization.objects.get(name=org_name)
+            validate_slug(org_slug)
+            instance = Organization.objects.get(slug=org_slug)
         except ValidationError as e:
             raise CsvImportException(str(e))
         except Organization.DoesNotExist:
-            try:
-                instance = Organization(name=org_name)
-                instance.save()
-            except ValidationError as e:
-                raise CsvImportException(str(e))
+            raise CsvImportException(
+                'The import operation failed because the data being imported '
+                f'belongs to an organization which is not recognized: “{org_slug}”. '
+                'Please create this organization or adapt the CSV file being imported '
+                'by pointing the data to another organization.'
+            )
         return instance
 
 

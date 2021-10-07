@@ -32,13 +32,14 @@ class TestCommands(CreateModelsMixin, FileMixin, TestCase):
             call_command('export_subnet', '11.0.0.0/24')
 
     def test_import_subnet_command(self):
+        self._create_org(name='Ham Ninux', slug='ham-ninux')
         with self.assertRaises(CommandError):
             call_command(
                 'import_subnet', file=self._get_path('static/invalid_data.csv')
             )
         self.assertEqual(Subnet.objects.all().count(), 0)
         self.assertEqual(IpAddress.objects.all().count(), 0)
-        call_command('import_subnet', file=self._get_path('static/import_data.xls'))
+        call_command('import_subnet', file=self._get_path('static/import_data.xlsx'))
         self.assertEqual(Subnet.objects.all().count(), 1)
         self.assertEqual(IpAddress.objects.all().count(), 8)
         with self.assertRaises(CommandError):

@@ -462,6 +462,7 @@ Follow the following structure while creating `csv` file to import data.
 
     Subnet Name
     Subnet Value
+    Organization Slug
 
     ip_address,description
     <ip-address>,<optional-description>

@@ -290,7 +290,7 @@ class TestMultitenantApi(
     def test_import_subnet_new_org(self):
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
-        new_org,
+        ,
         ip address,description
         10.27.1.1,Monachers
         10.27.1.254,Nano Beam 5 19AC"""
@@ -318,6 +318,7 @@ class TestMultitenantApi(
         )
         csv_data = """Sample Subnet\r
         10.0.0.0/24\r
+        org_a\r
         \r
         ip_address,description\r
         10.0.0.1,Testing\r
