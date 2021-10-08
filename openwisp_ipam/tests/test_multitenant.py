@@ -61,7 +61,6 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
         with self.subTest('Import successful'):
             csv_data = """Monachers - Matera,
             10.27.1.0/24,
-            Monachers,
             test1organization,
             ip address,description
             10.27.1.1,Monachers"""
@@ -80,7 +79,6 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
         with self.subTest('Import unsuccessful'):
             csv_data = """Monachers - Matera,
             10.27.1.0/24,
-            Monachers,
             test2organization,
             ip address,description
             10.27.1.1,Monachers"""
@@ -341,6 +339,32 @@ class TestMultitenantApi(
                 {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
             )
             self.assertEqual(response.status_code, 200)
+
+    def test_import_subnet_org_do_not_exist(self):
+        csv_data = """Monachers - Matera,
+        10.27.1.0/24,
+        monachers,
+        ip address,description
+        10.27.1.1,Monachers
+        10.27.1.254,Nano Beam 5 19AC"""
+        self._login(username='user_a', password='tester')
+        response = self.client.post(
+            reverse('ipam:import-subnet'),
+            {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('The import operation failed', str(response.data.get('detail')))
+
+    def test_invalid_csv_data(self):
+        csv_data = """Monachers - Matera,
+        10.27.1.0/24,"""
+        self._login(username='user_a', password='tester')
+        response = self.client.post(
+            reverse('ipam:import-subnet'),
+            {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(str(response.data.get('detail')), 'Invalid data format')
 
     def test_export_subnet_api(self):
         org_a = self._get_org(org_name='org_a')

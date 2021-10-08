@@ -17,14 +17,13 @@ from openwisp_utils.admin import TimeReadonlyAdminMixin
 from rest_framework.exceptions import PermissionDenied
 from reversion.admin import VersionAdmin
 
-from .api.utils import AuthorizeCSVOrgManaged
+from .api.utils import AuthorizeCSVOrgManaged, CsvImportAPIException
 from .api.views import HostsSet
 from .base.forms import IpAddressImportForm
 from .base.models import CsvImportException
 
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
 IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
-Organization = swapper.load_model('openwisp_users', 'Organization')
 
 
 @admin.register(Subnet)
@@ -143,14 +142,8 @@ class SubnetAdmin(
                 file = request.FILES['csvfile']
                 try:
                     self.assert_organization_permissions(request)
-                except PermissionDenied:
-                    messages.error(
-                        request,
-                        _(
-                            'You do not have permission to import data into this '
-                            'organization'
-                        ),
-                    )
+                except (PermissionDenied, CsvImportAPIException) as e:
+                    messages.error(request, str(e))
                     return redirect(reverse(context['subnet_list_url']))
                 if not file.name.endswith(('.csv', '.xls', '.xlsx')):
                     messages.error(request, _('File type not supported.'))
@@ -166,8 +159,7 @@ class SubnetAdmin(
 
     def get_csv_organization(self, request):
         data = Subnet._get_csv_reader(self, deepcopy(request.FILES['csvfile']))
-        org = Organization.objects.get(name=list(data)[2][0].strip())
-        return org
+        return Subnet._get_org(self, org_slug=list(data)[2][0].strip())
 
     class Media:
         js = (
