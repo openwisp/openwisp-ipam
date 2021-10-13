@@ -55,7 +55,10 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
         )
 
     def test_import_subnet_permission(self):
-        self._create_multitenancy_test_env()
+        data = self._create_multitenancy_test_env()
+        operator = data.get('operator')
+        permission = Permission.objects.get(codename='add_subnet')
+        operator.user_permissions.add(permission)
         self.client.login(username='operator', password='tester')
 
         with self.subTest('Import successful'):
@@ -331,7 +334,6 @@ class TestMultitenantApi(
         10.27.1.254,Nano Beam 5 19AC"""
         user_a = User.objects.get(username='user_a')
         user_a.user_permissions.add(Permission.objects.get(codename='add_organization'))
-
         with self.subTest('Test import subnet successful for org manager'):
             self._login(username='user_a', password='tester')
             response = self.client.post(

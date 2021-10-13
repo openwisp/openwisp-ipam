@@ -2,6 +2,7 @@ import csv
 from collections import OrderedDict
 from copy import deepcopy
 from functools import update_wrapper
+
 import swapper
 from django import forms
 from django.contrib import admin, messages
@@ -111,7 +112,7 @@ class SubnetAdmin(
         admin_site = self.admin_site
 
         def inner(request, *args, **kwargs):
-            if not request.user.has_perm('openwisp_ipam.add_subnet'):
+            if not request.user.has_perm(f'{self.app_label}.add_subnet'):
                 return redirect(reverse('admin:index', current_app=admin_site.name),)
             return view(request, *args, **kwargs)
 
