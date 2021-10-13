@@ -1,5 +1,6 @@
 import csv
 from collections import OrderedDict
+from copy import deepcopy
 
 import swapper
 from django import forms
@@ -13,8 +14,10 @@ from django.urls import path, re_path, reverse
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.multitenancy import MultitenantAdminMixin, MultitenantOrgFilter
 from openwisp_utils.admin import TimeReadonlyAdminMixin
+from rest_framework.exceptions import PermissionDenied
 from reversion.admin import VersionAdmin
 
+from .api.utils import AuthorizeCSVOrgManaged, CsvImportAPIException
 from .api.views import HostsSet
 from .base.forms import IpAddressImportForm
 from .base.models import CsvImportException
@@ -25,7 +28,11 @@ IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
 
 @admin.register(Subnet)
 class SubnetAdmin(
-    VersionAdmin, MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin
+    VersionAdmin,
+    MultitenantAdminMixin,
+    TimeReadonlyAdminMixin,
+    ModelAdmin,
+    AuthorizeCSVOrgManaged,
 ):
     app_label = 'openwisp_ipam'
     change_form_template = 'admin/openwisp-ipam/subnet/change_form.html'
@@ -122,7 +129,7 @@ class SubnetAdmin(
     def import_view(self, request):
         form = IpAddressImportForm()
         form_template = 'admin/openwisp-ipam/subnet/import.html'
-        subnet_list_url = 'admin:{0}_subnet_changelist'.format(self.app_label)
+        subnet_list_url = f'admin:{self.app_label}_{Subnet._meta.model_name}_changelist'
         context = {
             'form': form,
             'subnet_list_url': subnet_list_url,
@@ -133,6 +140,11 @@ class SubnetAdmin(
             context['form'] = form
             if form.is_valid():
                 file = request.FILES['csvfile']
+                try:
+                    self.assert_organization_permissions(request)
+                except (PermissionDenied, CsvImportAPIException) as e:
+                    messages.error(request, str(e))
+                    return redirect(reverse(context['subnet_list_url']))
                 if not file.name.endswith(('.csv', '.xls', '.xlsx')):
                     messages.error(request, _('File type not supported.'))
                     return render(request, form_template, context)
@@ -142,8 +154,12 @@ class SubnetAdmin(
                     messages.error(request, str(e))
                     return render(request, form_template, context)
                 messages.success(request, _('Successfully imported data.'))
-                return redirect('/admin/{0}/subnet'.format(self.app_label))
+                return redirect(reverse(context['subnet_list_url']))
         return render(request, form_template, context)
+
+    def get_csv_organization(self, request):
+        data = Subnet._get_csv_reader(self, deepcopy(request.FILES['csvfile']))
+        return Subnet._get_org(self, org_slug=list(data)[2][0].strip())
 
     class Media:
         js = (

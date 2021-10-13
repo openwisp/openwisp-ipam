@@ -54,6 +54,41 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
             hidden=[data['subnet2']],
         )
 
+    def test_import_subnet_permission(self):
+        self._create_multitenancy_test_env()
+        self.client.login(username='operator', password='tester')
+
+        with self.subTest('Import successful'):
+            csv_data = """Monachers - Matera,
+            10.27.1.0/24,
+            test1organization,
+            ip address,description
+            10.27.1.1,Monachers"""
+            csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
+            self.assertEqual(Subnet.objects.count(), 2)
+            response = self.client.post(
+                reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            )
+            self.assertContains(response, '<li class="success">Successfully imported')
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(Subnet.objects.count(), 3)
+            self.assertEqual(
+                Subnet.objects.filter(subnet='10.27.1.0/24').exists(), True
+            )
+
+        with self.subTest('Import unsuccessful'):
+            csv_data = """Monachers - Matera,
+            10.27.1.0/24,
+            test2organization,
+            ip address,description
+            10.27.1.1,Monachers"""
+            csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
+            response = self.client.post(
+                reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            )
+            self.assertContains(response, '<li class="error">You do not have')
+            self.assertEqual(Subnet.objects.count(), 3)
+
 
 class TestMultitenantApi(
     TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase
@@ -304,6 +339,32 @@ class TestMultitenantApi(
                 {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
             )
             self.assertEqual(response.status_code, 200)
+
+    def test_import_subnet_org_do_not_exist(self):
+        csv_data = """Monachers - Matera,
+        10.27.1.0/24,
+        monachers,
+        ip address,description
+        10.27.1.1,Monachers
+        10.27.1.254,Nano Beam 5 19AC"""
+        self._login(username='user_a', password='tester')
+        response = self.client.post(
+            reverse('ipam:import-subnet'),
+            {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('The import operation failed', str(response.data.get('detail')))
+
+    def test_invalid_csv_data(self):
+        csv_data = """Monachers - Matera,
+        10.27.1.0/24,"""
+        self._login(username='user_a', password='tester')
+        response = self.client.post(
+            reverse('ipam:import-subnet'),
+            {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(str(response.data.get('detail')), 'Invalid data format')
 
     def test_export_subnet_api(self):
         org_a = self._get_org(org_name='org_a')
