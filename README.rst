@@ -16,7 +16,7 @@ openwisp-ipam
 
 .. image:: https://img.shields.io/librariesio/release/github/openwisp/openwisp-ipam
   :target: https://libraries.io/github/openwisp/openwisp-ipam#dependencies
-  :alt: Requirements Status
+  :alt: Dependency monitoring
 
 .. image:: https://github.com/openwisp/openwisp-ipam/raw/master/docs/subnet_demo.gif
   :alt: Feature Highlights
