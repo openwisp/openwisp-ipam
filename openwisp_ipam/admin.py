@@ -108,11 +108,11 @@ class SubnetAdmin(
         }
         return super().change_view(request, object_id, form_url, extra_context)
 
-    def only_admin_view(self, view):
+    def _check_perm(self, view, perm):
         admin_site = self.admin_site
 
         def inner(request, *args, **kwargs):
-            if not request.user.has_perm(f'{self.app_label}.add_subnet'):
+            if not request.user.has_perm(f'{self.app_label}.{perm}'):
                 return redirect(reverse('admin:index', current_app=admin_site.name),)
             return view(request, *args, **kwargs)
 
@@ -120,16 +120,15 @@ class SubnetAdmin(
 
     def get_urls(self):
         urls = super().get_urls()
-        admin_view = self.only_admin_view
         custom_urls = [
             re_path(
                 r'^(?P<subnet_id>[^/]+)/export-subnet/',
-                admin_view(self.export_view),
+                self._check_perm(self.export_view, 'change_subnet'),
                 name='ipam_export_subnet',
             ),
             path(
                 'import-subnet/',
-                admin_view(self.import_view),
+                self._check_perm(self.import_view, 'add_subnet'),
                 name='ipam_import_subnet',
             ),
         ]
