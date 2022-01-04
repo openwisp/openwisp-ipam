@@ -22,7 +22,7 @@ def patch_ipaddress_lib():
             )
 
     def subnet_of(self, other):
-        """ Return True if this network is a subnet of other """
+        """Return True if this network is a subnet of other"""
         return self._is_subnet_of(self, other)
 
     if not hasattr(IPv4Network, 'subnet_of'):

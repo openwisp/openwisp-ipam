@@ -70,7 +70,9 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
             csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
             self.assertEqual(Subnet.objects.count(), 2)
             response = self.client.post(
-                reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+                reverse('admin:ipam_import_subnet'),
+                {'csvfile': csvfile},
+                follow=True,
             )
             self.assertContains(response, '<li class="success">Successfully imported')
             self.assertEqual(response.status_code, 200)
@@ -87,7 +89,9 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
             10.27.1.1,Monachers"""
             csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
             response = self.client.post(
-                reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+                reverse('admin:ipam_import_subnet'),
+                {'csvfile': csvfile},
+                follow=True,
             )
             self.assertContains(response, '<li class="error">You do not have')
             self.assertEqual(Subnet.objects.count(), 3)
@@ -178,7 +182,9 @@ class TestMultitenantApi(
         with self.subTest('Test ipaddress list for org manager'):
             self._login(username='superuser', password='tester')
             self.client.post(
-                url, data=post_data, content_type='application/json',
+                url,
+                data=post_data,
+                content_type='application/json',
             )
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)

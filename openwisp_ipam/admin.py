@@ -113,7 +113,9 @@ class SubnetAdmin(
 
         def inner(request, *args, **kwargs):
             if not request.user.has_perm(f'{self.app_label}.{perm}'):
-                return redirect(reverse('admin:index', current_app=admin_site.name),)
+                return redirect(
+                    reverse('admin:index', current_app=admin_site.name),
+                )
             return view(request, *args, **kwargs)
 
         return update_wrapper(inner, view)

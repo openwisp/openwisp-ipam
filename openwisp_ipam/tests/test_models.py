@@ -219,7 +219,9 @@ class TestModels(CreateModelsMixin, TestCase):
             master.full_clean()
             master.save()
             org1_subnet = self._create_subnet(
-                master_subnet=master, subnet='10.0.0.0/24', organization=org1,
+                master_subnet=master,
+                subnet='10.0.0.0/24',
+                organization=org1,
             )
             org1_subnet.delete()
 
@@ -238,7 +240,9 @@ class TestModels(CreateModelsMixin, TestCase):
             master.full_clean()
             master.save()
             org1_subnet = self._create_subnet(
-                master_subnet=master, subnet='10.0.0.0/24', organization=org1,
+                master_subnet=master,
+                subnet='10.0.0.0/24',
+                organization=org1,
             )
             # Tests for overlapping subnets
             with self.assertRaises(ValidationError) as context_manager:
@@ -457,5 +461,6 @@ class TestModels(CreateModelsMixin, TestCase):
         with self.assertRaises(CsvImportException) as context_manager:
             _get_org('new-org')
         self.assertIn(
-            '“new-org”', str(context_manager.exception),
+            '“new-org”',
+            str(context_manager.exception),
         )

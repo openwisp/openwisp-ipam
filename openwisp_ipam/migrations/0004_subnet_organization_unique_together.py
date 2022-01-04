@@ -13,6 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='subnet', unique_together={('subnet', 'organization')},
+            name='subnet',
+            unique_together={('subnet', 'organization')},
         ),
     ]

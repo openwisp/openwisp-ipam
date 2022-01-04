@@ -187,7 +187,9 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'index_together': {('id', 'email')},
             },
-            managers=[('objects', openwisp_users.base.models.UserManager()),],
+            managers=[
+                ('objects', openwisp_users.base.models.UserManager()),
+            ],
         ),
         migrations.CreateModel(
             name='Organization',
@@ -241,7 +243,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={'abstract': False,},
+            options={
+                'abstract': False,
+            },
             bases=(organizations.base.UnicodeMixin, models.Model),
         ),
         migrations.CreateModel(
@@ -255,7 +259,9 @@ class Migration(migrations.Migration):
                 'constraints': [],
             },
             bases=(openwisp_users.base.models.BaseGroup, 'auth.group'),
-            managers=[('objects', django.contrib.auth.models.GroupManager()),],
+            managers=[
+                ('objects', django.contrib.auth.models.GroupManager()),
+            ],
         ),
         migrations.CreateModel(
             name='OrganizationUser',
@@ -299,7 +305,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={'abstract': False,},
+            options={
+                'abstract': False,
+            },
             bases=(organizations.base.UnicodeMixin, models.Model),
         ),
         migrations.CreateModel(
@@ -342,7 +350,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={'abstract': False,},
+            options={
+                'abstract': False,
+            },
             bases=(organizations.base.UnicodeMixin, models.Model),
         ),
         migrations.AddField(

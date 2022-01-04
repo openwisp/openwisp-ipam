@@ -173,7 +173,8 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
-            IpAddress.objects.get(pk=ip_address.id).description, 'Test Ip address',
+            IpAddress.objects.get(pk=ip_address.id).description,
+            'Test Ip address',
         )
 
     def test_delete_ip_address_api(self):
