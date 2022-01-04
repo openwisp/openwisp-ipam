@@ -195,7 +195,8 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         ipaddress_list = []
         for row in reader:
             if not ipaddress_model.objects.filter(
-                subnet=subnet, ip_address=row[0].strip(),
+                subnet=subnet,
+                ip_address=row[0].strip(),
             ).exists():
                 instance = ipaddress_model(
                     subnet=subnet,

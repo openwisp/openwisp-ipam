@@ -104,7 +104,10 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         change_path = reverse(
             'admin:{0}_subnet_change'.format(self.app_label), args=[subnet.id]
         )
-        response = self.client.get(f'{change_path}?_popup=1', follow=True,)
+        response = self.client.get(
+            f'{change_path}?_popup=1',
+            follow=True,
+        )
         self.assertContains(response, 'ok')
 
     def test_add_ipaddress_response(self):
@@ -192,7 +195,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         10.27.1.254,Nano Beam 5 19AC"""
         csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
         response = self.client.post(
-            reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            reverse('admin:ipam_import_subnet'),
+            {'csvfile': csvfile},
+            follow=True,
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(str(Subnet.objects.first().subnet), '10.27.1.0/24')
@@ -216,7 +221,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         10.27.1.254,Nano Beam 5 19AC"""
         csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
         response = self.client.post(
-            reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            reverse('admin:ipam_import_subnet'),
+            {'csvfile': csvfile},
+            follow=True,
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(str(IpAddress.objects.all()[1].ip_address), '10.27.1.252')
@@ -234,7 +241,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         10.27.1.254,Nano Beam 5 19AC"""
         csvfile = SimpleUploadedFile('data.txt', bytes(csv_data, 'utf-8'))
         response = self.client.post(
-            reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            reverse('admin:ipam_import_subnet'),
+            {'csvfile': csvfile},
+            follow=True,
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'File type not supported.')
@@ -250,7 +259,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         10.27.1.254,Nano Beam 5 19AC"""
         csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
         response = self.client.post(
-            reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            reverse('admin:ipam_import_subnet'),
+            {'csvfile': csvfile},
+            follow=True,
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'does not appear to be an IPv4 or IPv6 network')
@@ -268,7 +279,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         10.27.1.254,Nano Beam 5 19AC"""
         csvfile = SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))
         response = self.client.post(
-            reverse('admin:ipam_import_subnet'), {'csvfile': csvfile}, follow=True,
+            reverse('admin:ipam_import_subnet'),
+            {'csvfile': csvfile},
+            follow=True,
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'does not appear to be an IPv4 or IPv6 address')
@@ -386,7 +399,9 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
                 self.assertContains(response, f'class="mg-link" href="{url}"')
         with self.subTest('test_ipam_group_is_registered'):
             self.assertContains(
-                response, '<div class="mg-dropdown-label">Ipam </div>', html=True,
+                response,
+                '<div class="mg-dropdown-label">Ipam </div>',
+                html=True,
             )
 
     def test_operator_import_export_subnet(self):

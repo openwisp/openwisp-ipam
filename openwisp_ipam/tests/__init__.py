@@ -22,7 +22,10 @@ class CreateModelsMixin(TestOrganizationMixin):
         return kwargs
 
     def _create_subnet(self, **kwargs):
-        options = dict(subnet='', description='',)
+        options = dict(
+            subnet='',
+            description='',
+        )
         options.update(self._get_extra_fields(**kwargs))
         options.update(kwargs)
         instance = Subnet(**options)
@@ -31,7 +34,10 @@ class CreateModelsMixin(TestOrganizationMixin):
         return instance
 
     def _create_ipaddress(self, **kwargs):
-        options = dict(ip_address='', description='',)
+        options = dict(
+            ip_address='',
+            description='',
+        )
         options.update(kwargs)
         instance = IpAddress(**options)
         instance.full_clean()
