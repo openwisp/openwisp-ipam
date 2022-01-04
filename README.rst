@@ -48,8 +48,8 @@ Project Goals
 Dependencies
 ************
 
-* Python 3.6 or higher
-* Django 2.2 or higher
+* Python 3.7 or higher
+* Django 3.0 or higher
 * Django REST Framework (for the REST API)
 * openwisp-users
 * swapper
@@ -435,7 +435,7 @@ Importing
 ---------
 
 Data can be imported via the admin interface or by using a management command.
-The imported data file can be in `.csv`, `.xls` and `.xlsx` format. While importing
+The imported data file can be in `.csv` and `.xlsx` format. While importing
 data for ip addresses, the system checks if the subnet specified in the import file exists or not.
 If the subnet does not exists it will be created while importing data.
 
@@ -493,7 +493,6 @@ Add the URLs to your main ``urls.py``:
 
 .. code-block:: python
 
-    from django.conf.urls import url
     from django.contrib import admin
     from django.urls import include, path
     from openwisp_users.api.urls import get_api_urls as get_users_api_urls
@@ -506,7 +505,7 @@ Add the URLs to your main ``urls.py``:
         # OpenAPI docs
         path('api/v1/', include('openwisp_utils.api.urls')),
         # Bearer Authentication API URL
-        url(r'^api/v1/', include((get_users_api_urls(), 'users'), namespace='users')),
+        path('api/v1/', include((get_users_api_urls(), 'users'), namespace='users')),
     ]
 
 
@@ -760,8 +759,8 @@ Substitute ``myipam`` with the name you chose in step 1.
     urlpatterns = [
         # ... other urls in your project ...
         # openwisp-ipam urls
-        # url(r'^', include(get_urls(api_views))) <-- Use only when changing API views (dicussed below)
-        url(r'^', include('openwisp_ipam.urls')),
+        # path('', include(get_urls(api_views))) <-- Use only when changing API views (dicussed below)
+        path('', include('openwisp_ipam.urls')),
     ]
 
 For more information about URL configuration in django, please refer to the

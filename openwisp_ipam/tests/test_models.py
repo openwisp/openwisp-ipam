@@ -76,6 +76,9 @@ class TestModels(CreateModelsMixin, TestCase):
 
     def test_unavailable_ip(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32')
+        # Consume the only available IP address in the subnet
+        subnet.request_ip()
+        # Try to request IP address from exhausted subnet
         ipaddr = subnet.get_next_available_ip()
         self.assertEqual(ipaddr, None)
 
@@ -93,6 +96,9 @@ class TestModels(CreateModelsMixin, TestCase):
 
     def test_unavailable_request_ip(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32')
+        # Consume the only available IP address in the subnet
+        subnet.request_ip()
+        # Try to request IP address from exhausted subnet
         ipaddr = subnet.request_ip()
         self.assertEqual(ipaddr, None)
 

@@ -1,7 +1,6 @@
 import os
 
 from django.conf import settings
-from django.conf.urls import url
 from django.contrib import admin
 from django.urls import include, path
 from openwisp_users.api.urls import get_api_urls as get_users_api_urls
@@ -9,7 +8,7 @@ from openwisp_users.api.urls import get_api_urls as get_users_api_urls
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('openwisp_utils.api.urls')),
-    url(r'^api/v1/', include((get_users_api_urls(), 'users'), namespace='users')),
+    path('api/v1/', include((get_users_api_urls(), 'users'), namespace='users')),
 ]
 
 if os.environ.get('SAMPLE_APP', False):
