@@ -10,6 +10,7 @@ from openwisp_users.base.models import (
 )
 from organizations.abstract import (
     AbstractOrganization,
+    AbstractOrganizationInvitation,
     AbstractOrganizationOwner,
     AbstractOrganizationUser,
 )
@@ -36,6 +37,11 @@ class OrganizationUser(BaseOrganizationUser, AbstractOrganizationUser):
 
 
 class OrganizationOwner(BaseOrganizationOwner, AbstractOrganizationOwner):
+    pass
+
+
+# only needed for django-organizations~=2.x
+class OrganizationInvitation(AbstractOrganizationInvitation):
     pass
 
 
