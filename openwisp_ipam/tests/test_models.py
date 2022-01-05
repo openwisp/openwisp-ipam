@@ -82,11 +82,11 @@ class TestModels(CreateModelsMixin, TestCase):
         ipaddr = subnet.get_next_available_ip()
         self.assertEqual(ipaddr, None)
 
-    def test_request_ip_for_32_prefix_subnet(self):
+    def test_request_ip_for_slash_32_subnet(self):
         # Regression test for provisioning IP from a /32 network
-        subnet = self._create_subnet(subnet='10.0.0.0/32')
+        subnet = self._create_subnet(subnet='10.0.0.1/32')
         ipaddr = subnet.get_next_available_ip()
-        self.assertIsNotNone(ipaddr)
+        self.assertEqual(ipaddr, '10.0.0.1')
 
     def test_request_ipv4(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24')
