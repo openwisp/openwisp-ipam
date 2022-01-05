@@ -39,6 +39,9 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
 
     def test_unavailable_ip(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32', description='Sample Subnet')
+        # Consume the only available IP address in the subnet
+        subnet.request_ip()
+        # Try to request IP address from exhausted subnet
         response = self.client.get(
             reverse('ipam:get_next_available_ip', args=(subnet.id,))
         )
@@ -89,6 +92,9 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
     def test_unvailable_request_api(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32')
         post_data = self._post_data(subnet=str(subnet.id), description='Testing')
+        # Consume the only available IP address in the subnet
+        subnet.request_ip()
+        # Try to request IP address from exhausted subnet
         response = self.client.post(
             reverse('ipam:request_ip', args=(subnet.id,)),
             data=post_data,

@@ -1,8 +1,9 @@
 import csv
+import sys
 from io import StringIO
 from ipaddress import ip_address, ip_network
 
-import xlrd
+import openpyxl
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_slug
 from django.db import models
@@ -143,7 +144,16 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
 
     def get_next_available_ip(self):
         ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
-        for host in self.subnet.hosts():
+        # NOTE: Shim for Python 3.7
+        # In Python < 3.8, subnet.hosts() does not include network
+        # address if prefixlen of subnet is 32.
+        # See https://bugs.python.org/issue28577.
+        py_major_ver, py_minor_ver, _, _, _ = sys.version_info[:]
+        if self.subnet.prefixlen == 32 and py_major_ver == 3 and py_minor_ver < 8:
+            subnet_hosts = [self.subnet.network_address]
+        else:
+            subnet_hosts = self.subnet.hosts()
+        for host in subnet_hosts:
             if str(host) not in ipaddress_set:
                 return str(host)
         return None
@@ -194,6 +204,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         ipaddress_model = load_model('openwisp_ipam', 'IpAddress')
         ipaddress_list = []
         for row in reader:
+            description = str(row[1] or '').strip()
             if not ipaddress_model.objects.filter(
                 subnet=subnet,
                 ip_address=row[0].strip(),
@@ -201,7 +212,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 instance = ipaddress_model(
                     subnet=subnet,
                     ip_address=row[0].strip(),
-                    description=row[1].strip(),
+                    description=description,
                 )
                 try:
                     instance.full_clean()
@@ -212,13 +223,10 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             ip.save()
 
     def _get_csv_reader(self, file):
-        if file.name.endswith(('.xls', '.xlsx')):
-            book = xlrd.open_workbook(file_contents=file.read())
-            sheet = book.sheet_by_index(0)
-            row = []
-            for row_num in range(sheet.nrows):
-                row.append(sheet.row_values(row_num))
-            reader = iter(row)
+        if file.name.endswith(('.xlsx')):
+            book = openpyxl.load_workbook(filename=file)
+            sheet = book.worksheets[0]
+            reader = sheet.values
         else:
             reader = csv.reader(StringIO(file.read().decode('utf-8')), delimiter=',')
         return reader

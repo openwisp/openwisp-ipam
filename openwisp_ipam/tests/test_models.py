@@ -76,8 +76,17 @@ class TestModels(CreateModelsMixin, TestCase):
 
     def test_unavailable_ip(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32')
+        # Consume the only available IP address in the subnet
+        subnet.request_ip()
+        # Try to request IP address from exhausted subnet
         ipaddr = subnet.get_next_available_ip()
         self.assertEqual(ipaddr, None)
+
+    def test_request_ip_for_slash_32_subnet(self):
+        # Regression test for provisioning IP from a /32 network
+        subnet = self._create_subnet(subnet='10.0.0.1/32')
+        ipaddr = subnet.get_next_available_ip()
+        self.assertEqual(ipaddr, '10.0.0.1')
 
     def test_request_ipv4(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24')
@@ -93,6 +102,9 @@ class TestModels(CreateModelsMixin, TestCase):
 
     def test_unavailable_request_ip(self):
         subnet = self._create_subnet(subnet='10.0.0.0/32')
+        # Consume the only available IP address in the subnet
+        subnet.request_ip()
+        # Try to request IP address from exhausted subnet
         ipaddr = subnet.request_ip()
         self.assertEqual(ipaddr, None)
 

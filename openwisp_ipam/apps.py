@@ -4,8 +4,6 @@ from openwisp_utils.api.apps import ApiAppConfig
 from openwisp_utils.utils import default_or_test
 from swapper import get_model_name
 
-from .compat import patch_ipaddress_lib
-
 
 class OpenWispIpamConfig(ApiAppConfig):
     name = 'openwisp_ipam'
@@ -18,7 +16,6 @@ class OpenWispIpamConfig(ApiAppConfig):
 
     def ready(self, *args, **kwargs):
         super().ready(*args, **kwargs)
-        patch_ipaddress_lib()
         self.register_menu_groups()
 
     def register_menu_groups(self):
