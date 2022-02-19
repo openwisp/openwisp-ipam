@@ -104,7 +104,9 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         self.assertEqual(response.data, None)
 
     def test_create_subnet_api(self):
-        post_data = self._post_data(subnet='10.0.0.0/32', description='Testing')
+        post_data = self._post_data(
+            name='Subnet', subnet='10.0.0.0/32', description='Testing'
+        )
         response = self.client.post(
             reverse('ipam:subnet_list_create'),
             data=post_data,
