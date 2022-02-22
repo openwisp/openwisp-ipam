@@ -258,10 +258,23 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
     def test_hosts_list_api(self):
         subnet = self._create_subnet(subnet='10.0.0.0/16')
         self._create_ipaddress(ip_address='10.0.0.1', subnet=subnet)
+        self._create_ipaddress(ip_address='10.0.0.3', subnet=subnet)
         response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
         self.assertEqual(response.data['results'][0]['address'], '10.0.0.1')
         self.assertEqual(response.data['results'][0]['used'], True)
+        self.assertEqual(response.data['results'][1]['address'], '10.0.0.2')
+        self.assertEqual(response.data['results'][1]['used'], False)
+        self.assertEqual(response.data['results'][2]['address'], '10.0.0.3')
+        self.assertEqual(response.data['results'][2]['used'], True)
         self.assertIsNone(response.data['previous'])
+        response = self.client.get(response.data['next'])
+        self.assertEqual(response.data['results'][0]['address'], '10.0.1.1')
+        self.assertEqual(self.client.get(response.data['previous']).status_code, 200)
+        self.assertEqual(self.client.get(response.data['next']).status_code, 200)
+        response = self.client.get(
+            reverse('ipam:hosts', args=(subnet.id,)), {'start': '10.0.255.1'}
+        )
+        self.assertEqual(self.client.get(response.data['previous']).status_code, 200)
         self.assertIsNone(response.data['next'])
 
     def test_bearer_auth(self):

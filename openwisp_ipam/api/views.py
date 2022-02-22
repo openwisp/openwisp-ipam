@@ -137,11 +137,10 @@ class HostsSet:
         if self.stop is not None:
             return self.stop - self.start
         broadcast = int(self.subnet.subnet.broadcast_address)
-        if (
-            self.subnet.subnet.max_prefixlen == 32
-            or self.subnet.subnet.max_prefixlen == 128
-        ):
-            return 1
+        if self.subnet.subnet.max_prefixlen == 32:
+            if self.subnet.subnet._prefixlen == 32:
+                return 1
+            return broadcast - self.network - 1
         else:
             return broadcast - self.network
 
