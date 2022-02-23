@@ -429,9 +429,6 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
 
     def test_subnet_32(self):
         subnet = self._create_subnet(subnet='192.168.0.0/32', description='Subnet 32')
-        try:
-            response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
-            self.assertIsNone(response.data['next'])
-            self.assertIsNone(response.data['previous'])
-        except ValueError as err:
-            self.fail(f'subnet/32: {err}')
+        response = self.client.get(reverse('ipam:hosts', args=(subnet.id,)))
+        self.assertIsNone(response.data['next'])
+        self.assertIsNone(response.data['previous'])
