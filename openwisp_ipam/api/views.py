@@ -147,6 +147,9 @@ class HostsSet:
             return broadcast - self.network - 1
         # IPV6
         else:
+            # Subnet/128 only contains single host address
+            if self.subnet.subnet.prefixlen == 128:
+                return 1
             return broadcast - self.network
 
     def __len__(self):
