@@ -129,7 +129,12 @@ class HostsSet:
             return HostsSet(self.subnet, self.start + start, self.start + stop)
         if i >= self.count():
             raise IndexError
-        host = self.subnet.subnet._address_class(self.network + 1 + i + self.start)
+        # In case of single hosts ie subnet/32 & /128
+        if self.subnet.subnet.prefixlen in [32, 128]:
+            host = self.subnet.subnet._address_class(self.network + i + self.start)
+        else:
+            # Host starts from next address
+            host = self.subnet.subnet._address_class(self.network + 1 + i + self.start)
         used = self.used_set.filter(ip_address=str(host)).exists()
         return HostsResponse(str(host), used)
 
