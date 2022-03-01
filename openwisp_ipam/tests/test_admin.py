@@ -440,3 +440,17 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
             self.fail('subnet/128: Returns empty hosts list')
         self.assertIsNone(response.data['next'])
         self.assertIsNone(response.data['previous'])
+
+    def test_subnet_single_hosts_first_address(self):
+        subnet_128 = self._create_subnet(
+            subnet='2001:db00::/128', description='Subnet 128'
+        )
+        subnet_32 = self._create_subnet(
+            subnet='192.168.0.0/32', description='Subnet 32'
+        )
+        response = self.client.get(reverse('ipam:hosts', args=(subnet_128.id,)))
+        host_address_128 = response.data['results'][0]['address']
+        response = self.client.get(reverse('ipam:hosts', args=(subnet_32.id,)))
+        host_address_32 = response.data['results'][0]['address']
+        self.assertEqual(host_address_128, '2001:db00::')
+        self.assertEqual(host_address_32, '192.168.0.0')
