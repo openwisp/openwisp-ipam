@@ -129,7 +129,11 @@ class HostsSet:
             return HostsSet(self.subnet, self.start + start, self.start + stop)
         if i >= self.count():
             raise IndexError
+        # Host starts from next address
         host = self.subnet.subnet._address_class(self.network + 1 + i + self.start)
+        # In case of single hosts ie subnet/32 & /128
+        if self.subnet.subnet.prefixlen in [32, 128]:
+            host = host - 1
         used = self.used_set.filter(ip_address=str(host)).exists()
         return HostsResponse(str(host), used)
 
@@ -137,11 +141,19 @@ class HostsSet:
         if self.stop is not None:
             return self.stop - self.start
         broadcast = int(self.subnet.subnet.broadcast_address)
-        # IPV4 (exclude broadcast)
-        if self.subnet.subnet.max_prefixlen == 32:
+        # IPV4
+        if self.subnet.subnet.version == 4:
+            # Networks with a mask of 32 will return a list
+            # containing the single host address
+            if self.subnet.subnet.prefixlen == 32:
+                return 1
+            # Other than subnet /32, exclude broadcast
             return broadcast - self.network - 1
         # IPV6
         else:
+            # Subnet/128 only contains single host address
+            if self.subnet.subnet.prefixlen == 128:
+                return 1
             return broadcast - self.network
 
     def __len__(self):
