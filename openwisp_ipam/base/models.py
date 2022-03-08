@@ -21,7 +21,7 @@ class CsvImportException(Exception):
 
 
 class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
-    name = models.CharField(max_length=100, blank=True, db_index=True)
+    name = models.CharField(max_length=100, db_index=True)
     subnet = NetworkField(
         db_index=True,
         help_text=_(
@@ -44,9 +44,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         unique_together = ('subnet', 'organization')
 
     def __str__(self):
-        if self.name:
-            return f'{self.name} {self.subnet}'
-        return str(self.subnet)
+        return f'{self.name} {self.subnet}'
 
     def clean(self):
         if not self.subnet:

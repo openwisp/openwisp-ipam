@@ -97,7 +97,7 @@ class Migration(migrations.Migration):
                         verbose_name='modified',
                     ),
                 ),
-                ('name', models.CharField(blank=True, db_index=True, max_length=100)),
+                ('name', models.CharField(db_index=True, max_length=100)),
                 (
                     'subnet',
                     openwisp_ipam.base.fields.NetworkField(

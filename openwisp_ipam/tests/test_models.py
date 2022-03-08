@@ -108,10 +108,6 @@ class TestModels(CreateModelsMixin, TestCase):
         ipaddr = subnet.request_ip()
         self.assertEqual(ipaddr, None)
 
-    def test_subnet_string_representation(self):
-        subnet = Subnet(subnet='entry subnet')
-        self.assertEqual(str(subnet), str(subnet.subnet))
-
     def test_subnet_string_representation_with_name(self):
         subnet = Subnet(subnet='entry subnet', name='test1')
         self.assertEqual(str(subnet), '{0} {1}'.format(subnet.name, str(subnet.subnet)))
@@ -310,6 +306,22 @@ class TestModels(CreateModelsMixin, TestCase):
             self.assertTrue(
                 err.message_dict['subnet'] == ['This field cannot be blank.']
             )
+        else:
+            self.fail('ValidationError not raised')
+
+    def test_save_none_subnet_name_fails(self):
+        try:
+            self._create_subnet(name=None)
+        except ValidationError as err:
+            self.assertTrue(err.message_dict['name'] == ['This field cannot be null.'])
+        else:
+            self.fail('ValidationError not raised')
+
+    def test_save_blank_subnet_name_fails(self):
+        try:
+            self._create_subnet(name='')
+        except ValidationError as err:
+            self.assertTrue(err.message_dict['name'] == ['This field cannot be blank.'])
         else:
             self.fail('ValidationError not raised')
 

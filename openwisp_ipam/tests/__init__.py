@@ -23,6 +23,7 @@ class CreateModelsMixin(TestOrganizationMixin):
 
     def _create_subnet(self, **kwargs):
         options = dict(
+            name='test subnet',
             subnet='',
             description='',
         )

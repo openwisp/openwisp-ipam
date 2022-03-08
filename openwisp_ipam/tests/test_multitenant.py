@@ -50,8 +50,8 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
         data = self._create_multitenancy_test_env()
         self._test_multitenant_admin(
             url=reverse(f'admin:{self.app_label}_subnet_changelist'),
-            visible=[data['subnet1']],
-            hidden=[data['subnet2']],
+            visible=[data['subnet1'].subnet],
+            hidden=[data['subnet2'].subnet],
         )
 
     def test_import_subnet_permission(self):
