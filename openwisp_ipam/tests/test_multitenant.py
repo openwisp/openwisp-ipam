@@ -123,6 +123,7 @@ class TestMultitenantApi(
         ou = OrganizationUser.objects.create(user=user_b, organization=org_b)
         ou.is_admin = True
         ou.save()
+        self._create_administrator(organizations=[org_a])
         # Creates a superuser
         self._create_operator(
             username='superuser',
@@ -308,7 +309,7 @@ class TestMultitenantApi(
         url = reverse('ipam:import-subnet')
 
         with self.subTest('Test import subnet successful for org manager'):
-            self._login(username='user_a', password='tester')
+            self._login(username='administrator', password='tester')
             response = self.client.post(
                 url,
                 {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
@@ -338,10 +339,8 @@ class TestMultitenantApi(
         ip address,description
         10.27.1.1,Monachers
         10.27.1.254,Nano Beam 5 19AC"""
-        user_a = User.objects.get(username='user_a')
-        user_a.user_permissions.add(Permission.objects.get(codename='add_organization'))
         with self.subTest('Test import subnet successful for org manager'):
-            self._login(username='user_a', password='tester')
+            self._login(username='administrator', password='tester')
             response = self.client.post(
                 reverse('ipam:import-subnet'),
                 {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
@@ -355,7 +354,7 @@ class TestMultitenantApi(
         ip address,description
         10.27.1.1,Monachers
         10.27.1.254,Nano Beam 5 19AC"""
-        self._login(username='user_a', password='tester')
+        self._login(username='administrator', password='tester')
         response = self.client.post(
             reverse('ipam:import-subnet'),
             {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
@@ -366,7 +365,7 @@ class TestMultitenantApi(
     def test_invalid_csv_data(self):
         csv_data = """Monachers - Matera,
         10.27.1.0/24,"""
-        self._login(username='user_a', password='tester')
+        self._login(username='administrator', password='tester')
         response = self.client.post(
             reverse('ipam:import-subnet'),
             {'csvfile': SimpleUploadedFile('data.csv', bytes(csv_data, 'utf-8'))},
@@ -397,7 +396,7 @@ class TestMultitenantApi(
         url = reverse('ipam:export-subnet', args=(subnet.id,))
 
         with self.subTest('Test export subnet successful for org manager'):
-            self._login(username='user_a', password='tester')
+            self._login(username='administrator', password='tester')
             response = self.client.post(url)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.content, csv_data)
