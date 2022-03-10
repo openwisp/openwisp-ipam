@@ -169,6 +169,7 @@ class HostsSet:
 class AvailableIpView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
     subnet_model = Subnet
     queryset = IpAddress.objects.none()
+    serializer_class = serializers.Serializer
 
     def get(self, request, *args, **kwargs):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
