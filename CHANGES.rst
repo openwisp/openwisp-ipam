@@ -1,6 +1,62 @@
 Changelog
 =========
 
+Version 1.0.0 [2022-04-28]
+--------------------------
+
+Features
+~~~~~~~~
+
+- Added go to in subnet UI
+- Added support for `django-reversion
+  <https://github.com/etianen/django-reversion>`_
+- Created default permissions for the default permission groups
+  defined by OpenWISP Users
+- Added menu items
+- Added throttling of API requests
+- Implemented multi-tenancy in REST API
+
+Changes
+~~~~~~~
+
+Backward incompatible changes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Changed API endpoints from ``/api/v1/*`` to ``/api/v1/ipam/*``
+  for consistency with the other openwisp modules
+
+Dependencies
+^^^^^^^^^^^^
+
+- Dropped support for Python 3.6
+- Dropped support for Django 2.2
+- Added support for Django 3.2 and Django 4.0
+- Replaced xlrd with openpyxl
+- Bumped django-reversion~=4.0.1
+
+Other changes
+^^^^^^^^^^^^^
+
+- Allow shared subnets to have non shared child subnets
+- Switched to new navigation menu
+- Updated tests to use administrator for failing tests
+
+Bugfixes
+~~~~~~~~
+
+- Avoid shipping openwisp-users URLs in openwisp-ipam app
+- Fixed ``IndexError`` exception in REST API
+- Fixed extensibility issues with openwisp-users and added tests
+  for this in the sample app
+- Fix overlapping shared/non-shared subnet validation
+- Excluded child subnets from overlapping validation
+- Added organization in import/export subnet
+- Validate organization membership when importing subnets
+- Ensure import/export subnet views check for user permissions
+- Fixed subnet /32 & /128 pie chart error
+- Fixed creation of subnet without name
+- Fixed API docs errror
+
 Version 0.2.0 [2020-10-16]
 --------------------------
 
