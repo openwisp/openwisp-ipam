@@ -1,5 +1,5 @@
-openwisp-users~=1.0.0
-openwisp-utils[rest]~=1.0.1
+openwisp-users @ https://github.com/openwisp/openwisp-users/tarball/issues/deps-update
+openwisp-utils[rest] @ https://github.com/openwisp/openwisp-utils/tarball/master
 django>=3.0.0,<4.1.0
 openpyxl~=3.0.9
 django-reversion~=4.0.1
