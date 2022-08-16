@@ -55,6 +55,9 @@ class SubnetAdmin(
     def change_view(self, request, object_id, form_url='', extra_context=None):
         instance = self.get_object(request, object_id)
         if instance is None:
+            # This is an internal Django method that redirects the
+            # user to the admin index page with a message that points
+            # out that the requested object does not exist.
             return self._get_obj_does_not_exist_redirect(
                 request, self.model._meta, object_id
             )
