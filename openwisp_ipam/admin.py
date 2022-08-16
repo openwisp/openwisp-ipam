@@ -53,7 +53,11 @@ class SubnetAdmin(
     save_on_top = True
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
-        instance = Subnet.objects.get(pk=object_id)
+        instance = self.get_object(request, object_id)
+        if instance is None:
+            return self._get_obj_does_not_exist_redirect(
+                request, self.model._meta, object_id
+            )
         ipaddress_add_url = 'admin:{0}_ipaddress_add'.format(self.app_label)
         ipaddress_change_url = 'admin:{0}_ipaddress_change'.format(self.app_label)
         subnet_change_url = 'admin:{0}_subnet_change'.format(self.app_label)
