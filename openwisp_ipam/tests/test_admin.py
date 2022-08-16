@@ -23,6 +23,18 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         )
         self.client.login(username='admin', password='tester')
 
+    def test_non_existing_subnet_change_view(self):
+        id = '00000000-0000-0000-0000-0000000000000'
+        response = self.client.post(
+            reverse(f'admin:{self.app_label}_subnet_change', args=[id]), follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            f'Subnet with ID “{id}” doesn’t exist. Perhaps it was deleted?',
+            html=True,
+        )
+
     def test_ipaddress_invalid_entry(self):
         subnet = self._create_subnet(subnet='10.0.0.0/24', description='Sample Subnet')
         post_data = self._post_data(
