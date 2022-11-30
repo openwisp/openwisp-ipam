@@ -1,5 +1,5 @@
-openwisp-users @ https://github.com/openwisp/openwisp-users/tarball/master
-openwisp-utils[rest] @ https://github.com/openwisp/openwisp-utils/tarball/master
+openwisp-users @ https://github.com/openwisp/openwisp-users/tarball/issues/270-organization-autocomplete
+openwisp-utils[rest] @ https://github.com/openwisp/openwisp-utils/tarball/fix-autocomplete-filter
 django>=3.0.0,<4.1.0
 openpyxl~=3.0.9
 django-reversion~=4.0.1
