@@ -10,6 +10,5 @@ class SubnetFilter(MultitenantRelatedOrgFilter):
 
 
 class SubnetOrganizationFilter(MultitenantRelatedOrgFilter):
-    field_name = 'organization'
     parameter_name = 'subnet__organization'
     rel_model = Subnet
