@@ -481,6 +481,7 @@ The ``settings.py`` of your project should contain the following:
         'openwisp_users',
         'openwisp_ipam',
         # admin
+        'admin_auto_filters',
         'django.contrib.admin',
         # rest framework
         'rest_framework',
@@ -575,6 +576,7 @@ ensuring also that ``openwisp_ipam`` has been removed:
         'openwisp_users',
         # 'myipam',   <-- replace without your app-name here
         # admin
+        'admin_auto_filters',
         'django.contrib.admin',
         # rest framework
         'rest_framework',

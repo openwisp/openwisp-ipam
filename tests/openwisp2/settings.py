@@ -13,7 +13,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'openwisp_utils.admin_theme',
     'openwisp_users.accounts',
     # all-auth
     'django.contrib.sites',
@@ -26,7 +25,9 @@ INSTALLED_APPS = [
     'openwisp_users',
     'openwisp_ipam',
     # admin
+    'openwisp_utils.admin_theme',
     'django.contrib.admin',
+    'admin_auto_filters',
     # rest framework
     'rest_framework',
     'rest_framework.authtoken',

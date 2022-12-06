@@ -22,6 +22,7 @@ from .api.utils import AuthorizeCSVOrgManaged, CsvImportAPIException
 from .api.views import HostsSet
 from .base.forms import IpAddressImportForm
 from .base.models import CsvImportException
+from .filters import SubnetFilter, SubnetOrganizationFilter
 
 Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
 IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
@@ -46,7 +47,7 @@ class SubnetAdmin(
         'created',
         'modified',
     ]
-    list_filter = [('organization', MultitenantOrgFilter)]
+    list_filter = [MultitenantOrgFilter]
     autocomplete_fields = ['master_subnet']
     search_fields = ['subnet', 'name']
     list_select_related = ['organization', 'master_subnet']
@@ -218,7 +219,7 @@ class IpAddressAdmin(
     form = IpAddressAdminForm
     change_form_template = 'admin/openwisp-ipam/ip_address/change_form.html'
     list_display = ['ip_address', 'subnet', 'organization', 'created', 'modified']
-    list_filter = ['subnet', ('subnet__organization', MultitenantOrgFilter)]
+    list_filter = [SubnetOrganizationFilter, SubnetFilter]
     search_fields = ['ip_address']
     autocomplete_fields = ['subnet']
     multitenant_parent = 'subnet'
