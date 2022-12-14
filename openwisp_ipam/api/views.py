@@ -10,7 +10,6 @@ from openwisp_users.api.mixins import (
     FilterByParentManaged,
     ProtectedAPIMixin as BaseProtectedAPIMixin,
 )
-from openwisp_users.api.permissions import IsOrganizationManager
 from rest_framework import pagination, serializers, status
 from rest_framework.generics import (
     CreateAPIView,
@@ -20,7 +19,6 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
-from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.utils.urls import remove_query_param, replace_query_param
 
@@ -47,7 +45,6 @@ class IpAddressOrgMixin(FilterByParentManaged):
 
 
 class ProtectedAPIMixin(BaseProtectedAPIMixin):
-    permission_classes = [IsOrganizationManager, DjangoModelPermissions]
     throttle_scope = 'ipam'
 
 
