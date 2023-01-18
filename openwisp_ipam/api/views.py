@@ -5,11 +5,12 @@ from copy import deepcopy
 import swapper
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
-from openwisp_users.api.authentication import BearerAuthentication
-from openwisp_users.api.mixins import FilterByOrganizationManaged, FilterByParentManaged
-from openwisp_users.api.permissions import IsOrganizationManager
+from openwisp_users.api.mixins import (
+    FilterByOrganizationManaged,
+    FilterByParentManaged,
+    ProtectedAPIMixin as BaseProtectedAPIMixin,
+)
 from rest_framework import pagination, serializers, status
-from rest_framework.authentication import SessionAuthentication
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -18,7 +19,6 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
-from rest_framework.permissions import DjangoModelPermissions
 from rest_framework.response import Response
 from rest_framework.utils.urls import remove_query_param, replace_query_param
 
@@ -44,9 +44,7 @@ class IpAddressOrgMixin(FilterByParentManaged):
         return qs
 
 
-class ProtectedAPIMixin(object):
-    authentication_classes = [BearerAuthentication, SessionAuthentication]
-    permission_classes = [IsOrganizationManager, DjangoModelPermissions]
+class ProtectedAPIMixin(BaseProtectedAPIMixin):
     throttle_scope = 'ipam'
 
 
