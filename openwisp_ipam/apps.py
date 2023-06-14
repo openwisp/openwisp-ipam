@@ -40,3 +40,6 @@ class OpenWispIpamConfig(ApiAppConfig):
                 'icon': 'ow-ipam',
             },
         )
+
+
+del ApiAppConfig
