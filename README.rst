@@ -48,8 +48,8 @@ Project Goals
 Dependencies
 ************
 
-* Python 3.7 or higher
-* Django 3.0 or higher
+* Python 3.8 or higher
+* Django 3.2 or higher (except 4.0)
 * Django REST Framework (for the REST API)
 * openwisp-users
 * swapper

@@ -1,5 +1,4 @@
 import csv
-import sys
 from io import StringIO
 from ipaddress import ip_address, ip_network
 
@@ -142,15 +141,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
 
     def get_next_available_ip(self):
         ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
-        # NOTE: Shim for Python 3.7
-        # In Python < 3.8, subnet.hosts() does not include network
-        # address if prefixlen of subnet is 32.
-        # See https://bugs.python.org/issue28577.
-        py_major_ver, py_minor_ver, _, _, _ = sys.version_info[:]
-        if self.subnet.prefixlen == 32 and py_major_ver == 3 and py_minor_ver < 8:
-            subnet_hosts = [self.subnet.network_address]
-        else:
-            subnet_hosts = self.subnet.hosts()
+        subnet_hosts = self.subnet.hosts()
         for host in subnet_hosts:
             if str(host) not in ipaddress_set:
                 return str(host)
