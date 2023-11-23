@@ -88,9 +88,14 @@ STATIC_URL = '/static/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 OPENWISP_USERS_AUTH_API = True
 
+CELERY_BROKER_URL = 'memory://'
+
 if TESTING:
     OPENWISP_ORGANIZATION_USER_ADMIN = True
     OPENWISP_ORGANIZATION_OWNER_ADMIN = True
+
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
 
 if os.environ.get('SAMPLE_APP', False):
     ipam_index = INSTALLED_APPS.index('openwisp_ipam')
