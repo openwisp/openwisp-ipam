@@ -3,7 +3,7 @@ REST API
 
 .. _ipam_live_documentation:
 
-Live documentation
+Live Documentation
 ------------------
 
 .. image:: https://raw.githubusercontent.com/openwisp/openwisp-ipam/docs/docs/api-docs.png
@@ -14,7 +14,7 @@ available at ``/api/v1/docs/``.
 
 .. _ipam_browsable_web_interface:
 
-Browsable web interface
+Browsable Web Interface
 -----------------------
 
 .. image:: https://raw.githubusercontent.com/openwisp/openwisp-ipam/docs/docs/api-ui.png
@@ -29,8 +29,7 @@ makes it even easier to find out the details of each endpoint.
 Authentication
 --------------
 
-See openwisp-users: `authenticating with the user token
-<https://github.com/openwisp/openwisp-users#authenticating-with-the-user-token>`_.
+See openwisp-users: :ref:`authenticating_rest_api`.
 
 When browsing the API via the :ref:`ipam_live_documentation` or the
 :ref:`ipam_browsable_web_interface`, you can also use the session
@@ -49,7 +48,7 @@ paginating the results in conjunction with the ``page`` parameter.
 
 .. _ipam_list_endpoints:
 
-List of endpoints
+List of Endpoints
 -----------------
 
 Since the detailed explanation is contained in the
@@ -78,10 +77,7 @@ The rate descriptions used in ``DEFAULT_THROTTLE_RATES`` may include
 Get Next Available IP
 ---------------------
 
-A model method to fetch the next available IP address under a specific
-subnet. This method can also be accessed via a REST API:
-`openwisp_ipam/base/models.py
-<https://github.com/openwisp/openwisp-ipam/tree/master/tests/openwisp2/openwisp_ipam/base/models.py#L80>`_
+Fetch the next available IP address under a specific subnet.
 
 GET
 ~~~

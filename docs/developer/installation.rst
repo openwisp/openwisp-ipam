@@ -74,4 +74,4 @@ Alternatively you can use the git protocol:
 
 .. code-block:: shell
 
-    pip install -e git+git://github.com/openwisp/openwisp-ipam#egg=openwisp_users
+    pip install -e git+git://github.com/openwisp/openwisp-ipam#egg=openwisp_ipam

@@ -139,7 +139,7 @@ Add ``openwisp_utils.loaders.DependencyLoader`` to ``TEMPLATES`` in your
         }
     ]
 
-6. Inherit the AppConfig class
+6. Inherit the AppConfig Class
 ------------------------------
 
 Please refer to the following files in the sample app of the test project:
@@ -155,7 +155,7 @@ For more information regarding the concept of ``AppConfig`` please refer
 to the `"Applications" section in the django documentation
 <https://docs.djangoproject.com/en/dev/ref/applications/>`_.
 
-7. Create your custom models
+7. Create your Custom Models
 ----------------------------
 
 For the purpose of showing an example, we added a simple "details" field
@@ -168,7 +168,7 @@ You can add fields in a similar way in your ``models.py`` file.
 refer to the `"Models" section in the django documentation
 <https://docs.djangoproject.com/en/dev/topics/db/models/>`_.
 
-8. Add swapper configurations
+8. Add Swapper Configurations
 -----------------------------
 
 Once you have created the models, add the following to your
@@ -182,7 +182,7 @@ Once you have created the models, add the following to your
 
 Substitute ``myipam`` with the name you chose in step 1.
 
-9. Create database migrations
+9. Create Database Migrations
 -----------------------------
 
 Create and apply database migrations:
@@ -196,7 +196,7 @@ For more information, refer to the `"Migrations" section in the django
 documentation
 <https://docs.djangoproject.com/en/dev/topics/migrations/>`_.
 
-10. Create the admin
+10. Create the Admin
 --------------------
 
 Refer to the `admin.py file of the sample app
@@ -210,7 +210,7 @@ how it can be customized, please refer to `"The django admin site" section
 in the django documentation
 <https://docs.djangoproject.com/en/dev/ref/contrib/admin/>`_.
 
-1. Monkey patching
+1. Monkey Patching
 ~~~~~~~~~~~~~~~~~~
 
 If the changes you need to add are relatively small, you can resort to
@@ -224,7 +224,7 @@ For example:
 
     SubnetAdmin.app_label = "sample_ipam"
 
-2. Inheriting admin classes
+2. Inheriting Admin Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need to introduce significant changes and/or you don't want to
@@ -259,7 +259,7 @@ resort to monkey patching, you can proceed as follows:
 
 Substitute ``myipam`` with the name you chose in step 1.
 
-11. Create root URL configuration
+11. Create Root URL Configuration
 ---------------------------------
 
 .. code-block:: python
@@ -278,7 +278,7 @@ For more information about URL configuration in django, please refer to
 the `"URL dispatcher" section in the django documentation
 <https://docs.djangoproject.com/en/dev/topics/http/urls/>`_.
 
-12. Import the automated tests
+12. Import the Automated Tests
 ------------------------------
 
 When developing a custom application based on this module, it's a good
@@ -306,7 +306,7 @@ For more information about automated tests in django, please refer to
 `"Testing in Django"
 <https://docs.djangoproject.com/en/dev/topics/testing/>`_.
 
-Other base classes that can be inherited and extended
+Other Base Classes That Can be Inherited and Extended
 -----------------------------------------------------
 
 The following steps are not required and are intended for more advanced
