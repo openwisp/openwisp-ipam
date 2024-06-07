@@ -20,9 +20,16 @@ openwisp-ipam
 .. image:: https://github.com/openwisp/openwisp-ipam/raw/docs/docs/subnet_demo.gif
     :alt: Feature Highlights
 
-Refer to `IPAM: Features
-<https://openwisp.io/docs/__new__/dev/ipam/user/intro.html>` of OpenWISP
-documentation for a complete overview of features.
+For a complete overview of features, refer to the `IPAM: Features
+<https://openwisp.io/docs/__new__/dev/ipam/user/intro.html>`_ section of
+the OpenWISP documentation.
+
+Documentation
+-------------
+
+- `Developer documentation
+  <https://openwisp.io/docs/__new__/dev/ipam/developer/>`_
+- `User documentation <https://openwisp.io/docs/__new__/dev/ipam/>`_
 
 Changelog
 ---------

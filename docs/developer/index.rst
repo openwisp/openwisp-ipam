@@ -12,4 +12,3 @@ Developer Docs Index
 Other useful resources:
 
     - :doc:`../user/rest-api`
-    - :doc:`../user/settings`

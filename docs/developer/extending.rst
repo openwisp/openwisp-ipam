@@ -1,4 +1,4 @@
-Extending openwisp-ipam
+Extending OpenWISP IPAM
 =======================
 
 .. include:: ../partials/developer-docs.rst
