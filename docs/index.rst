@@ -1,6 +1,9 @@
 IPAM
 ====
 
+**Source code**: `github.com/openwisp/openwisp-ipam
+<https://github.com/openwisp/openwisp-ipam>`_.
+
 .. image:: https://github.com/openwisp/openwisp-ipam/raw/docs/docs/subnet_demo.gif
     :target: https://github.com/openwisp/openwisp-ipam/raw/docs/docs/subnet_demo.gif
     :alt: Feature Highlights
