@@ -1,6 +1,10 @@
 REST API
 ========
 
+.. contents:: **Table of contents**:
+    :depth: 1
+    :local:
+
 .. _ipam_live_documentation:
 
 Live Documentation
@@ -35,6 +39,23 @@ When browsing the API via the :ref:`ipam_live_documentation` or the
 :ref:`ipam_browsable_web_interface`, you can also use the session
 authentication by logging in the django admin.
 
+API Throttling
+--------------
+
+To override the default API throttling settings, add the following to your
+``settings.py`` file:
+
+.. code-block:: python
+
+    REST_FRAMEWORK = {
+        "DEFAULT_THROTTLE_RATES": {
+            "ipam": "100/hour",
+        }
+    }
+
+The rate descriptions used in ``DEFAULT_THROTTLE_RATES`` may include
+``second``, ``minute``, ``hour`` or ``day`` as the throttle period.
+
 Pagination
 ----------
 
@@ -57,30 +78,13 @@ Since the detailed explanation is contained in the
 just a list of the available endpoints, for further information please
 open the URL of the endpoint in your browser.
 
-API Throttling
---------------
-
-To override the default API throttling settings, add the following to your
-``settings.py`` file:
-
-.. code-block:: python
-
-    REST_FRAMEWORK = {
-        "DEFAULT_THROTTLE_RATES": {
-            "ipam": "100/hour",
-        }
-    }
-
-The rate descriptions used in ``DEFAULT_THROTTLE_RATES`` may include
-``second``, ``minute``, ``hour`` or ``day`` as the throttle period.
-
 Get Next Available IP
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Fetch the next available IP address under a specific subnet.
 
 GET
-~~~
++++
 
 Returns the next available IP address under a subnet.
 
@@ -89,13 +93,13 @@ Returns the next available IP address under a subnet.
     /api/v1/ipam/subnet/<subnet_id>/get-next-available-ip/
 
 Request IP
-++++++++++
+~~~~~~~~~~
 
 A model method to create and fetch the next available IP address record
 under a subnet.
 
 POST
-~~~~
+++++
 
 Creates a record for next available IP address and returns JSON data of
 that record.
@@ -121,14 +125,14 @@ Response
         "description": "optional description"
     }
 
-IpAddress-Subnet List and Create View
--------------------------------------
+Subnet IP Address List/Create
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 An api endpoint to retrieve or create IP addresses under a specific
 subnet.
 
 GET
-~~~
++++
 
 Returns the list of IP addresses under a particular subnet.
 
@@ -137,7 +141,7 @@ Returns the list of IP addresses under a particular subnet.
     /api/v1/ipam/subnet/<subnet_id>/ip-address/
 
 POST
-~~~~
+++++
 
 Create a new ``IP Address``.
 
@@ -153,13 +157,13 @@ subnet      Subnet UUID
 description Optional description for the IP address
 =========== =======================================
 
-Subnet List/Create View
------------------------
+Subnet List/Create
+~~~~~~~~~~~~~~~~~~
 
 An api endpoint to create or retrieve the list of subnet instances.
 
 GET
-~~~
++++
 
 Returns the list of ``Subnet`` instances.
 
@@ -168,7 +172,7 @@ Returns the list of ``Subnet`` instances.
     /api/v1/ipam/subnet/
 
 POST
-~~~~
+++++
 
 Create a new ``Subnet``.
 
@@ -184,13 +188,13 @@ master_subnet Master Subnet UUID
 description   Optional description for the IP address
 ============= =======================================
 
-Subnet View
------------
+Subnet Detail
+~~~~~~~~~~~~~
 
 An api endpoint for retrieving, updating or deleting a subnet instance.
 
 GET
-~~~
++++
 
 Get details of a ``Subnet`` instance
 
@@ -199,7 +203,7 @@ Get details of a ``Subnet`` instance
     /api/v1/ipam/subnet/<subnet-id>/
 
 DELETE
-~~~~~~
+++++++
 
 Delete a ``Subnet`` instance
 
@@ -208,7 +212,7 @@ Delete a ``Subnet`` instance
     /api/v1/ipam/subnet/<subnet-id>/
 
 PUT
-~~~
++++
 
 Update details of a ``Subnet`` instance.
 
@@ -224,14 +228,14 @@ master_subnet Master Subnet UUID
 description   Optional description for the IP address
 ============= =======================================
 
-IP Address View
----------------
+IP Address Detail
+~~~~~~~~~~~~~~~~~
 
 An api endpoint for retrieving, updating or deleting a IP address
 instance.
 
 GET
-~~~
++++
 
 Get details of an ``IP address`` instance.
 
@@ -240,7 +244,7 @@ Get details of an ``IP address`` instance.
     /api/v1/ipam/ip-address/<ip_address-id>/
 
 DELETE
-~~~~~~
+++++++
 
 Delete an ``IP address`` instance.
 
@@ -249,7 +253,7 @@ Delete an ``IP address`` instance.
     /api/v1/ipam/ip-address/<ip_address-id>/
 
 PUT
-~~~
++++
 
 Update details of an ``IP address`` instance.
 
@@ -265,25 +269,25 @@ subnet      Subnet UUID
 description Optional description for the IP address
 =========== =======================================
 
-Export Subnet View
-------------------
+Export Subnet
+~~~~~~~~~~~~~
 
 View to export subnet data.
 
 POST
-~~~~
+++++
 
 .. code-block:: text
 
     /api/v1/ipam/subnet/<subnet-id>/export/
 
-Import Subnet View
-------------------
+Import Subnet
+~~~~~~~~~~~~~
 
 View to import subnet data.
 
 POST
-~~~~
+++++
 
 .. code-block:: text
 

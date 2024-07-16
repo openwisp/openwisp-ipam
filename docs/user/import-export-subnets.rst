@@ -4,6 +4,10 @@ Exporting and Importing Subnet
 One can easily import and export `Subnet` data and it's Ip Addresses using
 `openwisp-ipam`. This works for both IPv4 and IPv6 types of networks.
 
+.. contents:: **Table of contents**:
+    :depth: 2
+    :local:
+
 Exporting
 ---------
 

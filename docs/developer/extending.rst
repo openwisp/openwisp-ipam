@@ -3,8 +3,7 @@ Extending OpenWISP IPAM
 
 .. include:: ../partials/developer-docs.rst
 
-One of the core values of the OpenWISP project is `Software Reusability
-<http://openwisp.io/docs/general/values.html#software-reusability-means-long-term-sustainability>`_,
+One of the core values of the OpenWISP project is :ref:`Software Reusability <values_software_reusability>`,
 for this reason *openwisp-ipam* provides a set of base classes which can
 be imported, extended and reused to create derivative apps.
 
@@ -29,6 +28,10 @@ have extended *openwisp-users* to *sample_users* app and added a field
     If you plan on using a customized version of this module, we suggest
     to start with it since the beginning, because migrating your data from
     the default module to your extended version may be time consuming.
+
+.. contents:: **Table of Contents**:
+    :depth: 2
+    :local:
 
 1. Initialize your Custom Module
 --------------------------------
