@@ -36,29 +36,27 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install python dependencies
+      - name: Install Dependencies
+        id: deps
         run: |
           pip install -U pip wheel setuptools
           pip install -U -r requirements-test.txt
-
-      - name: Install openwisp-ipam
-        run: |
           pip install -U -e .
           pip install ${{ matrix.django-version }}
-
-      - name: Install jslint
-        run: sudo npm install -g jslint stylelint
+          sudo npm install -g jslint stylelint
 
       - name: QA checks
         run: ./run-qa-checks
 
       - name: Tests
+        if: ${{ !cancelled() && steps.deps.conclusion == 'success' }}
         run: |
           coverage run ./runtests.py --parallel
           SAMPLE_APP=1 coverage run ./runtests.py --parallel
           coverage combine
 
       - name: Upload Coverage
+        if: ${{ success() }}
         run: coveralls --service=github
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
