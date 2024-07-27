@@ -21,8 +21,8 @@ openwisp-ipam
     :alt: Feature Highlights
 
 For a complete overview of features, refer to the `IPAM: Features
-<https://openwisp.io/docs/dev/ipam/user/intro.html>`_ section of
-the OpenWISP documentation.
+<https://openwisp.io/docs/dev/ipam/user/intro.html>`_ section of the
+OpenWISP documentation.
 
 Documentation
 -------------
