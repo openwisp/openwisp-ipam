@@ -7,7 +7,6 @@ from swapper import get_model_name
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('openwisp_ipam', '0002_remove_ipaddress_organization'),
