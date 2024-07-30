@@ -14,7 +14,6 @@ import openwisp_ipam.base.fields
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [

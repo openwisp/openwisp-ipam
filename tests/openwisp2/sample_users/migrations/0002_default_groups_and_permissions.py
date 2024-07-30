@@ -11,7 +11,6 @@ from openwisp_users.migrations import (
 
 
 class Migration(migrations.Migration):
-
     org_model = swapper.get_model_name('openwisp_users', 'organization')
     model_app_label = swapper.split(org_model)[0]
     dependencies = [

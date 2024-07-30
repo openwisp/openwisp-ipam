@@ -15,8 +15,8 @@ Features
 - Added go to in subnet UI
 - Added support for `django-reversion
   <https://github.com/etianen/django-reversion>`_
-- Created default permissions for the default permission groups
-  defined by OpenWISP Users
+- Created default permissions for the default permission groups defined by
+  OpenWISP Users
 - Added menu items
 - Added throttling of API requests
 - Implemented multi-tenancy in REST API
@@ -25,13 +25,13 @@ Changes
 ~~~~~~~
 
 Backward incompatible changes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++++
 
-- Changed API endpoints from ``/api/v1/*`` to ``/api/v1/ipam/*``
-  for consistency with the other openwisp modules
+- Changed API endpoints from ``/api/v1/*`` to ``/api/v1/ipam/*`` for
+  consistency with the other openwisp modules
 
 Dependencies
-^^^^^^^^^^^^
+++++++++++++
 
 - Dropped support for Python 3.6
 - Dropped support for Django 2.2
@@ -40,7 +40,7 @@ Dependencies
 - Bumped django-reversion~=4.0.1
 
 Other changes
-^^^^^^^^^^^^^
++++++++++++++
 
 - Allow shared subnets to have non shared child subnets
 - Switched to new navigation menu
@@ -51,8 +51,8 @@ Bugfixes
 
 - Avoid shipping openwisp-users URLs in openwisp-ipam app
 - Fixed ``IndexError`` exception in REST API
-- Fixed extensibility issues with openwisp-users and added tests
-  for this in the sample app
+- Fixed extensibility issues with openwisp-users and added tests for this
+  in the sample app
 - Fix overlapping shared/non-shared subnet validation
 - Excluded child subnets from overlapping validation
 - Added organization in import/export subnet
@@ -68,8 +68,8 @@ Version 0.2.0 [2020-10-16]
 Features
 ~~~~~~~~
 
-- Added organization in list display, possibility to filter by organization,
-  and other minor improvements
+- Added organization in list display, possibility to filter by
+  organization, and other minor improvements
 - Added OpenAPI documentation (a.k.a. REST swagger) for the REST API
 - Added bearer token authentication to REST API
 
@@ -93,7 +93,8 @@ Bugfixes
 Version 0.1.1 [2020-09-03]
 --------------------------
 
-- Updated dependencies (django 3.1, openwisp-users 0.4.0, openwisp-utils 0.6.0)
+- Updated dependencies (django 3.1, openwisp-users 0.4.0, openwisp-utils
+  0.6.0)
 
 Version 0.1.0 [2020-05-28]
 --------------------------
