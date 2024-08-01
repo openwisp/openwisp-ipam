@@ -1,0 +1,21 @@
+[tool.coverage.run]
+source = ["openwisp_ipam"]
+parallel = true
+concurrency = ["multiprocessing"]
+omit = [
+    "*/tests/*",
+    "openwisp_ipam/__init__.py",
+]
+
+[tool.docstrfmt]
+extend_exclude = ["**/*.py", "README.rst"]
+
+[tool.isort]
+known_third_party = ["django"]
+default_section = "THIRDPARTY"
+line_length = 88
+multi_line_output = 3
+use_parentheses = true
+combine_as_imports = true
+include_trailing_comma = true
+force_grid_wrap = 0
