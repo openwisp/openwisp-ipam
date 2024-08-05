@@ -27,9 +27,9 @@ OpenWISP documentation.
 Documentation
 -------------
 
+- `Usage documentation <https://openwisp.io/docs/dev/ipam/>`_
 - `Developer documentation
   <https://openwisp.io/docs/dev/ipam/developer/>`_
-- `User documentation <https://openwisp.io/docs/dev/ipam/>`_
 
 Changelog
 ---------
