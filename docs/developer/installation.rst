@@ -59,7 +59,7 @@ Alternative Sources
 Pypi
 ~~~~
 
-To install the latest stable version from PyPI:
+To install the latest Pypi:
 
 .. code-block:: shell
 

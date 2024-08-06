@@ -86,7 +86,8 @@ apps, please refer to the `django documentation
 2. Install ``openwisp-ipam``
 ----------------------------
 
-Install (and add to the requirement of your project) openwisp-ipam:
+Install (and add to the requirements of your project) the
+``openwisp-ipam`` python package:
 
 .. code-block::
 

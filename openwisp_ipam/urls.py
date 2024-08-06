@@ -7,7 +7,7 @@ from .api.urls import get_api_urls
 def get_urls(api_views):
     """
     returns:: all the urls of the openwisp-ipam module
-    arguements::
+    arguments::
         api_views: location for getting API views
     """
     return [

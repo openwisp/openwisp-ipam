@@ -4,7 +4,7 @@ from django.urls import path
 def get_api_urls(api_views):
     """
     returns:: all the API urls of the app
-    arguements::
+    arguments::
         api_views: location for getting API views
     """
 
