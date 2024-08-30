@@ -11,4 +11,4 @@ Developer Docs
 
 Other useful resources:
 
-    - :doc:`../user/rest-api`
+- :doc:`../user/rest-api`
