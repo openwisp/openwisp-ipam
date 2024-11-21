@@ -1,10 +1,30 @@
 Changelog
 =========
 
-Version 1.1.0 [unreleased]
+Version 1.1.0 [2024-11-21]
 --------------------------
 
-WIP
+Changes
+~~~~~~~
+
+Dependencies
+++++++++++++
+
+- Bumped ``openwisp-users~=1.1.0``.
+- Bumped ``openwisp-utils[rest]~=1.1.1``.
+- Bumped ``django-reversion~=5.1.0``.
+- Bumped ``openpyxl~=3.1.5``.
+- Added support for Python ``3.10``.
+- Dropped support for Python ``3.7``.
+- Added support for Django ``4.2.x``.
+- Dropped support for Django ``4.0``.
+
+Bug Fixes
+~~~~~~~~~
+
+- Implemented error handling in Subnet admin change view to fix *HTTP 500
+  Internal Server Error* response when attempting to open the change page
+  for a non-existent subnet.
 
 Version 1.0.0 [2022-04-28]
 --------------------------
