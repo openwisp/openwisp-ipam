@@ -16,13 +16,21 @@ Install sqlite:
 
     sudo apt-get install sqlite3 libsqlite3-dev openssl libssl-dev
 
-Install your forked repo:
+Create and activate virtual environment in your forked repo:
 
 .. code-block:: shell
 
     git clone git://github.com/<your_fork>/openwisp-ipam
     cd openwisp-ipam/
+    virtualenv venv
+    source venv/bin/activate
+
+Install your forked repo:
+
+.. code-block:: shell
+
     pip install -e .
+    
 
 Install test requirements:
 
