@@ -1,6 +1,6 @@
 import csv
 from io import StringIO
-from ipaddress import IPv4Network, IPv6Network
+from ipaddress import IPv4Network, IPv6Network, ip_network
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -336,15 +336,27 @@ class TestModels(CreateModelsMixin, TestCase):
         self.assertIsInstance(instance.subnet, IPv6Network)
 
     def test_incompatible_ipadresses(self):
-        instance = self._create_subnet(subnet='10.1.2.0/24')
-        try:
-            self._create_subnet(subnet='2001:db8::0/32', master_subnet=instance)
-        except TypeError as err:
-            self.assertEqual(
-                str(err), '2001:db8::/32 and 10.1.2.0/24 are not of the same version'
+        org = self._create_org(name='org', slug='org')
+        master = self._create_subnet(
+            name='IPv6', organization=org, subnet='2001:db8:85a3::64/128'
+        )
+        subnet_ip = '192.166.45.0/24'
+        with self.assertRaises(ValidationError) as context_manager:
+            self._create_subnet(
+                name='IPv4',
+                organization=org,
+                subnet=subnet_ip,
+                master_subnet=master,
             )
-        else:
-            self.fail('TypeError not raised')
+        message_dict = context_manager.exception.message_dict
+        master_version = ip_network(master.subnet).version
+        subnet_version = ip_network(subnet_ip).version
+        error_message = (
+            f'IP version mismatch: Subnet {subnet_ip} is IPv{subnet_version}, '
+            f'but Master Subnet {master.subnet} is IPv{master_version}.'
+        )
+        self.assertIn('master_subnet', message_dict)
+        self.assertIn(error_message, message_dict['master_subnet'])
 
     def test_ipadresses_missing_attribute(self):
         instance = self._create_subnet(subnet='10.1.2.0/24')

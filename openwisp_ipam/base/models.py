@@ -136,6 +136,18 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     def _validate_master_subnet_consistency(self):
         if not self.master_subnet:
             return
+        subnet_version = ip_network(self.subnet).version
+        master_subnet_version = ip_network(self.master_subnet.subnet).version
+        if subnet_version != master_subnet_version:
+            raise ValidationError(
+                {
+                    'master_subnet': _(
+                        f'IP version mismatch: Subnet {self.subnet} is IPv'
+                        f'{subnet_version}, but Master Subnet '
+                        f'{self.master_subnet.subnet} is IPv{master_subnet_version}.'
+                    )
+                }
+            )
         if not ip_network(self.subnet).subnet_of(ip_network(self.master_subnet.subnet)):
             raise ValidationError({'master_subnet': _('Invalid master subnet.')})
 
