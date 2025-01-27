@@ -46,7 +46,7 @@ jobs:
           pip install -U -r requirements-test.txt
           pip install -U -e .
           pip install ${{ matrix.django-version }}
-          sudo npm install -g jslint stylelint
+          sudo npm install -g prettier
 
       - name: QA checks
         run: ./run-qa-checks

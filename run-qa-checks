@@ -3,19 +3,14 @@
 set -e
 
 echo ''
-echo 'Check JavaScript Linting'
-jslint ./openwisp_ipam/static/openwisp-ipam/js/*.js
-
-echo ''
-echo 'Check CSS Linting'
-stylelint ./openwisp_ipam/static/openwisp-ipam/css/*.css
-
-echo ''
 echo 'Running checks for openwisp_ipam'
 
 openwisp-qa-check \
           --migration-path ./openwisp_ipam/migrations/ \
-          --migration-module openwisp_ipam
+          --migration-module openwisp_ipam \
+          --csslinter \
+          --jslinter \
+          
 
 echo ''
 echo 'Running checks for SAMPLE_APP'
