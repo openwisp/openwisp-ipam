@@ -7,7 +7,10 @@ echo 'Running checks for openwisp_ipam'
 
 openwisp-qa-check \
           --migration-path ./openwisp_ipam/migrations/ \
-          --migration-module openwisp_ipam
+          --migration-module openwisp_ipam \
+          --csslinter \
+          --jslinter \
+          
 
 echo ''
 echo 'Running checks for SAMPLE_APP'
