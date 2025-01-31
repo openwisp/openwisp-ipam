@@ -1,6 +1,17 @@
 Changelog
 =========
 
+Version 1.1.1 [2025-01-31]
+--------------------------
+
+Bugfixes
+~~~~~~~~
+
+- Fixed validation to ensure that subnets and master subnets are of the
+  same IP version.
+- Improved the developer installation documentation with detailed steps
+  for setting up a virtual environment.
+
 Version 1.1.0 [2024-11-21]
 --------------------------
 
