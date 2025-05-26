@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     args = sys.argv
     args.insert(1, "test")
-    if not os.environ.get('SAMPLE_APP', False):
+    if not os.environ.get("SAMPLE_APP", False):
         args.insert(2, "openwisp_ipam")
     else:
         args.insert(2, "openwisp2")

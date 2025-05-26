@@ -18,19 +18,19 @@ def create_default_permissions(apps, schema_editor):
 
 def assign_permissions_to_groups(apps, schema_editor):
     create_default_permissions(apps, schema_editor)
-    admins_can_manage = ['subnet', 'ipaddress']
-    operators_can_manage = ['ipaddress']
-    manage_operations = ['add', 'change', 'delete', 'view']
-    Group = get_swapped_model(apps, 'openwisp_users', 'Group')
+    admins_can_manage = ["subnet", "ipaddress"]
+    operators_can_manage = ["ipaddress"]
+    manage_operations = ["add", "change", "delete", "view"]
+    Group = get_swapped_model(apps, "openwisp_users", "Group")
 
-    admin = Group.objects.get(name='Administrator')
-    operator = Group.objects.get(name='Operator')
+    admin = Group.objects.get(name="Administrator")
+    operator = Group.objects.get(name="Operator")
 
     # Administrator - Can managae both ipaddress and subnet
     for model_name in admins_can_manage:
         for operation in manage_operations:
             permission = Permission.objects.get(
-                codename='{}_{}'.format(operation, model_name)
+                codename="{}_{}".format(operation, model_name)
             )
             admin.permissions.add(permission.pk)
 
@@ -39,12 +39,12 @@ def assign_permissions_to_groups(apps, schema_editor):
         for operation in manage_operations:
             operator.permissions.add(
                 Permission.objects.get(
-                    codename='{}_{}'.format(operation, model_name)
+                    codename="{}_{}".format(operation, model_name)
                 ).pk
             )
 
     try:
-        permission = Permission.objects.get(codename='view_subnet')
+        permission = Permission.objects.get(codename="view_subnet")
         operator.permissions.add(permission.pk)
     except Permission.DoesNotExist:
         pass

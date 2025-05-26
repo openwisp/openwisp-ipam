@@ -9,23 +9,23 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('sample_ipam', '0002_remove_ipaddress_organization'),
+        ("sample_ipam", "0002_remove_ipaddress_organization"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='subnet',
-            name='organization',
+            model_name="subnet",
+            name="organization",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to=swapper.get_model_name('openwisp_users', 'Organization'),
-                verbose_name='organization',
+                to=swapper.get_model_name("openwisp_users", "Organization"),
+                verbose_name="organization",
             ),
         ),
         migrations.AlterUniqueTogether(
-            name='subnet',
-            unique_together={('subnet', 'organization')},
+            name="subnet",
+            unique_together={("subnet", "organization")},
         ),
     ]

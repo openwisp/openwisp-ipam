@@ -5,7 +5,7 @@ from rest_framework.exceptions import APIException, PermissionDenied
 
 from openwisp_ipam.base.models import CsvImportException
 
-Organization = swapper.load_model('openwisp_users', 'Organization')
+Organization = swapper.load_model("openwisp_users", "Organization")
 
 
 class CsvImportAPIException(APIException):
@@ -25,9 +25,9 @@ class AuthorizeCSVImport:
         except CsvImportException as e:
             raise CsvImportAPIException(str(e))
         except IndexError:
-            raise CsvImportAPIException(_('Invalid data format'))
+            raise CsvImportAPIException(_("Invalid data format"))
         raise PermissionDenied(
-            _('You do not have permission to import data into this organization')
+            _("You do not have permission to import data into this organization")
         )
 
     def get_csv_organization(self):

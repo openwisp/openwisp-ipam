@@ -33,30 +33,30 @@ from .serializers import (
 )
 from .utils import AuthorizeCSVOrgManaged
 
-IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
-Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
-Organization = swapper.load_model('openwisp_users', 'Organization')
+IpAddress = swapper.load_model("openwisp_ipam", "IpAddress")
+Subnet = swapper.load_model("openwisp_ipam", "Subnet")
+Organization = swapper.load_model("openwisp_users", "Organization")
 
 
 class IpAddressOrgMixin(FilterByParentManaged):
     def get_parent_queryset(self):
-        qs = Subnet.objects.filter(pk=self.kwargs['subnet_id'])
+        qs = Subnet.objects.filter(pk=self.kwargs["subnet_id"])
         return qs
 
 
 class ProtectedAPIMixin(BaseProtectedAPIMixin):
-    throttle_scope = 'ipam'
+    throttle_scope = "ipam"
 
 
 class ListViewPagination(pagination.PageNumberPagination):
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
 
 
 class HostsListPagination(pagination.BasePagination):
     limit = 256
-    start_query_param = 'start'
+    start_query_param = "start"
 
     def paginate_queryset(self, queryset, request, view=None):
         self.count = queryset.count()
@@ -69,9 +69,9 @@ class HostsListPagination(pagination.BasePagination):
         return Response(
             OrderedDict(
                 [
-                    ('next', self.get_next_link()),
-                    ('previous', self.get_previous_link()),
-                    ('results', data),
+                    ("next", self.get_next_link()),
+                    ("previous", self.get_previous_link()),
+                    ("results", data),
                 ]
             )
         )
@@ -160,7 +160,7 @@ class HostsSet:
     def index_of(self, address):
         index = int(self.subnet.subnet._address_class(address)) - self.network - 1
         if index < 0 or index >= self.count():  # pragma: no cover
-            raise serializers.ValidationError({'detail': _('Invalid Address')})
+            raise serializers.ValidationError({"detail": _("Invalid Address")})
         return index
 
 
@@ -170,7 +170,7 @@ class AvailableIpView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
     serializer_class = serializers.Serializer
 
     def get(self, request, *args, **kwargs):
-        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
+        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs["subnet_id"])
         return Response(subnet.get_next_available_ip())
 
 
@@ -181,9 +181,9 @@ class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAP
     pagination_class = ListViewPagination
 
     def get_queryset(self):
-        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
+        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs["subnet_id"])
         super().get_queryset()
-        return subnet.ipaddress_set.all().order_by('ip_address')
+        return subnet.ipaddress_set.all().order_by("ip_address")
 
 
 class SubnetListCreateView(
@@ -191,7 +191,7 @@ class SubnetListCreateView(
 ):
     serializer_class = SubnetSerializer
     pagination_class = ListViewPagination
-    queryset = Subnet.objects.all().order_by('subnet')
+    queryset = Subnet.objects.all().order_by("subnet")
 
 
 class SubnetView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
@@ -202,7 +202,7 @@ class SubnetView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
 class IpAddressView(ProtectedAPIMixin, RetrieveUpdateDestroyAPIView):
     serializer_class = IpAddressSerializer
     queryset = IpAddress.objects.all()
-    organization_field = 'subnet__organization'
+    organization_field = "subnet__organization"
 
 
 class RequestIPView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
@@ -211,12 +211,12 @@ class RequestIPView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
     serializer_class = IpRequestSerializer
 
     def post(self, request, *args, **kwargs):
-        options = {'description': request.data.get('description')}
-        subnet = get_object_or_404(self.subnet_model, pk=kwargs['subnet_id'])
+        options = {"description": request.data.get("description")}
+        subnet = get_object_or_404(self.subnet_model, pk=kwargs["subnet_id"])
         ip_address = subnet.request_ip(options)
         if ip_address:
             serializer = IpAddressSerializer(
-                ip_address, context={'request': self.request}
+                ip_address, context={"request": self.request}
             )
             headers = self.get_success_headers(serializer.data)
             return Response(
@@ -232,20 +232,20 @@ class ImportSubnetView(ProtectedAPIMixin, CreateAPIView, AuthorizeCSVOrgManaged)
 
     def get_csv_organization(self, request):
         data = self.subnet_model._get_csv_reader(
-            self, deepcopy(request.FILES['csvfile'])
+            self, deepcopy(request.FILES["csvfile"])
         )
         return self.subnet_model._get_org(self, org_slug=list(data)[2][0].strip())
 
     def post(self, request, *args, **kwargs):
         self.assert_organization_permissions(request)
-        file = request.FILES['csvfile']
-        if not file.name.endswith(('.csv', '.xls', '.xlsx')):
-            return Response({'error': _('File type not supported.')}, status=400)
+        file = request.FILES["csvfile"]
+        if not file.name.endswith((".csv", ".xls", ".xlsx")):
+            return Response({"error": _("File type not supported.")}, status=400)
         try:
             self.subnet_model().import_csv(file)
         except CsvImportException as e:
-            return Response({'error': _(str(e))}, status=400)
-        return Response({'detail': _('Data imported successfully.')})
+            return Response({"error": _(str(e))}, status=400)
+        return Response({"detail": _("Data imported successfully.")})
 
 
 class ExportSubnetView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
@@ -254,10 +254,10 @@ class ExportSubnetView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
     serializer_class = serializers.Serializer
 
     def post(self, request, *args, **kwargs):
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="ip_address.csv"'
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="ip_address.csv"'
         writer = csv.writer(response)
-        self.subnet_model().export_csv(kwargs['subnet_id'], writer)
+        self.subnet_model().export_csv(kwargs["subnet_id"], writer)
         return response
 
 
@@ -269,7 +269,7 @@ class SubnetHostsView(IpAddressOrgMixin, ProtectedAPIMixin, ListAPIView):
 
     def get_queryset(self):
         super().get_queryset()
-        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs['subnet_id'])
+        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs["subnet_id"])
         qs = HostsSet(subnet)
         return qs
 

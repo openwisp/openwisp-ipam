@@ -5,12 +5,12 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('openwisp_ipam', '0001_initial'),
+        ("openwisp_ipam", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='ipaddress',
-            name='organization',
+            model_name="ipaddress",
+            name="organization",
         ),
     ]

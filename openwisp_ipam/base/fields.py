@@ -8,7 +8,7 @@ from django.db import models
 class IpNetworkFormField(forms.Field):
     widget = forms.TextInput
     default_error_messages = {
-        'invalid': 'Enter a valid CIDR address.',
+        "invalid": "Enter a valid CIDR address.",
     }
 
     def __init__(self, *args, **kwargs):
@@ -27,20 +27,20 @@ class IpNetworkFormField(forms.Field):
         try:
             network = ip_network(value, strict=False)
         except ValueError:
-            raise ValidationError(self.default_error_messages['invalid'])
+            raise ValidationError(self.default_error_messages["invalid"])
         return network
 
 
 class NetworkField(models.Field):
     empty_strings_allowed = False
-    description = 'CIDR type network field'
+    description = "CIDR type network field"
 
     def __init__(self, *args, **kwargs):
-        kwargs['max_length'] = 43
+        kwargs["max_length"] = 43
         super().__init__(*args, **kwargs)
 
     def db_type(self, connection):
-        return 'cidr'
+        return "cidr"
 
     def from_db_value(self, value, expression, connection):
         return self.to_python(value)
@@ -59,12 +59,12 @@ class NetworkField(models.Field):
         return str(self.to_python(value))
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': IpNetworkFormField}
+        defaults = {"form_class": IpNetworkFormField}
         defaults.update(kwargs)
         return super().formfield(**defaults)
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
         if self.max_length is not None:
-            kwargs['max_length'] = self.max_length
+            kwargs["max_length"] = self.max_length
         return name, path, args, kwargs

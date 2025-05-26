@@ -9,19 +9,19 @@ from swapper import get_model_name
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('openwisp_ipam', '0002_remove_ipaddress_organization'),
+        ("openwisp_ipam", "0002_remove_ipaddress_organization"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='subnet',
-            name='organization',
+            model_name="subnet",
+            name="organization",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to=get_model_name('openwisp_users', 'Organization'),
-                verbose_name='organization',
+                to=get_model_name("openwisp_users", "Organization"),
+                verbose_name="organization",
             ),
         ),
     ]

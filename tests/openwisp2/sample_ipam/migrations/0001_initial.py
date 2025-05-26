@@ -22,10 +22,10 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Subnet',
+            name="Subnet",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.UUIDField(
                         default=uuid.uuid4,
                         editable=False,
@@ -34,24 +34,24 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     model_utils.fields.AutoCreatedField(
                         default=django.utils.timezone.now,
                         editable=False,
-                        verbose_name='created',
+                        verbose_name="created",
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     model_utils.fields.AutoLastModifiedField(
                         default=django.utils.timezone.now,
                         editable=False,
-                        verbose_name='modified',
+                        verbose_name="modified",
                     ),
                 ),
-                ('name', models.CharField(db_index=True, max_length=100)),
+                ("name", models.CharField(db_index=True, max_length=100)),
                 (
-                    'subnet',
+                    "subnet",
                     openwisp_ipam.base.fields.NetworkField(
                         db_index=True,
                         help_text=(
@@ -61,35 +61,35 @@ class Migration(migrations.Migration):
                         max_length=43,
                     ),
                 ),
-                ('description', models.CharField(blank=True, max_length=100)),
-                ('details', models.CharField(blank=True, max_length=64, null=True)),
+                ("description", models.CharField(blank=True, max_length=100)),
+                ("details", models.CharField(blank=True, max_length=64, null=True)),
                 (
-                    'master_subnet',
+                    "master_subnet",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='child_subnet_set',
-                        to=swapper.get_model_name('openwisp_ipam', 'Subnet'),
+                        related_name="child_subnet_set",
+                        to=swapper.get_model_name("openwisp_ipam", "Subnet"),
                     ),
                 ),
                 (
-                    'organization',
+                    "organization",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to=swapper.get_model_name('openwisp_users', 'Organization'),
-                        verbose_name='organization',
+                        to=swapper.get_model_name("openwisp_users", "Organization"),
+                        verbose_name="organization",
                     ),
                 ),
             ],
-            options={'abstract': False},
+            options={"abstract": False},
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
         migrations.CreateModel(
-            name='IpAddress',
+            name="IpAddress",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.UUIDField(
                         default=uuid.uuid4,
                         editable=False,
@@ -98,49 +98,49 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     model_utils.fields.AutoCreatedField(
                         default=django.utils.timezone.now,
                         editable=False,
-                        verbose_name='created',
+                        verbose_name="created",
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     model_utils.fields.AutoLastModifiedField(
                         default=django.utils.timezone.now,
                         editable=False,
-                        verbose_name='modified',
+                        verbose_name="modified",
                     ),
                 ),
-                ('ip_address', models.GenericIPAddressField()),
-                ('description', models.CharField(blank=True, max_length=100)),
-                ('details', models.CharField(blank=True, max_length=64, null=True)),
+                ("ip_address", models.GenericIPAddressField()),
+                ("description", models.CharField(blank=True, max_length=100)),
+                ("details", models.CharField(blank=True, max_length=64, null=True)),
                 (
-                    'organization',
+                    "organization",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to=swapper.get_model_name('openwisp_users', 'Organization'),
-                        verbose_name='organization',
+                        to=swapper.get_model_name("openwisp_users", "Organization"),
+                        verbose_name="organization",
                     ),
                 ),
                 (
-                    'subnet',
+                    "subnet",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        to=swapper.get_model_name('openwisp_ipam', 'Subnet'),
+                        to=swapper.get_model_name("openwisp_ipam", "Subnet"),
                     ),
                 ),
             ],
             options={
-                'abstract': False,
-                'verbose_name': 'IP address',
-                'verbose_name_plural': 'IP addresses',
+                "abstract": False,
+                "verbose_name": "IP address",
+                "verbose_name_plural": "IP addresses",
             },
             bases=(openwisp_users.mixins.ValidateOrgMixin, models.Model),
         ),
         migrations.AddIndex(
-            model_name='subnet',
-            index=models.Index(fields=['subnet'], name='subnet_idx'),
+            model_name="subnet",
+            index=models.Index(fields=["subnet"], name="subnet_idx"),
         ),
     ]

@@ -5,9 +5,9 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('sample_ipam', '0001_initial'),
+        ("sample_ipam", "0001_initial"),
     ]
 
     operations = [
-        migrations.RemoveField(model_name='ipaddress', name='organization'),
+        migrations.RemoveField(model_name="ipaddress", name="organization"),
     ]

@@ -9,7 +9,7 @@ from openwisp_ipam.tests.test_multitenant import (
 
 
 class TestAdmin(BaseTestAdmin):
-    app_label = 'sample_ipam'
+    app_label = "sample_ipam"
 
 
 class TestApi(BaseTestApi):
@@ -29,7 +29,7 @@ class TestModels(BaseTestModels):
 
 
 class TestMultitenantAdmin(BaseTestMultitenantAdmin):
-    app_label = 'sample_ipam'
+    app_label = "sample_ipam"
 
 
 # this is necessary to avoid excuting the base test suites

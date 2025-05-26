@@ -7,12 +7,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('openwisp_ipam', '0003_shareable_subnets'),
+        ("openwisp_ipam", "0003_shareable_subnets"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='subnet',
-            unique_together={('subnet', 'organization')},
+            name="subnet",
+            unique_together={("subnet", "organization")},
         ),
     ]

@@ -17,8 +17,8 @@ from openwisp_ipam.api.views import (
     SubnetView as BaseSubnetView,
 )
 
-IpAddress = swapper.load_model('openwisp_ipam', 'IpAddress')
-Subnet = swapper.load_model('openwisp_ipam', 'Subnet')
+IpAddress = swapper.load_model("openwisp_ipam", "IpAddress")
+Subnet = swapper.load_model("openwisp_ipam", "Subnet")
 
 
 class AvailableIpView(BaseAvailableIpView):

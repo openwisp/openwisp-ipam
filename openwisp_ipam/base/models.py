@@ -30,20 +30,20 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     )
     description = models.CharField(max_length=100, blank=True)
     master_subnet = models.ForeignKey(
-        'self',
+        "self",
         on_delete=models.CASCADE,
         blank=True,
         null=True,
-        related_name='child_subnet_set',
+        related_name="child_subnet_set",
     )
 
     class Meta:
         abstract = True
-        indexes = [models.Index(fields=['subnet'], name='subnet_idx')]
-        unique_together = ('subnet', 'organization')
+        indexes = [models.Index(fields=["subnet"], name="subnet_idx")]
+        unique_together = ("subnet", "organization")
 
     def __str__(self):
-        return f'{self.name} {self.subnet}'
+        return f"{self.name} {self.subnet}"
 
     def clean(self):
         if not self.subnet:
@@ -60,9 +60,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         if qs.filter(organization=None).exists():
             raise ValidationError(
                 {
-                    'subnet': _(
-                        'This subnet is already assigned for '
-                        'internal usage in the system.'
+                    "subnet": _(
+                        "This subnet is already assigned for "
+                        "internal usage in the system."
                     )
                 }
             )
@@ -71,8 +71,8 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         if not self.organization and qs.filter(organization__isnull=False).exists():
             raise ValidationError(
                 {
-                    'subnet': _(
-                        'This subnet is already assigned to another organization.'
+                    "subnet": _(
+                        "This subnet is already assigned to another organization."
                     )
                 }
             )
@@ -81,7 +81,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         if not self.master_subnet:
             return
         if self.master_subnet.organization:
-            self._validate_org_relation('master_subnet', field_error='master_subnet')
+            self._validate_org_relation("master_subnet", field_error="master_subnet")
 
     def _validate_multitenant_unique_child_subnet(self):
         if self.master_subnet is None or self.master_subnet.organization_id is not None:
@@ -90,8 +90,8 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         if qs.exists():
             raise ValidationError(
                 {
-                    'subnet': _(
-                        'This subnet is already assigned to another organization.'
+                    "subnet": _(
+                        "This subnet is already assigned to another organization."
                     )
                 }
             )
@@ -100,7 +100,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         organization_query = Q(organization_id=self.organization_id) | Q(
             organization_id__isnull=True
         )
-        error_message = _('Subnet overlaps with {0}.')
+        error_message = _("Subnet overlaps with {0}.")
         if (
             self.master_subnet and self.master_subnet.organization_id is None
         ) or self.organization is None:
@@ -109,9 +109,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             # same. Otherwise, self._validate_multitenant_master_subnet
             # would have raised a validation error
             organization_query = Q()
-            error_message = _('Subnet overlaps with a subnet of another organization.')
+            error_message = _("Subnet overlaps with a subnet of another organization.")
 
-        qs = self._meta.model.objects.filter(organization_query).only('subnet')
+        qs = self._meta.model.objects.filter(organization_query).only("subnet")
         # exclude parent subnets
         exclude = [self.pk]
         parent_subnet = self.master_subnet
@@ -119,19 +119,19 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             exclude.append(parent_subnet.pk)
             parent_subnet = parent_subnet.master_subnet
         # exclude child subnets
-        child_subnets = list(self.child_subnet_set.values_list('pk', flat=True))
+        child_subnets = list(self.child_subnet_set.values_list("pk", flat=True))
         while child_subnets:
             exclude += child_subnets
             child_subnets = list(
                 self._meta.model.objects.filter(
                     master_subnet__in=child_subnets
-                ).values_list('pk', flat=True)
+                ).values_list("pk", flat=True)
             )
         # exclude also identical subnets (handled by other checks)
         qs = qs.exclude(pk__in=exclude).exclude(subnet=self.subnet)
         for subnet in qs.iterator():
             if ip_network(self.subnet).overlaps(subnet.subnet):
-                raise ValidationError({'subnet': error_message.format(subnet.subnet)})
+                raise ValidationError({"subnet": error_message.format(subnet.subnet)})
 
     def _validate_master_subnet_consistency(self):
         if not self.master_subnet:
@@ -141,15 +141,15 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         if subnet_version != master_subnet_version:
             raise ValidationError(
                 {
-                    'master_subnet': _(
-                        f'IP version mismatch: Subnet {self.subnet} is IPv'
-                        f'{subnet_version}, but Master Subnet '
-                        f'{self.master_subnet.subnet} is IPv{master_subnet_version}.'
+                    "master_subnet": _(
+                        f"IP version mismatch: Subnet {self.subnet} is IPv"
+                        f"{subnet_version}, but Master Subnet "
+                        f"{self.master_subnet.subnet} is IPv{master_subnet_version}."
                     )
                 }
             )
         if not ip_network(self.subnet).subnet_of(ip_network(self.master_subnet.subnet)):
-            raise ValidationError({'master_subnet': _('Invalid master subnet.')})
+            raise ValidationError({"master_subnet": _("Invalid master subnet.")})
 
     def get_next_available_ip(self):
         ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
@@ -165,7 +165,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         ip = self.get_next_available_ip()
         if not ip:
             return None
-        ip_address = load_model('openwisp_ipam', 'IpAddress')(
+        ip_address = load_model("openwisp_ipam", "IpAddress")(
             ip_address=ip, subnet=self, **options
         )
         ip_address.full_clean()
@@ -179,7 +179,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         return None
 
     def _read_subnet_data(self, reader):
-        subnet_model = load_model('openwisp_ipam', 'Subnet')
+        subnet_model = load_model("openwisp_ipam", "Subnet")
         subnet_name = self._read_row(reader)
         subnet_value = self._read_row(reader)
         org_slug = self._read_row(reader)
@@ -202,10 +202,10 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         return subnet
 
     def _read_ipaddress_data(self, reader, subnet):
-        ipaddress_model = load_model('openwisp_ipam', 'IpAddress')
+        ipaddress_model = load_model("openwisp_ipam", "IpAddress")
         ipaddress_list = []
         for row in reader:
-            description = str(row[1] or '').strip()
+            description = str(row[1] or "").strip()
             if not ipaddress_model.objects.filter(
                 subnet=subnet,
                 ip_address=row[0].strip(),
@@ -224,12 +224,12 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             ip.save()
 
     def _get_csv_reader(self, file):
-        if file.name.endswith(('.xlsx')):
+        if file.name.endswith((".xlsx")):
             book = openpyxl.load_workbook(filename=file)
             sheet = book.worksheets[0]
             reader = sheet.values
         else:
-            reader = csv.reader(StringIO(file.read().decode('utf-8')), delimiter=',')
+            reader = csv.reader(StringIO(file.read().decode("utf-8")), delimiter=",")
         return reader
 
     def import_csv(self, file):
@@ -240,15 +240,15 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         self._read_ipaddress_data(reader, subnet)
 
     def export_csv(self, subnet_id, writer):
-        ipaddress_model = load_model('openwisp_ipam', 'IpAddress')
-        subnet = load_model('openwisp_ipam', 'Subnet').objects.get(pk=subnet_id)
+        ipaddress_model = load_model("openwisp_ipam", "IpAddress")
+        subnet = load_model("openwisp_ipam", "Subnet").objects.get(pk=subnet_id)
         writer.writerow([subnet.name])
         writer.writerow([subnet.subnet])
-        writer.writerow([subnet.organization.slug] if subnet.organization else '')
-        writer.writerow('')
+        writer.writerow([subnet.organization.slug] if subnet.organization else "")
+        writer.writerow("")
         fields = [
-            ipaddress_model._meta.get_field('ip_address'),
-            ipaddress_model._meta.get_field('description'),
+            ipaddress_model._meta.get_field("ip_address"),
+            ipaddress_model._meta.get_field("description"),
         ]
         writer.writerow(field.name for field in fields)
         for obj in subnet.ipaddress_set.all():
@@ -258,8 +258,8 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             writer.writerow(row)
 
     def _get_org(self, org_slug):
-        Organization = load_model('openwisp_users', 'Organization')
-        if org_slug in [None, '']:
+        Organization = load_model("openwisp_users", "Organization")
+        if org_slug in [None, ""]:
             return None
         try:
             validate_slug(org_slug)
@@ -268,25 +268,25 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             raise CsvImportException(str(e))
         except Organization.DoesNotExist:
             raise CsvImportException(
-                'The import operation failed because the data being imported '
-                f'belongs to an organization which is not recognized: “{org_slug}”. '
-                'Please create this organization or adapt the CSV file being imported '
-                'by pointing the data to another organization.'
+                "The import operation failed because the data being imported "
+                f"belongs to an organization which is not recognized: “{org_slug}”. "
+                "Please create this organization or adapt the CSV file being imported "
+                "by pointing the data to another organization."
             )
         return instance
 
 
 class AbstractIpAddress(TimeStampedEditableModel):
     subnet = models.ForeignKey(
-        get_model_name('openwisp_ipam', 'Subnet'), on_delete=models.CASCADE
+        get_model_name("openwisp_ipam", "Subnet"), on_delete=models.CASCADE
     )
     ip_address = models.GenericIPAddressField()
     description = models.CharField(max_length=100, blank=True)
 
     class Meta:
         abstract = True
-        verbose_name = _('IP address')
-        verbose_name_plural = _('IP addresses')
+        verbose_name = _("IP address")
+        verbose_name_plural = _("IP addresses")
 
     def __str__(self):
         return self.ip_address
@@ -296,14 +296,14 @@ class AbstractIpAddress(TimeStampedEditableModel):
             return
         if ip_address(self.ip_address) not in self.subnet.subnet:
             raise ValidationError(
-                {'ip_address': _('IP address does not belong to the subnet')}
+                {"ip_address": _("IP address does not belong to the subnet")}
             )
         addresses = (
-            load_model('openwisp_ipam', 'IpAddress')
+            load_model("openwisp_ipam", "IpAddress")
             .objects.filter(subnet=self.subnet_id)
             .exclude(pk=self.pk)
             .values()
         )
         for ip in addresses:
-            if ip_address(self.ip_address) == ip_address(ip['ip_address']):
-                raise ValidationError({'ip_address': _('IP address already used.')})
+            if ip_address(self.ip_address) == ip_address(ip["ip_address"]):
+                raise ValidationError({"ip_address": _("IP address already used.")})
