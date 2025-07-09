@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      
+
       # Caches downloaded .deb packages to speed up future installations
       - name: Cache APT packages
         uses: actions/cache@v4
@@ -51,7 +51,7 @@ jobs:
           restore-keys: |
             apt-${{ runner.os }}-
 
-      # Disables man-db auto-update to prevent delays during package installation  
+      # Disables man-db auto-update to prevent delays during package installation
       - name: Disable man page auto-update
         run: |
           echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null
@@ -71,6 +71,7 @@ jobs:
           pip install -U pip wheel setuptools
           pip install -U -r requirements-test.txt
           pip install -U -e .
+          pip install -UI "openwisp-users @ https://github.com/openwisp/openwisp-users/tarball/issues/238-view-shared-objects" "cryptography~=43.0.3"
           pip install ${{ matrix.django-version }}
           sudo npm install -g prettier
 
