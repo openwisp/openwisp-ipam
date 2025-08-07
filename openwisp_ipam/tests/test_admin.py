@@ -1,5 +1,6 @@
 import json
 
+import django
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -509,7 +510,6 @@ class TestAdmin(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, Tes
             },
             model=IpAddress,
             error_message=(
-                '<ul class="errorlist" id="id_ip_address_error">'
-                "<li>This field is required.</li></ul>"
-            ),
+                '<ul class="errorlist"{}><li>This field is required.</li></ul>'
+            ).format(' id="id_ip_address_error"' if django.VERSION >= (5, 2) else ""),
         )
