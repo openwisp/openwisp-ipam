@@ -11,9 +11,7 @@ function dismissAddAnotherPopup(win, ip_address) {
   win.close();
   var id = normalizeIP(ip_address);
   var host = django.jQuery("#addr_" + id);
-  host.replaceWith(
-    '<a class="used" id="addr_' + id + '">' + ip_address + "</a>",
-  );
+  host.replaceWith('<a class="used" id="addr_' + id + '">' + ip_address + "</a>");
 }
 
 django.jQuery(function ($) {
@@ -100,8 +98,7 @@ function initHostsInfiniteScroll(
     }
     $.ajax({
       type: "GET",
-      url:
-        "/api/v1/ipam/subnet/" + current_subnet + "/hosts/?start=" + ip_address,
+      url: "/api/v1/ipam/subnet/" + current_subnet + "/hosts/?start=" + ip_address,
       success: function (res) {
         callback(res.results[0].address === ip_address);
       },
@@ -119,10 +116,7 @@ function initHostsInfiniteScroll(
         if (input !== searchQuery) {
           searchQuery = input;
           nextPageUrl =
-            "/api/v1/ipam/subnet/" +
-            current_subnet +
-            "/hosts/?start=" +
-            searchQuery;
+            "/api/v1/ipam/subnet/" + current_subnet + "/hosts/?start=" + searchQuery;
           $("#subnet-visual").empty();
           fetchedPages = [];
           lastRenderedPage = 0;
@@ -176,9 +170,7 @@ function initHostsInfiniteScroll(
     busy = true;
     if (lastRenderedPage > renderedPages) {
       $("#subnet-visual div:last").remove();
-      var addedDiv = pageContainer(
-        fetchedPages[lastRenderedPage - renderedPages - 1],
-      );
+      var addedDiv = pageContainer(fetchedPages[lastRenderedPage - renderedPages - 1]);
       $("#subnet-visual").prepend(addedDiv);
       $("#subnet-visual").scrollTop(
         $("#subnet-visual").scrollTop() + addedDiv.height(),

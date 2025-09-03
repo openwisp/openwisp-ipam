@@ -6,10 +6,7 @@
   function getAvailableIp() {
     $.ajax({
       type: "GET",
-      url: django.ipamGetNextAvailableIpUrl.replace(
-        "0000",
-        $("#id_subnet").val(),
-      ),
+      url: django.ipamGetNextAvailableIpUrl.replace("0000", $("#id_subnet").val()),
       success: function (res) {
         if (!res) {
           alert("No IP address available");
@@ -21,9 +18,7 @@
 
   function getURLParameter(name) {
     return decodeURI(
-      (new RegExp(name + "=" + "(.+?)(&|$)").exec(location.search) || [
-        null,
-      ])[1],
+      (new RegExp(name + "=" + "(.+?)(&|$)").exec(location.search) || [null])[1],
     );
   }
 
