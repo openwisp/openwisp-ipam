@@ -1,10 +1,12 @@
 import json
 
+import django
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from swapper import load_model
 
 from . import CreateModelsMixin, PostDataMixin
@@ -14,7 +16,7 @@ Subnet = load_model("openwisp_ipam", "Subnet")
 IpAddress = load_model("openwisp_ipam", "IpAddress")
 
 
-class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
+class TestAdmin(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase):
     app_label = "openwisp_ipam"
 
     def setUp(self):
@@ -438,3 +440,76 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
                 reverse("admin:ipam_export_subnet", args=[subnet.id]), follow=True
             )
             assert_response(response)
+
+    def test_superuser_create_shared_subnet(self):
+        admin = self._get_admin()
+        self.client.force_login(admin)
+        response = self.client.post(
+            reverse(f"admin:{self.app_label}_subnet_add"),
+            data={
+                "name": "test-subnet",
+                "subnet": "10.0.0.0/24",
+                "organization": "",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Subnet.objects.count(), 1)
+
+    def test_org_admin_view_shared_subnet(self):
+        subnet = self._create_subnet(organization=None, subnet="10.8.0.0/24")
+        self._test_org_admin_view_shareable_object(
+            reverse(f"admin:{self.app_label}_subnet_change", args=(subnet.id,)),
+        )
+
+    def test_org_admin_create_shared_subnet(self):
+        self._test_org_admin_create_shareable_object(
+            reverse(f"admin:{self.app_label}_subnet_add"),
+            payload={
+                "name": "test-subnet",
+                "subnet": "10.0.0.0/24",
+                "organization": "",
+            },
+            model=Subnet,
+        )
+
+    def test_superuser_create_shared_ip(self):
+        admin = self._get_admin()
+        self.client.force_login(admin)
+        shared_subnet = self._create_subnet(subnet="10.0.0.0/24", organization=None)
+        response = self.client.post(
+            reverse(f"admin:{self.app_label}_ipaddress_add"),
+            data={
+                "subnet": str(shared_subnet.id),
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Subnet.objects.count(), 1)
+
+    def test_org_admin_view_shared_ip(self):
+        shared_subnet = self._create_subnet(subnet="10.0.0.0/24", organization=None)
+        ip = shared_subnet.request_ip()
+        self._test_org_admin_view_shareable_object(
+            reverse(f"admin:{self.app_label}_ipaddress_change", args=(ip.id,)),
+            expected_element=(
+                '<div class="form-row field-ip_address">\n\n\n<div>\n\n'
+                '<div class="flex-container">\n\n'
+                "<label>Ip address:</label>\n\n"
+                '<div class="readonly">10.0.0.1</div>\n\n\n'
+                "</div>\n\n</div>\n\n\n</div>"
+            ),
+        )
+
+    def test_org_admin_create_shared_ip(self):
+        shared_subnet = self._create_subnet(subnet="10.0.0.0/24", organization=None)
+        self._test_org_admin_create_shareable_object(
+            reverse(f"admin:{self.app_label}_ipaddress_add"),
+            payload={
+                "subnet": str(shared_subnet.id),
+            },
+            model=IpAddress,
+            error_message=(
+                '<ul class="errorlist"{}><li>This field is required.</li></ul>'
+            ).format(' id="id_ip_address_error"' if django.VERSION >= (5, 2) else ""),
+        )
