@@ -21,7 +21,7 @@ class TestForms(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_field_base_network_value(self):
-        form = self.form_class({"subnet": ip_network(b"\xC0\xA8\x00\x01")})
+        form = self.form_class({"subnet": ip_network(b"\xc0\xa8\x00\x01")})
         self.assertTrue(form.is_valid())
 
     def test_form_ipv4_valid(self):
