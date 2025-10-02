@@ -41,14 +41,8 @@ section.subnet-visual {
   background: rgba(149, 10, 10, 1);
   border: 1px solid rgba(0, 0, 0, 0.4);
 }
-
 .subnet-visual .page {
   display: inline;
-}
-
-.highlighted-ip {
-    background-color: #fffa8c;
-    transition: background-color 0.5s;
 }
 
 #goto-input {
