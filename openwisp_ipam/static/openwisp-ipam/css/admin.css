@@ -46,6 +46,11 @@ section.subnet-visual {
   display: inline;
 }
 
+.highlighted-ip {
+    background-color: #fffa8c;
+    transition: background-color 0.5s;
+}
+
 #goto-input {
   padding: 5px 10px;
 }
