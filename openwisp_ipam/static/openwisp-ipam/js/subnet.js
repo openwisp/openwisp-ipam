@@ -66,8 +66,7 @@ function initHostsInfiniteScroll(
         "&amp;subnet=" +
         current_subnet +
         '" ' +
-        id_attr +
-        ' onclick="return showAddAnotherPopup(this);">' +
+        id_attr + ' onclick="return showAddAnotherPopup(this);">' +
         addr.address +
         "</a>"
       );
@@ -123,15 +122,9 @@ function initHostsInfiniteScroll(
       var target = $("#addr_" + id);
       if (target.length) {
         // IP is already on the page
-        $("#subnet-visual").animate(
-          {
-            scrollTop:
-              target.offset().top -
-              $("#subnet-visual").offset().top +
-              $("#subnet-visual").scrollTop(),
-          },
-          500,
-        );
+        $("#subnet-visual").animate({
+          scrollTop: target.offset().top - $("#subnet-visual").offset().top + $("#subnet-visual").scrollTop()
+        }, 500);
         target.css("background-color", "yellow");
         setTimeout(function () {
           target.css("background-color", "");
@@ -139,14 +132,13 @@ function initHostsInfiniteScroll(
       } else {
         // IP not on page, re-fetch
         searchQuery = input;
-        nextPageUrl =
-          "/api/v1/ipam/subnet/" + current_subnet + "/hosts/?start=" + searchQuery;
+        nextPageUrl = "/api/v1/ipam/subnet/" + current_subnet + "/hosts/?start=" + searchQuery;
         $("#subnet-visual").empty();
         fetchedPages = [];
         lastRenderedPage = 0;
         busy = false;
         onUpdate();
-      }
+        }
     });
   }
   function appendPage() {
