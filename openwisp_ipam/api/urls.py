@@ -16,6 +16,11 @@ def get_api_urls(api_views):
             name="get_next_available_ip",
         ),
         path(
+            "subnet/<str:subnet_id>/get-next-available-subnet/",
+            api_views.get_next_available_subnet,
+            name="get_next_available_subnet",
+        ),
+        path(
             "subnet/<str:subnet_id>/request-ip/",
             api_views.request_ip,
             name="request_ip",

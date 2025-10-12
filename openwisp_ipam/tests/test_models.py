@@ -138,7 +138,10 @@ class TestModels(CreateModelsMixin, TestCase):
                 )
             message_dict = context_manager.exception.message_dict
             self.assertIn("subnet", message_dict)
-            self.assertIn("Subnet overlaps with 10.0.0.0/16.", message_dict["subnet"])
+            self.assertIn(
+                "Subnet overlaps with 10.0.0.0/16. Suggested alternative: 10.1.0.0/24",
+                message_dict["subnet"],
+            )
             subnet1.delete()
 
         with self.subTest("10.0.0.0/16 overlaps with 10.0.0.0/24"):
@@ -149,7 +152,10 @@ class TestModels(CreateModelsMixin, TestCase):
                 )
             message_dict = context_manager.exception.message_dict
             self.assertIn("subnet", message_dict)
-            self.assertIn("Subnet overlaps with 10.0.0.0/24.", message_dict["subnet"])
+            self.assertIn(
+                "Subnet overlaps with 10.0.0.0/24. Suggested alternative: 10.1.0.0/16",
+                message_dict["subnet"],
+            )
             subnet1.delete()
 
         with self.subTest("different orgs do not overlap"):
@@ -384,7 +390,8 @@ class TestModels(CreateModelsMixin, TestCase):
                 )
             message_dict = context_manager.exception.message_dict
             self.assertIn(
-                "Subnet with this Subnet and Organization already exists.",
+                "Subnet with this Subnet and Organization already exists. \
+                Suggested alternative: 10.0.1.0/24",
                 str(message_dict),
             )
 
