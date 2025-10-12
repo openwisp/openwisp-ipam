@@ -1,4 +1,4 @@
 openwisp-users @ https://github.com/openwisp/openwisp-users/tarball/1.2
 openwisp-utils[rest] @ https://github.com/openwisp/openwisp-utils/tarball/1.2
-django-reversion~=5.1.0
+django-reversion~=6.0.0
 openpyxl~=3.1.5
