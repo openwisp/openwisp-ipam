@@ -390,8 +390,10 @@ class TestModels(CreateModelsMixin, TestCase):
                 )
             message_dict = context_manager.exception.message_dict
             self.assertIn(
-                "Subnet with this Subnet and Organization already exists. \
-                Suggested alternative: 10.0.1.0/24",
+                (
+                    "Subnet with this Subnet and Organization already exists. "
+                    "Suggested alternative: 10.0.1.0/24"
+                ),
                 str(message_dict),
             )
 
