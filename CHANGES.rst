@@ -1,10 +1,22 @@
 Changelog
 =========
 
-Version 1.2.0 [Unreleased]
+Version 1.2.0 [2025-10-23]
 --------------------------
 
-Work in progress.
+Changes
+~~~~~~~
+
+Dependencies
+++++++++++++
+
+- Bumped ``openwisp-users~=1.2.0``.
+- Bumped ``openwisp-utils~=1.2.0``.
+- Bumped ``django-reversion~=6.0.0``.
+- Added support for Django ``5.x``.
+- Dropped support for Django ``3.2.0`` and Django ``4.1.0``.
+- Added support for Python ``3.11``, ``3.12``, and ``3.13``.
+- Dropped support for Python ``3.8``.
 
 Version 1.1.1 [2025-01-31]
 --------------------------
