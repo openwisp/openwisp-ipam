@@ -2,9 +2,8 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
 from django.urls import reverse
-from openwisp_users.tests.utils import TestMultitenantAdminMixin
+from openwisp_users.tests.test_api import APITestCase
 from swapper import load_model
 
 from . import CreateModelsMixin, PostDataMixin
@@ -14,7 +13,7 @@ Subnet = load_model("openwisp_ipam", "Subnet")
 IpAddress = load_model("openwisp_ipam", "IpAddress")
 
 
-class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase):
+class TestApi(CreateModelsMixin, PostDataMixin, APITestCase):
     def setUp(self):
         super().setUp()
         self._login()
@@ -351,3 +350,83 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         host_address_32 = response.data["results"][0]["address"]
         self.assertEqual(host_address_128, "2001:db00::")
         self.assertEqual(host_address_32, "192.168.0.0")
+
+    def test_superuser_access_shared_subnet(self):
+        self._logout()
+        self._test_superuser_access_shared_object(
+            token=None,
+            listview_name="ipam:subnet_list_create",
+            detailview_name="ipam:subnet",
+            create_payload={
+                "name": "test-subnet",
+                "subnet": "10.0.0.0/24",
+                "description": "Test Subnet",
+                "organization": None,
+            },
+            update_payload={
+                "name": "updated-subnet",
+                "subnet": "10.0.0.0/24",
+            },
+            expected_count=1,
+        )
+
+    def test_org_manager_access_shared_subnet(self):
+        self._logout()
+        shared_subnet = self._create_subnet(organization=None, subnet="10.0.0.0/24")
+        self._test_org_user_access_shared_object(
+            listview_path=reverse("ipam:subnet_list_create"),
+            detailview_path=reverse("ipam:subnet", args=[shared_subnet.pk]),
+            create_payload={
+                "name": "test-subnet",
+                "subnet": "10.0.0.0/24",
+                "description": "Test Subnet",
+                "organization": None,
+            },
+            update_payload={
+                "name": "updated-subnet",
+                "subnet": "10.0.0.0/24",
+            },
+            expected_count=1,
+        )
+
+    def test_superuser_access_shared_ip(self):
+        self._logout()
+        subnet = self._create_subnet(subnet="10.0.0.0/24", organization=None)
+        self._test_superuser_access_shared_object(
+            token=None,
+            listview_path=reverse("ipam:list_create_ip_address", args=[subnet.id]),
+            detailview_name="ipam:ip_address",
+            create_payload={
+                "ip_address": "10.0.0.1",
+                "subnet": str(subnet.id),
+                "description": "Test IP",
+            },
+            update_payload={
+                "description": "updated-ip",
+                "ip_address": "10.0.0.1",
+                "subnet": str(subnet.id),
+            },
+            expected_count=1,
+        )
+
+    def test_org_manager_access_shared_ip(self):
+        self._logout()
+        shared_subnet = self._create_subnet(subnet="10.0.0.0/24", organization=None)
+        shared_ip = shared_subnet.request_ip()
+        self._test_org_user_access_shared_object(
+            listview_path=reverse(
+                "ipam:list_create_ip_address", args=[shared_subnet.id]
+            ),
+            detailview_path=reverse("ipam:ip_address", args=[shared_ip.id]),
+            create_payload={
+                "ip_address": "10.0.0.2",
+                "subnet": str(shared_subnet.id),
+                "description": "Test IP",
+            },
+            update_payload={
+                "description": "updated-ip",
+                "ip_address": "10.0.0.1",
+                "subnet": str(shared_subnet.id),
+            },
+            expected_count=1,
+        )
