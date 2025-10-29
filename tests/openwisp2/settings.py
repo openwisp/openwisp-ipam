@@ -98,6 +98,8 @@ if TESTING:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
 
+    ACCOUNT_RATE_LIMITS = False
+
 if os.environ.get("SAMPLE_APP", False):
     ipam_index = INSTALLED_APPS.index("openwisp_ipam")
     INSTALLED_APPS.remove("openwisp_ipam")
