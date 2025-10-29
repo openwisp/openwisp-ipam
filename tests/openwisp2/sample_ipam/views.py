@@ -7,6 +7,7 @@ import swapper
 
 from openwisp_ipam.api.views import (
     AvailableIpView as BaseAvailableIpView,
+    AvailableSubnetView as BaseAvailableSubnetView,
     ExportSubnetView as BaseExportSubnetView,
     ImportSubnetView as BaseImportSubnetView,
     IpAddressListCreateView as BaseIpAddressListCreateView,
@@ -48,6 +49,14 @@ class IpAddressListCreateView(BaseIpAddressListCreateView):
 class SubnetListCreateView(BaseSubnetListCreateView):
     """
     List/Create subnets
+    """
+
+    pass
+
+
+class AvailableSubnetView(BaseAvailableSubnetView):
+    """
+    Get next available subnet
     """
 
     pass
@@ -101,4 +110,5 @@ subnet = SubnetView.as_view()
 ip_address = IpAddressView.as_view()
 subnet_list_ipaddress = IpAddressListCreateView.as_view()
 get_next_available_ip = AvailableIpView.as_view()
+get_next_available_subnet = AvailableSubnetView.as_view()
 subnet_hosts = SubnetHostsView.as_view()
