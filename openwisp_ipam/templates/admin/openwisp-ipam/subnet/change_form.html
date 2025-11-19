@@ -49,6 +49,7 @@
   var current_subnet = '{{ original.pk }}';
   var ipAddUrl = '{% url ipaddress_add_url %}'
   var ipChangeUrl = '{% url ipaddress_change_url "1234" %}'
+  var hasSubnetChangePermission = {{ has_change_permission|yesno:"true,false" }};
   django.jQuery(document).ready(function () {
     initHostsInfiniteScroll(django.jQuery, current_subnet, ipAddUrl, ipChangeUrl, {{ ip_uuid| safe}})
   });
