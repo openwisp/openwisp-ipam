@@ -141,6 +141,11 @@ class SubnetAdmin(
                 self._check_perm(self.import_view, "add_subnet"),
                 name="ipam_import_subnet",
             ),
+            path(
+                "export-all-subnets/",
+                self._check_perm(self.export_all_view, "change_subnet"),
+                name="ipam_export_all_subnets",
+            ),
         ]
         return custom_urls + urls
 
@@ -181,6 +186,23 @@ class SubnetAdmin(
                 messages.success(request, _("Successfully imported data."))
                 return redirect(reverse(context["subnet_list_url"]))
         return render(request, form_template, context)
+    
+    def export_all_view(self, request):
+        response = HttpResponse(content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="subnets_export.csv"'
+        writer = csv.writer(response)
+        all_subnets = Subnet.objects.all().select_related("organization").order_by('created')
+        fields = [
+            IpAddress._meta.get_field("ip_address"),
+            IpAddress._meta.get_field("description"),
+        ]
+        first = True
+        for subnet in all_subnets:
+            if not first:
+                writer.writerow([])  
+            first = False
+            subnet.export_csv(subnet.id, writer)
+        return response
 
     def get_csv_organization(self, request):
         data = Subnet._get_csv_reader(self, deepcopy(request.FILES["csvfile"]))
