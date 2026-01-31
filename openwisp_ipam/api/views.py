@@ -174,6 +174,41 @@ class AvailableIpView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
         return Response(subnet.get_next_available_ip())
 
 
+class AvailableSubnetView(
+    ProtectedAPIMixin, FilterByOrganizationManaged, RetrieveAPIView
+):
+    subnet_model = Subnet
+    queryset = Subnet.objects.none()
+    serializer_class = serializers.Serializer
+
+    def get(self, request, *args, **kwargs):
+        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs["subnet_id"])
+        target_prefix = request.query_params.get("prefix")
+        parent_subnet = request.query_params.get("parent_subnet")
+
+        # Convert prefix to int if provided
+        if target_prefix:
+            try:
+                target_prefix = int(target_prefix)
+            except ValueError:
+                return Response(
+                    {"error": _("Invalid prefix length. Must be an integer.")},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        next_subnet = subnet.get_next_available_subnet(
+            target_prefix=target_prefix, parent_subnet=parent_subnet
+        )
+
+        if next_subnet:
+            return Response({"subnet": next_subnet})
+        else:
+            return Response(
+                {"error": _("No available subnet found with the specified criteria.")},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+
 class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAPIView):
     queryset = IpAddress.objects.none()
     subnet_model = Subnet
@@ -282,4 +317,5 @@ subnet = SubnetView.as_view()
 ip_address = IpAddressView.as_view()
 subnet_list_ipaddress = IpAddressListCreateView.as_view()
 get_next_available_ip = AvailableIpView.as_view()
+get_next_available_subnet = AvailableSubnetView.as_view()
 subnet_hosts = SubnetHostsView.as_view()
