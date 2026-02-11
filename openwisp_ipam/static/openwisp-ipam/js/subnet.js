@@ -69,20 +69,21 @@ function initHostsInfiniteScroll(
         "</a>"
       );
     }
-    return (
-      '<a href=\"' +
-      address_add_url +
-      "?_to_field=id&amp;_popup=1&amp;ip_address=" +
-      addr.address +
-      "&amp;subnet=" +
-      current_subnet +
-      '"onclick="return showAddAnotherPopup(this);" ' +
-      'id="addr_' +
-      id +
-      '">' +
-      addr.address +
-      "</a>"
-    );
+    var anchorAttributes = 'class="disabled"';
+    if (hasSubnetChangePermission === "true") {
+      anchorAttributes =
+        'href=\"' +
+        address_add_url +
+        "?_to_field=id&amp;_popup=1&amp;ip_address=" +
+        addr.address +
+        "&amp;subnet=" +
+        current_subnet +
+        '"onclick="return showAddAnotherPopup(this);" ' +
+        'id="addr_' +
+        id +
+        '"';
+    }
+    return "<a " + anchorAttributes + " >" + addr.address + "</a>";
   }
   function pageContainer(page) {
     var div = $('<div class="page"></div>');
