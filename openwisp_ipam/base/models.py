@@ -181,6 +181,8 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     def _read_subnet_data(self, reader):
         subnet_model = load_model("openwisp_ipam", "Subnet")
         subnet_name = self._read_row(reader)
+        if subnet_name is None:
+            raise StopIteration
         subnet_value = self._read_row(reader)
         org_slug = self._read_row(reader)
         subnet_org = self._get_org(org_slug)
@@ -205,7 +207,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         ipaddress_model = load_model("openwisp_ipam", "IpAddress")
         ipaddress_list = []
         for row in reader:
-            description = str(row[1] or "").strip()
+            if not row or not row[0].strip():
+                break
+            description = str(row[1] if len(row) > 1 else "").strip()
             if not ipaddress_model.objects.filter(
                 subnet=subnet,
                 ip_address=row[0].strip(),
@@ -234,10 +238,14 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
 
     def import_csv(self, file):
         reader = self._get_csv_reader(file)
-        subnet = self._read_subnet_data(reader)
-        next(reader)
-        next(reader)
-        self._read_ipaddress_data(reader, subnet)
+        while True:
+            try:
+                subnet = self._read_subnet_data(reader)
+            except StopIteration:
+                break
+            next(reader, None)
+            next(reader, None)
+            self._read_ipaddress_data(reader, subnet)
 
     def export_csv(self, subnet_id, writer):
         ipaddress_model = load_model("openwisp_ipam", "IpAddress")

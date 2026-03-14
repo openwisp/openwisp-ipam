@@ -218,6 +218,40 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         self.assertEqual(str(IpAddress.objects.all()[2].ip_address), "10.27.1.253")
         self.assertEqual(str(IpAddress.objects.all()[3].ip_address), "10.27.1.254")
 
+    def test_multi_subnet_csv_upload(self):
+        self._create_org(name="Monachers", slug="monachers")
+        self._create_org(name="Ninux Roma", slug="ninux-roma")
+        csv_data = """Monachers - Matera,
+        10.27.1.0/24,
+        monachers,
+        ,
+        ip address,description
+        10.27.1.1,Host A
+        10.27.1.2,Host B
+        ,
+        Ninux - Roma,
+        10.28.1.0/24,
+        ninux-roma,
+        ,
+        ip address,description
+        10.28.1.1,Host C
+        10.28.1.2,Host D"""
+        csvfile = SimpleUploadedFile("data.csv", bytes(csv_data, "utf-8"))
+        response = self.client.post(
+            reverse("admin:ipam_import_subnet"),
+            {"csvfile": csvfile},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Subnet.objects.count(), 2)
+        self.assertEqual(IpAddress.objects.count(), 4)
+        subnet_a = Subnet.objects.get(subnet="10.27.1.0/24")
+        subnet_b = Subnet.objects.get(subnet="10.28.1.0/24")
+        self.assertEqual(subnet_a.ipaddress_set.count(), 2)
+        self.assertEqual(subnet_b.ipaddress_set.count(), 2)
+        self.assertTrue(subnet_a.ipaddress_set.filter(ip_address="10.27.1.1").exists())
+        self.assertTrue(subnet_b.ipaddress_set.filter(ip_address="10.28.1.1").exists())
+
     def test_existing_csv_data(self):
         subnet = self._create_subnet(name="Monachers - Matera", subnet="10.27.1.0/24")
         self._create_ipaddress(
