@@ -48,11 +48,48 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     def clean(self):
         if not self.subnet:
             return
-        self._validate_multitenant_uniqueness()
-        self._validate_multitenant_master_subnet()
-        self._validate_multitenant_unique_child_subnet()
-        self._validate_overlapping_subnets()
-        self._validate_master_subnet_consistency()
+
+        try:
+            self._validate_multitenant_uniqueness()
+            self._validate_multitenant_master_subnet()
+            self._validate_multitenant_unique_child_subnet()
+            self._validate_overlapping_subnets()
+            self._validate_master_subnet_consistency()
+
+        except ValidationError as e:
+            next_subnet = self.get_next_available_subnet()
+            if next_subnet:
+                self._suggested_subnet = next_subnet
+                error_dict = e.message_dict.copy()
+                if "subnet" in error_dict:
+                    original_message = error_dict["subnet"][0]
+                    error_dict["subnet"] = [
+                        f"{original_message} Suggested alternative: {next_subnet}"
+                    ]
+                else:
+                    error_dict["subnet"] = [  # fallback
+                        f"Subnet conflict found. Suggested alternative: {next_subnet}"
+                    ]
+                raise ValidationError(error_dict)
+            else:
+                raise e
+
+    def _find_optimal_parent_subnet(self, current_network):
+        current_prefix = current_network.prefixlen
+
+        if current_network.version == 4:  # IPv4
+            if current_prefix <= 8:
+                parent_prefix = 8
+            elif current_prefix <= 16:
+                parent_prefix = max(current_prefix - 4, 8)  # 16 options
+            elif current_prefix <= 24:
+                parent_prefix = max(current_prefix - 6, 8)  # 64 options
+            else:
+                parent_prefix = max(current_prefix - 4, 8)  # 16 options
+        else:
+            parent_prefix = max(current_prefix - 16, 0)  # IPv6 : 2^16 options
+
+        return current_network.supernet(new_prefix=parent_prefix)
 
     def _validate_multitenant_uniqueness(self):
         qs = self._meta.model.objects.exclude(pk=self.pk).filter(subnet=self.subnet)
@@ -73,6 +110,16 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 {
                     "subnet": _(
                         "This subnet is already assigned to another organization."
+                    )
+                }
+            )
+        # if adding an organization-specific subnet,
+        # ensure it's not already taken by the same org
+        if self.organization and qs.filter(organization=self.organization).exists():
+            raise ValidationError(
+                {
+                    "subnet": _(
+                        "Subnet with this Subnet and Organization already exists."
                     )
                 }
             )
@@ -150,6 +197,93 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             )
         if not ip_network(self.subnet).subnet_of(ip_network(self.master_subnet.subnet)):
             raise ValidationError({"master_subnet": _("Invalid master subnet.")})
+
+    def get_next_available_subnet(self, target_prefix=None, parent_subnet=None):
+        if target_prefix is None:
+            try:
+                network = (
+                    ip_network(self.subnet)
+                    if isinstance(self.subnet, str)
+                    else self.subnet
+                )
+            except ValueError:
+                return None
+            target_prefix = network.prefixlen
+
+        if parent_subnet:
+            parent_network = ip_network(parent_subnet)
+        elif self.master_subnet:
+            parent_network = ip_network(self.master_subnet.subnet)
+        else:
+            current_network = ip_network(self.subnet)
+            parent_network = self._find_optimal_parent_subnet(current_network)
+
+            if self.organization:
+                organization_query = Q(organization_id=self.organization_id) | Q(
+                    organization_id__isnull=True
+                )
+            else:
+                organization_query = Q()
+
+            existing_subnets = self._meta.model.objects.filter(
+                organization_query
+            ).exclude(pk=self.pk)
+            existing_networks = [ip_network(sub.subnet) for sub in existing_subnets]
+
+            for existing in existing_networks:
+                if parent_network.overlaps(existing) and parent_network.subnet_of(
+                    existing
+                ):
+                    parent_network = self._find_optimal_parent_subnet(existing)
+                    break
+
+        if self.organization:
+            organization_query = Q(organization_id=self.organization_id) | Q(
+                organization_id__isnull=True
+            )
+        else:
+            organization_query = Q()
+
+        existing_subnets = self._meta.model.objects.filter(organization_query).exclude(
+            pk=self.pk
+        )
+        existing_networks = {
+            ip_network(sub.subnet)
+            for sub in existing_subnets
+            if ip_network(sub.subnet).subnet_of(parent_network)
+            or ip_network(sub.subnet).overlaps(parent_network)
+        }
+
+        for candidate_subnet in parent_network.subnets(new_prefix=target_prefix):
+            if any(
+                candidate_subnet.overlaps(existing) for existing in existing_networks
+            ):
+                continue
+
+            if self._validate_candidate_subnet(candidate_subnet):
+                return str(candidate_subnet)
+
+        return None
+
+    def _validate_candidate_subnet(self, candidate_subnet):
+        try:
+            temp_instance = self._meta.model(
+                name=self.name,
+                subnet=str(candidate_subnet),
+                description=self.description,
+                master_subnet=self.master_subnet,
+                organization=self.organization,
+            )
+
+            temp_instance._validate_multitenant_uniqueness()
+            temp_instance._validate_multitenant_master_subnet()
+            temp_instance._validate_multitenant_unique_child_subnet()
+            temp_instance._validate_overlapping_subnets()
+            temp_instance._validate_master_subnet_consistency()
+
+            return True
+        except ValidationError:
+            return False
 
     def get_next_available_ip(self):
         ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
