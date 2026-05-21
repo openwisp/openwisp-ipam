@@ -179,6 +179,8 @@ class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAP
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
     pagination_class = ListViewPagination
+    organization_field = "subnet__organization"
+    organization_lookup = "organization__in"
 
     def get_queryset(self):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs["subnet_id"])
