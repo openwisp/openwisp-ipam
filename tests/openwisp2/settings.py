@@ -89,7 +89,38 @@ STATIC_URL = "/static/"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 OPENWISP_USERS_AUTH_API = True
 
-CELERY_BROKER_URL = "memory://"
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://localhost/0",
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+    },
+    "sessions": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://localhost/1",
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+    },
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "sessions"
+
+if not TESTING:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {"hosts": ["redis://localhost/3"]},
+        }
+    }
+else:
+    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+
+if not TESTING:
+    CELERY_BROKER_URL = "redis://localhost/2"
+else:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    CELERY_BROKER_URL = "memory://"
 
 if TESTING:
     OPENWISP_ORGANIZATION_USER_ADMIN = True
