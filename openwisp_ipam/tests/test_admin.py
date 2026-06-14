@@ -329,6 +329,32 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         response = self.client.get(reverse("admin:ipam_import_subnet"))
         self.assertEqual(response.status_code, 200)
 
+    def test_export_all_subnet_csv(self):
+        subnet1 = self._create_subnet(subnet="10.0.0.0/24", name="Subnet One")
+        self._create_ipaddress(ip_address="10.0.0.1", subnet=subnet1, description="Router")
+        subnet2 = self._create_subnet(subnet="192.168.1.0/24", name="Subnet Two")
+        self._create_ipaddress(ip_address="192.168.1.1", subnet=subnet2, description="Printer")
+        
+        csv_data = (
+            "Subnet One\r\n"
+            "10.0.0.0/24\r\n"
+            "test-org\r\n"
+            "\r\n"
+            "ip_address,description\r\n"
+            "10.0.0.1,Router\r\n"
+            "\r\n"
+            "Subnet Two\r\n"
+            "192.168.1.0/24\r\n"
+            "test-org\r\n"
+            "\r\n"
+            "ip_address,description\r\n"
+            "192.168.1.1,Printer\r\n"
+        ).encode("utf-8")
+        url = reverse("admin:ipam_export_all_subnets")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.content, csv_data)
+
     def test_hierarchy_tree(self):
         subnet_root = self._create_subnet(subnet="11.0.0.0/23", name="Root")
         subnet_child = self._create_subnet(
