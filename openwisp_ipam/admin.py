@@ -10,7 +10,7 @@ from django.contrib.admin import ModelAdmin
 from django.db.models import TextField
 from django.db.models.functions import Cast
 from django.http import HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, re_path, reverse
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.multitenancy import MultitenantAdminMixin, MultitenantOrgFilter
@@ -145,10 +145,12 @@ class SubnetAdmin(
         return custom_urls + urls
 
     def export_view(self, request, subnet_id):
+        # Returns 404 if user is not a manager of the subnet's organization
+        subnet = get_object_or_404(self.get_queryset(request), pk=subnet_id)
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="ip_address.csv"'
         writer = csv.writer(response)
-        Subnet().export_csv(subnet_id, writer)
+        Subnet().export_csv(subnet.id, writer)
         return response
 
     def import_view(self, request):
