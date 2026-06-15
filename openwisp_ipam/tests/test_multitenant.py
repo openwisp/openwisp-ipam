@@ -96,6 +96,19 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
             self.assertContains(response, '<li class="error">You do not have')
             self.assertEqual(Subnet.objects.count(), 3)
 
+    def test_export_subnet_multitenancy(self):
+        data = self._create_multitenancy_test_env()
+        self._create_administrator(
+            organizations=[data["org1"]],
+            username="org1_administrator",
+            email="org1administrator@test.com",
+        )
+        self._login(username="org1_administrator", password="tester")
+        response = self.client.get(
+            reverse("admin:ipam_export_subnet", args=(data["subnet2"].id,))
+        )
+        self.assertEqual(response.status_code, 404)
+
 
 class TestMultitenantApi(
     TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase
