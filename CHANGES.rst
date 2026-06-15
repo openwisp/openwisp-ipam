@@ -6,6 +6,19 @@ Version 1.3.0 [unreleased]
 
 Work in progress.
 
+Version 1.2.1 [2026-06-15]
+--------------------------
+
+Bugfixes
+~~~~~~~~
+
+- **Fixed admin subnet export multitenancy security issue**.
+
+  If a specific subnet ID was known, any staff user with permissions to
+  operate on subnet objects was allowed to export the subnet contents,
+  regardless of whether they managed the organization of the subnet or
+  not.
+
 Version 1.2.0 [2025-10-23]
 --------------------------
 
