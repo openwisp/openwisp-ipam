@@ -257,13 +257,11 @@ class IpAddressAdmin(
         """
         response = super().response_add(request, *args, **kwargs)
         if request.POST.get("_popup"):
-            return HttpResponse(
-                f"""
+            return HttpResponse(f"""
 <script type='text/javascript'>
     opener.dismissAddAnotherPopup(window, '{request.POST.get('ip_address')}');
 </script>
-                """
-            )
+                """)
         return response
 
     def response_change(self, request, *args, **kwargs):
@@ -272,11 +270,9 @@ class IpAddressAdmin(
         """
         response = super().response_change(request, *args, **kwargs)
         if request.POST.get("_popup"):
-            return HttpResponse(
-                """
+            return HttpResponse("""
 <script type='text/javascript'>
     opener.dismissAddAnotherPopup(window);
 </script>
-             """
-            )
+             """)
         return response
