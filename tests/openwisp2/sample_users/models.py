@@ -47,3 +47,6 @@ class OrganizationInvitation(AbstractOrganizationInvitation):
 
 class Group(BaseGroup, AbstractGroup):
     pass
+
+
+from openwisp_users.base.models import ApiKey  # noqa

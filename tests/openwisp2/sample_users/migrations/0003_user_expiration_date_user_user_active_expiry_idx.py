@@ -7,6 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("auth", "0012_alter_user_first_name_max_length"),
+        ("authtoken", "0001_initial"),
         ("sample_users", "0002_default_groups_and_permissions"),
     ]
 
@@ -20,6 +21,18 @@ class Migration(migrations.Migration):
                 null=True,
                 verbose_name="expiration date",
             ),
+        ),
+        migrations.CreateModel(
+            name="ApiKey",
+            fields=[],
+            options={
+                "verbose_name": "API key",
+                "verbose_name_plural": "API keys",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
+            },
+            bases=("authtoken.token",),
         ),
         migrations.AddIndex(
             model_name="user",
