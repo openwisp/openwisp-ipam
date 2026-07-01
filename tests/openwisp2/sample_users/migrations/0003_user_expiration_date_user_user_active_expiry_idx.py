@@ -21,6 +21,18 @@ class Migration(migrations.Migration):
                 verbose_name="expiration date",
             ),
         ),
+        migrations.CreateModel(
+            name="ApiKey",
+            fields=[],
+            options={
+                "verbose_name": "API key",
+                "verbose_name_plural": "API keys",
+                "proxy": True,
+                "indexes": [],
+                "constraints": [],
+            },
+            bases=("authtoken.token",),
+        ),
         migrations.AddIndex(
             model_name="user",
             index=models.Index(

@@ -1,8 +1,9 @@
 from django.contrib.auth.models import Group as AbstractGroup
 from django.core.validators import RegexValidator
 from django.db import models
-from openwisp_users.base.models import (
+from openwisp_users.base.models import (  # noqa: F401
     AbstractUser,
+    ApiKey,
     BaseGroup,
     BaseOrganization,
     BaseOrganizationOwner,
