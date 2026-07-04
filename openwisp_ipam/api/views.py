@@ -10,6 +10,7 @@ from openwisp_users.api.mixins import (
     FilterByParentManaged,
     ProtectedAPIMixin as BaseProtectedAPIMixin,
 )
+from openwisp_utils.api.pagination import OpenWispPagination
 from rest_framework import pagination, serializers, status
 from rest_framework.generics import (
     CreateAPIView,
@@ -46,12 +47,6 @@ class IpAddressOrgMixin(FilterByParentManaged):
 
 class ProtectedAPIMixin(BaseProtectedAPIMixin):
     throttle_scope = "ipam"
-
-
-class ListViewPagination(pagination.PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 100
 
 
 class HostsListPagination(pagination.BasePagination):
@@ -213,7 +208,7 @@ class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAP
     queryset = IpAddress.objects.none()
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
-    pagination_class = ListViewPagination
+    pagination_class = OpenWispPagination
 
     def get_queryset(self):
         subnet = get_object_or_404(self.subnet_model, pk=self.kwargs["subnet_id"])
@@ -225,7 +220,7 @@ class SubnetListCreateView(
     FilterByOrganizationManaged, ProtectedAPIMixin, ListCreateAPIView
 ):
     serializer_class = SubnetSerializer
-    pagination_class = ListViewPagination
+    pagination_class = OpenWispPagination
     queryset = Subnet.objects.all().order_by("subnet")
 
 
