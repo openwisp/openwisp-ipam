@@ -173,7 +173,7 @@ You can add fields in a similar way in your ``models.py`` file.
 
     If you have questions about using, extending, or developing models,
     refer to the `"Models" section of the Django documentation
-    <https://docs.djangoproject.com/en/4.2/topics/db/models/>`_.
+    <https://docs.djangoproject.com/en/5.2/topics/db/models/>`_.
 
 8. Add Swapper Configurations
 -----------------------------
