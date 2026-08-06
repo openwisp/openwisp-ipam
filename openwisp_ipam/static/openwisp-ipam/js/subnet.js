@@ -56,6 +56,7 @@ function initHostsInfiniteScroll(
     var id = normalizeIP(addr.address);
     if (addr.used) {
       var uuid = ip_uuid[addr.address];
+      var id_attr = 'id="addr_' + id + '"';
       //note 1234 was passed as a dummy to be later on replaced in the script
       return (
         '<a class = "used" href=\"' +
@@ -64,7 +65,9 @@ function initHostsInfiniteScroll(
         addr.address +
         "&amp;subnet=" +
         current_subnet +
-        '"onclick="return showAddAnotherPopup(this);">' +
+        '" ' +
+        id_attr +
+        ' onclick="return showAddAnotherPopup(this);">' +
         addr.address +
         "</a>"
       );
@@ -111,20 +114,38 @@ function initHostsInfiniteScroll(
   function goTo() {
     var input = $("#goto-input").val().toLowerCase().trim();
     validateIp(input, function (isValid) {
-      if (isValid) {
-        $("#invalid-address").hide();
-        if (input !== searchQuery) {
-          searchQuery = input;
-          nextPageUrl =
-            "/api/v1/ipam/subnet/" + current_subnet + "/hosts/?start=" + searchQuery;
-          $("#subnet-visual").empty();
-          fetchedPages = [];
-          lastRenderedPage = 0;
-          busy = false;
-          onUpdate();
-        }
-      } else {
+      if (!isValid) {
         $("#invalid-address").show();
+        return;
+      }
+      $("#invalid-address").hide();
+      var id = normalizeIP(input);
+      var target = $("#addr_" + id);
+      if (target.length) {
+        // IP is already on the page
+        $("#subnet-visual").animate(
+          {
+            scrollTop:
+              target.offset().top -
+              $("#subnet-visual").offset().top +
+              $("#subnet-visual").scrollTop(),
+          },
+          500,
+        );
+        target.css("background-color", "yellow");
+        setTimeout(function () {
+          target.css("background-color", "");
+        }, 500);
+      } else {
+        // IP not on page, re-fetch
+        searchQuery = input;
+        nextPageUrl =
+          "/api/v1/ipam/subnet/" + current_subnet + "/hosts/?start=" + searchQuery;
+        $("#subnet-visual").empty();
+        fetchedPages = [];
+        lastRenderedPage = 0;
+        busy = false;
+        onUpdate();
       }
     });
   }
