@@ -8,6 +8,11 @@
     {% trans 'Import Subnet' %}
   </a>
 </li>
+<li>
+  <a href="{% url 'admin:ipam_export_all_subnets' %}">
+    {% trans 'Export Subnets' %}
+  </a>
+</li>
 {% endif %}
 {{ block.super }}
 {% endblock %}
