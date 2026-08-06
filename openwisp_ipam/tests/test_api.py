@@ -1,4 +1,5 @@
 import json
+from ipaddress import ip_network
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -150,6 +151,60 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         response = self.client.delete(reverse("ipam:subnet", args=(subnet_id,)))
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Subnet.objects.count(), 0)
+
+    def test_get_next_available_subnet_success(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        url = reverse("ipam:get_next_available_subnet", kwargs={"subnet_id": subnet.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("subnet", response.data)
+        self.assertTrue(ip_network(response.data["subnet"]))
+
+    def test_get_next_available_subnet_invalid_prefix(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        url = reverse("ipam:get_next_available_subnet", kwargs={"subnet_id": subnet.pk})
+        response = self.client.get(f"{url}?prefix=invalid")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("error", response.data)
+
+    def test_get_next_available_subnet_no_available(self):
+        parent_subnet = self._create_subnet(
+            subnet="10.0.0.0/23"
+        )  # 512 IPs, can fit two /24s
+
+        # fill all available /24 subnets
+        Subnet.objects.create(subnet="10.0.0.0/24", name="Full")
+        Subnet.objects.create(subnet="10.0.1.0/24", name="Full")
+
+        url = reverse(
+            "ipam:get_next_available_subnet", kwargs={"subnet_id": parent_subnet.pk}
+        )
+        response = self.client.get(
+            url, data={"prefix": 24, "parent_subnet": parent_subnet.subnet}
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("error", response.data)
+
+    def test_get_next_available_subnet_with_prefix(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/16")
+        url = reverse("ipam:get_next_available_subnet", kwargs={"subnet_id": subnet.pk})
+        response = self.client.get(f"{url}?prefix=24")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("subnet", response.data)
+        self.assertTrue(ip_network(response.data["subnet"]).prefixlen == 24)
+
+    def test_get_next_available_subnet_multi_org(self):
+        subnet1 = self._create_subnet(subnet="10.0.0.0/24")
+        org2 = self._create_org(name="Other Org")
+        Subnet.objects.create(
+            subnet="10.0.0.0/24", organization=org2, name="Other Org Subnet"
+        )
+        url = reverse(
+            "ipam:get_next_available_subnet", kwargs={"subnet_id": subnet1.pk}
+        )
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("subnet", response.data)
 
     def test_create_ip_address_api(self):
         subnet_id = self._create_subnet(subnet="10.0.0.0/24").id
