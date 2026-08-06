@@ -133,6 +133,25 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             if ip_network(self.subnet).overlaps(subnet.subnet):
                 raise ValidationError({"subnet": error_message.format(subnet.subnet)})
 
+    def get_hierarchy_ids(self):
+        """
+        Returns the IDs of this subnet, its ancestors and its descendants.
+        """
+        ids = [self.pk]
+        parent_subnet = self.master_subnet
+        while parent_subnet:
+            ids.append(parent_subnet.pk)
+            parent_subnet = parent_subnet.master_subnet
+        child_subnets = list(self.child_subnet_set.values_list("pk", flat=True))
+        while child_subnets:
+            ids += child_subnets
+            child_subnets = list(
+                self._meta.model.objects.filter(
+                    master_subnet__in=child_subnets
+                ).values_list("pk", flat=True)
+            )
+        return ids
+
     def _validate_master_subnet_consistency(self):
         if not self.master_subnet:
             return
@@ -307,3 +326,15 @@ class AbstractIpAddress(TimeStampedEditableModel):
         for ip in addresses:
             if ip_address(self.ip_address) == ip_address(ip["ip_address"]):
                 raise ValidationError({"ip_address": _("IP address already used.")})
+        self._validate_related_subnets()
+
+    def _validate_related_subnets(self):
+        subnet_ids = self.subnet.get_hierarchy_ids()
+        duplicate = (
+            load_model("openwisp_ipam", "IpAddress")
+            .objects.filter(ip_address=self.ip_address, subnet_id__in=subnet_ids)
+            .exclude(pk=self.pk)
+            .exists()
+        )
+        if duplicate:
+            raise ValidationError({"ip_address": _("IP address already used.")})

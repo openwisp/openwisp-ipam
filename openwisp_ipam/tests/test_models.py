@@ -52,6 +52,33 @@ class TestModels(CreateModelsMixin, TestCase):
         else:
             self.fail("ValidationError not raised")
 
+    def test_duplicate_ipaddress_in_hierarchy(self):
+        parent_subnet = self._create_subnet(subnet="10.0.0.0/16")
+        child_subnet = self._create_subnet(
+            subnet="10.0.1.0/24", master_subnet=parent_subnet
+        )
+        self._create_ipaddress(ip_address="10.0.1.10", subnet=child_subnet)
+        with self.assertRaises(ValidationError) as context_manager:
+            self._create_ipaddress(ip_address="10.0.1.10", subnet=parent_subnet)
+        self.assertEqual(
+            context_manager.exception.message_dict["ip_address"],
+            ["IP address already used."],
+        )
+
+    def test_ipaddress_in_different_organizations(self):
+        org1 = self._create_org(name="test1organization")
+        org2 = self._create_org(name="test2organization")
+        parent1 = self._create_subnet(subnet="10.0.0.0/16", organization=org1)
+        child1 = self._create_subnet(
+            subnet="10.0.1.0/24", master_subnet=parent1, organization=org1
+        )
+        parent2 = self._create_subnet(subnet="10.0.0.0/16", organization=org2)
+        child2 = self._create_subnet(
+            subnet="10.0.1.0/24", master_subnet=parent2, organization=org2
+        )
+        self._create_ipaddress(ip_address="10.0.1.10", subnet=child1)
+        self._create_ipaddress(ip_address="10.0.1.10", subnet=child2)
+
     def test_invalid_ipaddress(self):
         error_message = "'1234325' does not appear to be an IPv4 or IPv6 address"
         self._create_subnet(subnet="10.0.0.0/24")
