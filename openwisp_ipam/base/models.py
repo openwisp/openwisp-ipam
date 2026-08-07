@@ -294,7 +294,9 @@ class AbstractIpAddress(TimeStampedEditableModel):
     def clean(self):
         if not self.ip_address or not self.subnet_id:
             return
-        if ip_address(self.ip_address) not in self.subnet.subnet:
+
+        subnet_obj = ip_network(self.subnet.subnet, strict=False)
+        if ip_address(self.ip_address) not in subnet_obj:
             raise ValidationError(
                 {"ip_address": _("IP address does not belong to the subnet")}
             )
@@ -307,3 +309,30 @@ class AbstractIpAddress(TimeStampedEditableModel):
         for ip in addresses:
             if ip_address(self.ip_address) == ip_address(ip["ip_address"]):
                 raise ValidationError({"ip_address": _("IP address already used.")})
+
+        related_subnet_ids = []
+        for subnet in load_model("openwisp_ipam", "Subnet").objects.all():
+            try:
+                net = ip_network(subnet.subnet, strict=False)
+            except ValueError:
+                continue
+            if ip_address(self.ip_address) in net:
+                related_subnet_ids.append(subnet.id)
+
+        duplicate = (
+            load_model("openwisp_ipam", "IpAddress")
+            .objects.filter(
+                ip_address=self.ip_address, subnet_id__in=related_subnet_ids
+            )
+            .exclude(pk=self.pk)
+            .exists()
+        )
+
+        if duplicate:
+            raise ValidationError(
+                {
+                    "ip_address": _(
+                        "IP address already exists in a related subnet (parent, child, or overlapping)."
+                    )
+                }
+            )
