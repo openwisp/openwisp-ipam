@@ -134,9 +134,6 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 raise ValidationError({"subnet": error_message.format(subnet.subnet)})
 
     def get_hierarchy_ids(self):
-        """
-        Returns the IDs of this subnet, its ancestors and its descendants.
-        """
         ids = [self.pk]
         parent_subnet = self.master_subnet
         while parent_subnet:
@@ -317,15 +314,6 @@ class AbstractIpAddress(TimeStampedEditableModel):
             raise ValidationError(
                 {"ip_address": _("IP address does not belong to the subnet")}
             )
-        addresses = (
-            load_model("openwisp_ipam", "IpAddress")
-            .objects.filter(subnet=self.subnet_id)
-            .exclude(pk=self.pk)
-            .values()
-        )
-        for ip in addresses:
-            if ip_address(self.ip_address) == ip_address(ip["ip_address"]):
-                raise ValidationError({"ip_address": _("IP address already used.")})
         self._validate_related_subnets()
 
     def _validate_related_subnets(self):
