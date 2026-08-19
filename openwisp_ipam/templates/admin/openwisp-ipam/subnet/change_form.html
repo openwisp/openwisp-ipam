@@ -45,7 +45,7 @@
 {% block admin_change_form_document_ready %}
 {{ block.super }}
 {% if original and not is_popup %}
-{% translate "Cannot be create IP Address for a disabled organization." as disabled_ipaddress_message %}
+{% translate "Cannot create IP Address for a disabled organization." as disabled_ipaddress_message %}
 <script type="text/javascript">
   var current_subnet = '{{ original.pk }}';
   var ipAddUrl = '{% url ipaddress_add_url %}'

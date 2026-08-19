@@ -8,7 +8,7 @@ coverage run ./runtests.py --parallel --exclude-tag=selenium_tests \
   || coverage run ./runtests.py --exclude-tag=selenium_tests
 
 echo "Starting selenium browser tests"
-coverage run ./runtests.py --tag=selenium_tests --no-input --exclude-pytest
+coverage run ./runtests.py --tag=selenium_tests --no-input
 
 echo "Starting tests for extensibility"
 SAMPLE_APP=1 coverage run ./runtests.py \
