@@ -72,6 +72,7 @@ If instructions conflict, repository config and CI workflows win first, official
 
 - Watch for cross-tenant data leaks, permission bypasses, invalid subnet/IP calculations, unsafe file paths, and secrets.
 - Preserve validation around subnet ranges, IP allocation, overlap checks, and organization ownership.
+- Objects belonging to a disabled organization must be readable and deletable; creation and updates must be blocked across all relevant write paths. This applies to objects with either a direct or chained/nested relationship to the organization. No other operations should be permitted, except for ordinary cleanup operations.
 
 ## Troubleshooting
 

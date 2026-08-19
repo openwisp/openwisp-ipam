@@ -10,6 +10,7 @@ from openwisp_users.api.mixins import (
     FilterByParentManaged,
     ProtectedAPIMixin as BaseProtectedAPIMixin,
 )
+from openwisp_users.api.permissions import DisabledOrgReadOnly
 from openwisp_utils.api.pagination import OpenWispPagination
 from rest_framework import pagination, serializers, status
 from rest_framework.generics import (
@@ -20,6 +21,7 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from rest_framework.utils.urls import remove_query_param, replace_query_param
 
@@ -39,10 +41,32 @@ Subnet = swapper.load_model("openwisp_ipam", "Subnet")
 Organization = swapper.load_model("openwisp_users", "Organization")
 
 
+class DisabledOrgParentSubnetPermission(BasePermission):
+    """
+    Blocks writes when the parent ``Subnet`` belongs to a disabled
+    organization.
+    """
+
+    message = DisabledOrgReadOnly.message
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS or getattr(
+            view, "allow_disabled_organization_writes", False
+        ):
+            return True
+        subnet = view.get_parent_queryset().select_related("organization").first()
+        if subnet is None or subnet.organization_id is None:
+            return True
+        return subnet.organization.is_active
+
+
 class IpAddressOrgMixin(FilterByParentManaged):
     def get_parent_queryset(self):
         qs = Subnet.objects.filter(pk=self.kwargs["subnet_id"])
         return qs
+
+    def get_permissions(self):
+        return super().get_permissions() + [DisabledOrgParentSubnetPermission()]
 
 
 class ProtectedAPIMixin(BaseProtectedAPIMixin):
@@ -169,7 +193,7 @@ class AvailableIpView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAPIView):
+class IpAddressListCreateView(ProtectedAPIMixin, IpAddressOrgMixin, ListCreateAPIView):
     queryset = IpAddress.objects.none()
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
@@ -182,7 +206,7 @@ class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAP
 
 
 class SubnetListCreateView(
-    FilterByOrganizationManaged, ProtectedAPIMixin, ListCreateAPIView
+    ProtectedAPIMixin, FilterByOrganizationManaged, ListCreateAPIView
 ):
     serializer_class = SubnetSerializer
     pagination_class = OpenWispPagination
@@ -247,6 +271,8 @@ class ExportSubnetView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
+    # this view only reads data (CSV export), even though it uses POST
+    allow_disabled_organization_writes = True
 
     def post(self, request, *args, **kwargs):
         response = HttpResponse(content_type="text/csv")

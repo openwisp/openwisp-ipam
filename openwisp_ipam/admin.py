@@ -39,6 +39,7 @@ class SubnetAdmin(
     app_label = "openwisp_ipam"
     change_form_template = "admin/openwisp-ipam/subnet/change_form.html"
     change_list_template = "admin/openwisp-ipam/subnet/change_list.html"
+    multitenant_shared_relations = ["master_subnet"]
     list_display = [
         "name",
         "organization",

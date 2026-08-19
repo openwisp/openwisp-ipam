@@ -434,12 +434,20 @@ class TestMultitenantApi(
         url = f'{reverse("ipam:subnet_list_create")}?format=api'
 
         with self.subTest(
-            "Test `Organization` and `Master subnet` field filter for org manager"
+            "Test `Organization` and `Master subnet` field filter for administrator"
         ):
-            self._login(username="user_a", password="tester")
+            self._login(username="administrator", password="tester")
             response = self.client.get(url)
             self.assertContains(response, "org_a</option>")
             self.assertContains(response, "10.0.0.0/24</option>")
+            self.assertNotContains(response, "org_b</option>")
+            self.assertNotContains(response, "10.10.0.0/24</option>")
+
+        with self.subTest("Operators can only view subnets in their organization"):
+            self._login(username="user_a", password="tester")
+            response = self.client.get(url)
+            self.assertNotContains(response, "org_a</option>")
+            self.assertNotContains(response, "10.0.0.0/24</option>")
             self.assertNotContains(response, "org_b</option>")
             self.assertNotContains(response, "10.10.0.0/24</option>")
 

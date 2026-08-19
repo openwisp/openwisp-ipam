@@ -1,10 +1,12 @@
 import json
 
+from django.contrib import admin as django_admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from openwisp_users.tests.utils import TestDisabledOrgAdminMixin
 from swapper import load_model
 
 from . import CreateModelsMixin, PostDataMixin
@@ -14,7 +16,7 @@ Subnet = load_model("openwisp_ipam", "Subnet")
 IpAddress = load_model("openwisp_ipam", "IpAddress")
 
 
-class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
+class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, TestCase):
     app_label = "openwisp_ipam"
 
     def setUp(self):
@@ -438,3 +440,144 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
                 reverse("admin:ipam_export_subnet", args=[subnet.id]), follow=True
             )
             assert_response(response)
+
+    def test_subnet_disabled_org_admin_crud(self):
+        org = self._create_org(name="disabled-org", slug="disabled-org")
+        subnet = self._create_subnet(organization=org, subnet="10.70.0.0/24")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        change_data = {
+            "name": "changed",
+            "subnet": "10.70.0.0/24",
+            "description": "",
+            "organization": str(org.pk),
+        }
+        self._test_disabled_org_admin_crud(subnet, change_data)
+
+    def test_ipaddress_disabled_org_admin_crud(self):
+        org = self._create_org(name="disabled-org", slug="disabled-org")
+        subnet = self._create_subnet(organization=org, subnet="10.71.0.0/24")
+        ip_address = self._create_ipaddress(ip_address="10.71.0.5", subnet=subnet)
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        change_data = {
+            "ip_address": "10.71.0.5",
+            "subnet": str(subnet.pk),
+            "description": "changed",
+        }
+        self._test_disabled_org_admin_crud(
+            ip_address, change_data, organization=org, unchanged_field="description"
+        )
+
+    def test_subnet_admin_add_form_excludes_disabled_org(self):
+        org = self._create_org(name="disabled-org", slug="disabled-org")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        url = reverse(f"admin:{self.app_label}_subnet_add")
+        self._test_disabled_org_admin_org_field_excludes_disabled(url, org)
+        self.client.login(username="admin", password="tester")
+        post_data = {
+            "name": "should-not-be-created",
+            "subnet": "10.72.0.0/24",
+            "description": "",
+            "organization": str(org.pk),
+        }
+        response = self.client.post(url, post_data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Subnet.objects.filter(subnet="10.72.0.0/24").count(), 0)
+
+    def test_subnet_admin_master_subnet_excludes_disabled_org(self):
+        org = self._create_org(name="disabled-org", slug="disabled-org")
+        disabled_subnet = self._create_subnet(organization=org, subnet="10.73.0.0/24")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        request = RequestFactory().get(reverse(f"admin:{self.app_label}_subnet_add"))
+        request.user = User.objects.get(username="admin")
+        model_admin = django_admin.site._registry[Subnet]
+        form_class = model_admin.get_form(request)
+        master_subnet_qs = form_class.base_fields["master_subnet"].queryset
+        self.assertNotIn(
+            disabled_subnet.pk, master_subnet_qs.values_list("pk", flat=True)
+        )
+
+    def test_ipaddress_admin_add_form_excludes_disabled_org_subnet(self):
+        org = self._create_org(name="disabled-org", slug="disabled-org")
+        disabled_subnet = self._create_subnet(organization=org, subnet="10.74.0.0/24")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        request = RequestFactory().get(reverse(f"admin:{self.app_label}_ipaddress_add"))
+        request.user = User.objects.get(username="admin")
+        model_admin = django_admin.site._registry[IpAddress]
+        form_class = model_admin.get_form(request)
+        subnet_qs = form_class.base_fields["subnet"].queryset
+        self.assertNotIn(disabled_subnet.pk, subnet_qs.values_list("pk", flat=True))
+        post_data = {
+            "ip_address": "10.74.0.5",
+            "subnet": str(disabled_subnet.pk),
+            "description": "",
+        }
+        response = self.client.post(
+            reverse(f"admin:{self.app_label}_ipaddress_add"), post_data, follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(IpAddress.objects.filter(ip_address="10.74.0.5").count(), 0)
+
+    def test_admin_export_view_disabled_org(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.75.0.0/24")
+        url = reverse("admin:ipam_export_subnet", args=[subnet.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+
+    def test_admin_import_view_disabled_org(self):
+        org = self._create_org(name="disabled-import-org", slug="disabled-import-org")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        csv_data = """Disabled Import,
+        10.76.1.0/24,
+        disabled-import-org,
+        ,
+        ip address,description
+        10.76.1.1,Disabled"""
+        csvfile = SimpleUploadedFile("data.csv", bytes(csv_data, "utf-8"))
+        response = self.client.post(
+            reverse("admin:ipam_import_subnet"), {"csvfile": csvfile}, follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            "The import operation failed because the data being imported "
+            "belongs to a disabled organization: “disabled-import-org”.",
+        )
+        self.assertEqual(Subnet.objects.filter(subnet="10.76.1.0/24").count(), 0)
+
+    def test_subnet_admin_delete_selected_disabled_org(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.77.0.0/24")
+        url = reverse(f"admin:{self.app_label}_subnet_changelist")
+        response = self.client.post(
+            url,
+            {
+                "action": "delete_selected",
+                "_selected_action": [str(subnet.pk)],
+                "post": "yes",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Subnet.objects.filter(pk=subnet.pk).exists(), False)
+
+    def test_ipaddress_admin_delete_selected_disabled_org(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.78.0.0/24")
+        ip_address = self._create_ipaddress(ip_address="10.78.0.5", subnet=subnet)
+        url = reverse(f"admin:{self.app_label}_ipaddress_changelist")
+        response = self.client.post(
+            url,
+            {
+                "action": "delete_selected",
+                "_selected_action": [str(ip_address.pk)],
+                "post": "yes",
+            },
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(IpAddress.objects.filter(pk=ip_address.pk).exists(), False)
