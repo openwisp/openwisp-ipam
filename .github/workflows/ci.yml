@@ -74,11 +74,16 @@ jobs:
 
       - name: Tests
         if: ${{ !cancelled() && steps.deps.conclusion == 'success' }}
+        run: ./runtests
+        env:
+          SELENIUM_HEADLESS: 1
+          GECKO_LOG: 1
+
+      - name: Show gecko web driver log on failures
+        if: ${{ failure() }}
         run: |
-          coverage run ./runtests.py --parallel
-          SAMPLE_APP=1 coverage run ./runtests.py --parallel
-          coverage combine
-          coverage xml
+          [ -f geckodriver.log ] && cat geckodriver.log \
+            || echo "there is no gecko web driver log to show"
 
       - name: Upload Coverage
         if: ${{ success() }}

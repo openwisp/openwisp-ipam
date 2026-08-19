@@ -59,12 +59,12 @@ Launch development server:
 
 You can access the admin interface at ``http://127.0.0.1:8000/admin/``.
 
-Run tests with:
+Run tests with (make sure you have the :ref:`selenium dependencies
+<selenium_dependencies>` installed locally first):
 
 .. code-block:: shell
 
-    # --parallel and --keepdb are optional but help to speed up the operation
-    ./runtests.py --parallel --keepdb
+    ./runtests
 
 Alternative Sources
 -------------------
