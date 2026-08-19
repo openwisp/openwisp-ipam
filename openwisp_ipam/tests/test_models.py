@@ -78,6 +78,38 @@ class TestModels(CreateModelsMixin, TestCase):
             ["IP address already used."],
         )
 
+    def test_duplicate_ipaddress_in_root_subnet(self):
+        root_subnet = self._create_subnet(subnet="10.0.0.0/16")
+        child_subnet = self._create_subnet(
+            subnet="10.0.1.0/24", master_subnet=root_subnet
+        )
+        grandchild_subnet = self._create_subnet(
+            subnet="10.0.1.0/28", master_subnet=child_subnet
+        )
+        self._create_ipaddress(ip_address="10.0.1.10", subnet=grandchild_subnet)
+        with self.assertRaises(ValidationError) as context_manager:
+            self._create_ipaddress(ip_address="10.0.1.10", subnet=root_subnet)
+        self.assertEqual(
+            context_manager.exception.message_dict["ip_address"],
+            ["IP address already used."],
+        )
+
+    def test_duplicate_ipaddress_in_grandchild_subnet(self):
+        root_subnet = self._create_subnet(subnet="10.0.0.0/16")
+        child_subnet = self._create_subnet(
+            subnet="10.0.1.0/24", master_subnet=root_subnet
+        )
+        grandchild_subnet = self._create_subnet(
+            subnet="10.0.1.0/28", master_subnet=child_subnet
+        )
+        self._create_ipaddress(ip_address="10.0.1.10", subnet=root_subnet)
+        with self.assertRaises(ValidationError) as context_manager:
+            self._create_ipaddress(ip_address="10.0.1.10", subnet=grandchild_subnet)
+        self.assertEqual(
+            context_manager.exception.message_dict["ip_address"],
+            ["IP address already used."],
+        )
+
     def test_ipaddress_in_different_organizations(self):
         org1 = self._create_org(name="test1organization")
         org2 = self._create_org(name="test2organization")
