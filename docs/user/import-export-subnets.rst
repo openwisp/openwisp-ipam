@@ -43,7 +43,8 @@ created while importing data.
 .. important::
 
     Data can only be imported into active organizations. Imports targeting
-    a disabled organization are rejected.
+    a disabled organization are rejected. A blank organization slug
+    remains supported for shared subnets.
 
 From Management Command
 ~~~~~~~~~~~~~~~~~~~~~~~

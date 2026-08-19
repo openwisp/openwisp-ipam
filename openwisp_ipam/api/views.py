@@ -54,9 +54,15 @@ class DisabledOrgParentSubnetPermission(BasePermission):
             view, "allow_disabled_organization_writes", False
         ):
             return True
-        subnet = view.get_parent_queryset().select_related("organization").first()
+        parent_queryset = view.get_parent_queryset()
+        is_superuser = request.user.is_superuser
+        if not is_superuser:
+            parent_queryset = view.get_organization_queryset(parent_queryset)
+        subnet = parent_queryset.select_related("organization").first()
+        # Managers need an organization-scoped parent; shared subnet writes
+        # are restricted to superusers.
         if subnet is None or subnet.organization_id is None:
-            return True
+            return is_superuser
         return subnet.organization.is_active
 
 

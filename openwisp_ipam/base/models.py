@@ -275,8 +275,10 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             )
         if not instance.is_active:
             raise CsvImportException(
-                "The import operation failed because the data being imported "
-                f"belongs to a disabled organization: “{org_slug}”. "
+                _(
+                    "The import operation failed because the data being imported "
+                    "belongs to a disabled organization: “{org_slug}”. "
+                ).format(org_slug=org_slug)
             )
         return instance
 
