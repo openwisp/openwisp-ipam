@@ -2,7 +2,7 @@ import json
 
 from django.contrib import admin as django_admin
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -351,6 +351,30 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
         self.assertContains(response, "11.0.0.0/24 (Child#1)")
         self.assertContains(response, "11.0.1.0/24 (Child#2)")
         self.assertContains(response, "11.0.0.0/25 (Grantchild#1)")
+
+    def test_subnet_change_view_ipaddress_add_permission_flag(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24", description="Sample Subnet")
+        url = reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id])
+        response = self.client.get(url)
+        self.assertContains(response, "hasIpaddressAddPermission = true;")
+        org = subnet.organization
+        staff_user = self._create_user(
+            username="staff", email="staff@staff.com", is_staff=True
+        )
+        staff_user.user_permissions.add(
+            *Permission.objects.filter(codename__in=["view_subnet", "view_ipaddress"])
+        )
+        self._create_org_user(organization=org, user=staff_user, is_admin=True)
+        self.client.logout()
+        self.client.login(username="staff", password="tester")
+        response = self.client.get(url)
+        self.assertContains(response, "hasIpaddressAddPermission = false;")
+
+    def test_subnet_change_view_disabled_org_excludes_ipaddress_add_permission(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.72.0.0/24")
+        url = reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id])
+        response = self.client.get(url)
+        self.assertContains(response, "hasIpaddressAddPermission = false;")
 
     def test_subnet_add_rendered(self):
         url = reverse(f"admin:{self.app_label}_subnet_add")

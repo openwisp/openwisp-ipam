@@ -105,6 +105,10 @@ class SubnetAdmin(
         available = HostsSet(instance).count() - used
         labels = ["Used", "Available"]
         values = [used, available]
+        is_org_active = instance.organization is None or instance.organization.is_active
+        has_ipaddress_add_permission = is_org_active and self.admin_site._registry[
+            IpAddress
+        ].has_add_permission(request)
         extra_context = {
             "labels": labels,
             "values": values,
@@ -114,6 +118,8 @@ class SubnetAdmin(
             "ipaddress_change_url": ipaddress_change_url,
             "subnet_change_url": subnet_change_url,
             "subnet_tree": subnet_tree,
+            "has_ipaddress_add_permission": has_ipaddress_add_permission,
+            "is_organization_active": is_org_active,
         }
         return super().change_view(request, object_id, form_url, extra_context)
 
