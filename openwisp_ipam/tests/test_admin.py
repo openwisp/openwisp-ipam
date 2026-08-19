@@ -476,7 +476,13 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
             "description": "",
             "organization": str(org.pk),
         }
-        self._test_disabled_org_admin_crud(subnet, change_data)
+        create_data = {
+            "name": "new-subnet",
+            "subnet": "10.70.1.0/24",
+            "description": "",
+            "organization": str(org.pk),
+        }
+        self._test_disabled_org_admin_crud(subnet, change_data, create_data=create_data)
 
     def test_ipaddress_disabled_org_admin_crud(self):
         org = self._create_org(name="disabled-org", slug="disabled-org")
@@ -489,8 +495,17 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
             "subnet": str(subnet.pk),
             "description": "changed",
         }
+        create_data = {
+            "ip_address": "10.71.0.6",
+            "subnet": str(subnet.pk),
+            "description": "",
+        }
         self._test_disabled_org_admin_crud(
-            ip_address, change_data, organization=org, unchanged_field="description"
+            ip_address,
+            change_data,
+            organization=org,
+            unchanged_field="description",
+            create_data=create_data,
         )
 
     def test_subnet_admin_add_form_excludes_disabled_org(self):
