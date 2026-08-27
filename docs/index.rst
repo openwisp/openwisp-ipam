@@ -24,23 +24,6 @@ and Django can leverage this module independently to enhance their
 projects, for more details on this subject please refer to the
 :doc:`developer documentation <developer/index>`.
 
-The following diagram illustrates the role of the IPAM module within the
-OpenWISP architecture.
-
-.. figure:: images/architecture-v2-openwisp-ipam.png
-    :target: ../_images/architecture-v2-openwisp-ipam.png
-    :align: center
-    :alt: OpenWISP Architecture: IPAM module
-
-    **OpenWISP Architecture: highlighted IPAM module**
-
-.. important::
-
-    For an enhanced viewing experience, open the image above in a new
-    browser tab.
-
-    Refer to :doc:`/general/architecture` for more information.
-
 .. toctree::
     :caption: IPAM Usage Docs
     :maxdepth: 1

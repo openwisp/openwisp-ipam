@@ -3,6 +3,23 @@ Developer Installation Instructions
 
 .. include:: ../partials/developer-docs.rst
 
+The following diagram illustrates the role of the IPAM module within the
+OpenWISP architecture.
+
+.. figure:: ../images/architecture-v2-openwisp-ipam.png
+    :target: ../../_images/architecture-v2-openwisp-ipam.png
+    :align: center
+    :alt: OpenWISP Architecture: IPAM module
+
+    **OpenWISP Architecture: highlighted IPAM module**
+
+.. important::
+
+    For an enhanced viewing experience, open the image above in a new
+    browser tab.
+
+    Refer to :doc:`/general/architecture` for more information.
+
 .. contents:: **Table of contents**:
     :depth: 2
     :local:
