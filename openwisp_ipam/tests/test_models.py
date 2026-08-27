@@ -53,62 +53,64 @@ class TestModels(CreateModelsMixin, TestCase):
             self.fail("ValidationError not raised")
 
     def test_duplicate_ipaddress_in_hierarchy(self):
-        parent_subnet = self._create_subnet(subnet="10.0.0.0/16")
-        child_subnet = self._create_subnet(
-            subnet="10.0.1.0/24", master_subnet=parent_subnet
-        )
-        self._create_ipaddress(ip_address="10.0.1.10", subnet=child_subnet)
-        with self.assertRaises(ValidationError) as context_manager:
-            self._create_ipaddress(ip_address="10.0.1.10", subnet=parent_subnet)
-        self.assertEqual(
-            context_manager.exception.message_dict["ip_address"],
-            ["IP address already used."],
-        )
-
-    def test_duplicate_ipaddress_in_parent_subnet(self):
-        parent_subnet = self._create_subnet(subnet="10.0.0.0/16")
-        child_subnet = self._create_subnet(
-            subnet="10.0.1.0/24", master_subnet=parent_subnet
-        )
-        self._create_ipaddress(ip_address="10.0.1.10", subnet=parent_subnet)
-        with self.assertRaises(ValidationError) as context_manager:
-            self._create_ipaddress(ip_address="10.0.1.10", subnet=child_subnet)
-        self.assertEqual(
-            context_manager.exception.message_dict["ip_address"],
-            ["IP address already used."],
-        )
+        for organization_name, source, target in (
+            ("child-to-parent", "child", "parent"),
+            ("parent-to-child", "parent", "child"),
+        ):
+            with self.subTest(direction=organization_name):
+                organization = self._create_org(name=organization_name)
+                parent_subnet = self._create_subnet(
+                    subnet="10.0.0.0/16", organization=organization
+                )
+                child_subnet = self._create_subnet(
+                    subnet="10.0.1.0/24",
+                    master_subnet=parent_subnet,
+                    organization=organization,
+                )
+                subnets = {"parent": parent_subnet, "child": child_subnet}
+                self._create_ipaddress(ip_address="10.0.1.10", subnet=subnets[source])
+                with self.assertRaises(ValidationError) as context_manager:
+                    self._create_ipaddress(
+                        ip_address="10.0.1.10", subnet=subnets[target]
+                    )
+                self.assertEqual(
+                    context_manager.exception.message_dict["ip_address"],
+                    ["IP address already used."],
+                )
 
     def test_duplicate_ipaddress_in_root_subnet(self):
-        root_subnet = self._create_subnet(subnet="10.0.0.0/16")
-        child_subnet = self._create_subnet(
-            subnet="10.0.1.0/24", master_subnet=root_subnet
-        )
-        grandchild_subnet = self._create_subnet(
-            subnet="10.0.1.0/28", master_subnet=child_subnet
-        )
-        self._create_ipaddress(ip_address="10.0.1.10", subnet=grandchild_subnet)
-        with self.assertRaises(ValidationError) as context_manager:
-            self._create_ipaddress(ip_address="10.0.1.10", subnet=root_subnet)
-        self.assertEqual(
-            context_manager.exception.message_dict["ip_address"],
-            ["IP address already used."],
-        )
-
-    def test_duplicate_ipaddress_in_grandchild_subnet(self):
-        root_subnet = self._create_subnet(subnet="10.0.0.0/16")
-        child_subnet = self._create_subnet(
-            subnet="10.0.1.0/24", master_subnet=root_subnet
-        )
-        grandchild_subnet = self._create_subnet(
-            subnet="10.0.1.0/28", master_subnet=child_subnet
-        )
-        self._create_ipaddress(ip_address="10.0.1.10", subnet=root_subnet)
-        with self.assertRaises(ValidationError) as context_manager:
-            self._create_ipaddress(ip_address="10.0.1.10", subnet=grandchild_subnet)
-        self.assertEqual(
-            context_manager.exception.message_dict["ip_address"],
-            ["IP address already used."],
-        )
+        for organization_name, source, target in (
+            ("grandchild-to-root", "grandchild", "root"),
+            ("root-to-grandchild", "root", "grandchild"),
+        ):
+            with self.subTest(direction=organization_name):
+                organization = self._create_org(name=organization_name)
+                root_subnet = self._create_subnet(
+                    subnet="10.0.0.0/16", organization=organization
+                )
+                child_subnet = self._create_subnet(
+                    subnet="10.0.1.0/24",
+                    master_subnet=root_subnet,
+                    organization=organization,
+                )
+                grandchild_subnet = self._create_subnet(
+                    subnet="10.0.1.0/28",
+                    master_subnet=child_subnet,
+                    organization=organization,
+                )
+                subnets = {
+                    "root": root_subnet,
+                    "grandchild": grandchild_subnet,
+                }
+                self._create_ipaddress(ip_address="10.0.1.10", subnet=subnets[source])
+                with self.assertRaises(ValidationError) as context_manager:
+                    self._create_ipaddress(
+                        ip_address="10.0.1.10", subnet=subnets[target]
+                    )
+                self.assertEqual(
+                    context_manager.exception.message_dict["ip_address"],
+                    ["IP address already used."],
+                )
 
     def test_ipaddress_in_different_organizations(self):
         org1 = self._create_org(name="test1organization")
