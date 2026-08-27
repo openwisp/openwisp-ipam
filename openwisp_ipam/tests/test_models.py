@@ -112,6 +112,19 @@ class TestModels(CreateModelsMixin, TestCase):
                     ["IP address already used."],
                 )
 
+    def test_get_related_subnet_pks(self):
+        root_subnet = self._create_subnet(subnet="10.0.0.0/16")
+        child_subnet = self._create_subnet(
+            subnet="10.0.1.0/24", master_subnet=root_subnet
+        )
+        grandchild_subnet = self._create_subnet(
+            subnet="10.0.1.0/28", master_subnet=child_subnet
+        )
+        self.assertEqual(
+            child_subnet.get_related_subnet_pks(),
+            [child_subnet.pk, root_subnet.pk, grandchild_subnet.pk],
+        )
+
     def test_ipaddress_in_different_organizations(self):
         org1 = self._create_org(name="test1organization")
         org2 = self._create_org(name="test2organization")

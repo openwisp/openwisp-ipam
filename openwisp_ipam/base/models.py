@@ -112,42 +112,33 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             error_message = _("Subnet overlaps with a subnet of another organization.")
 
         qs = self._meta.model.objects.filter(organization_query).only("subnet")
-        # exclude parent subnets
-        exclude = [self.pk]
-        parent_subnet = self.master_subnet
-        while parent_subnet:
-            exclude.append(parent_subnet.pk)
-            parent_subnet = parent_subnet.master_subnet
-        # exclude child subnets
-        child_subnets = list(self.child_subnet_set.values_list("pk", flat=True))
-        while child_subnets:
-            exclude += child_subnets
-            child_subnets = list(
-                self._meta.model.objects.filter(
-                    master_subnet__in=child_subnets
-                ).values_list("pk", flat=True)
-            )
+        exclude = self.get_related_subnet_pks()
         # exclude also identical subnets (handled by other checks)
         qs = qs.exclude(pk__in=exclude).exclude(subnet=self.subnet)
         for subnet in qs.iterator():
             if ip_network(self.subnet).overlaps(subnet.subnet):
                 raise ValidationError({"subnet": error_message.format(subnet.subnet)})
 
-    def get_hierarchy_ids(self):
-        ids = [self.pk]
+    def get_related_subnet_pks(self):
+        """Return a list of primary keys for this subnet, its ancestors and descendants.
+
+        The current subnet comes first, followed by its nearest ancestors and
+        descendants level by level.
+        """
+        pks = [self.pk]
         parent_subnet = self.master_subnet
         while parent_subnet:
-            ids.append(parent_subnet.pk)
+            pks.append(parent_subnet.pk)
             parent_subnet = parent_subnet.master_subnet
         child_subnets = list(self.child_subnet_set.values_list("pk", flat=True))
         while child_subnets:
-            ids += child_subnets
+            pks += child_subnets
             child_subnets = list(
                 self._meta.model.objects.filter(
                     master_subnet__in=child_subnets
                 ).values_list("pk", flat=True)
             )
-        return ids
+        return pks
 
     def _validate_master_subnet_consistency(self):
         if not self.master_subnet:
@@ -317,10 +308,10 @@ class AbstractIpAddress(TimeStampedEditableModel):
         self._validate_related_subnets()
 
     def _validate_related_subnets(self):
-        subnet_ids = self.subnet.get_hierarchy_ids()
+        subnet_pks = self.subnet.get_related_subnet_pks()
         duplicate = (
             load_model("openwisp_ipam", "IpAddress")
-            .objects.filter(ip_address=self.ip_address, subnet_id__in=subnet_ids)
+            .objects.filter(ip_address=self.ip_address, subnet_id__in=subnet_pks)
             .exclude(pk=self.pk)
             .exists()
         )
