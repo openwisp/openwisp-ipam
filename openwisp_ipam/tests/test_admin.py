@@ -75,6 +75,12 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         self.assertContains(
             response, '<h3 class="subnet-visual">Subnet Visual Display</h3>'
         )
+        self.assertContains(response, 'id="graph-loading"')
+        self.assertContains(response, 'id="graph-error" class="errorlist hide"')
+        self.assertContains(
+            response,
+            reverse("ipam:subnet_allocation", args=(subnet.id,)),
+        )
 
     def test_ipv6_subnet_change(self):
         subnet = self._create_subnet(

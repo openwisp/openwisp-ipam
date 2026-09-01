@@ -130,6 +130,11 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         while parent_subnet:
             pks.append(parent_subnet.pk)
             parent_subnet = parent_subnet.master_subnet
+        return pks + self.get_descendant_subnet_pks()
+
+    def get_descendant_subnet_pks(self):
+        """Return a list of primary keys for this subnet's descendants."""
+        pks = []
         child_subnets = list(self.child_subnet_set.values_list("pk", flat=True))
         while child_subnets:
             pks += child_subnets
@@ -165,6 +170,45 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             if str(host) not in ipaddress_set:
                 return str(host)
         return None
+
+    def get_allocation(self):
+        """Return counts of total, used, reserved, and available addresses.
+
+        Addresses with IP records in this subnet or its descendants are used.
+        Remaining addresses in direct child subnets are reserved.
+        """
+        start, end = self._get_usable_address_range()
+        reserved = 0
+        for child in self.child_subnet_set.only("subnet", "master_subnet").iterator():
+            child_start = max(start, int(child.subnet.network_address))
+            child_end = min(end, int(child.subnet.broadcast_address))
+            if child_start <= child_end:
+                reserved += child_end - child_start + 1
+        total = max(end - start + 1, 0)
+        descendant_pks = self.get_descendant_subnet_pks()
+        used = self.ipaddress_set.count()
+        if descendant_pks:
+            IpAddress = load_model("openwisp_ipam", "IpAddress")
+            descendant_used = IpAddress.objects.filter(
+                subnet_id__in=descendant_pks
+            ).count()
+            used += descendant_used
+            reserved = max(reserved - descendant_used, 0)
+        return {
+            "total": total,
+            "used": used,
+            "reserved": reserved,
+            "available": max(total - used - reserved, 0),
+        }
+
+    def _get_usable_address_range(self):
+        start = int(self.subnet.network_address)
+        end = int(self.subnet.broadcast_address)
+        if self.subnet.prefixlen not in [32, 128]:
+            start += 1
+            if self.subnet.version == 4:
+                end -= 1
+        return start, end
 
     def request_ip(self, options=None):
         if options is None:

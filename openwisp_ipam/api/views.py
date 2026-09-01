@@ -44,6 +44,12 @@ class IpAddressOrgMixin(FilterByParentManaged):
         qs = Subnet.objects.filter(pk=self.kwargs["subnet_id"])
         return qs
 
+    def get_subnet(self):
+        qs = self.get_parent_queryset()
+        if not self.request.user.is_superuser:
+            qs = self.get_organization_queryset(qs)
+        return get_object_or_404(qs)
+
 
 class ProtectedAPIMixin(BaseProtectedAPIMixin):
     throttle_scope = "ipam"
@@ -107,7 +113,10 @@ class HostsSet:
         self.stop = stop
         self.subnet = subnet
         self.network = int(self.subnet.subnet.network_address)
-        self.used_set = subnet.ipaddress_set.all()
+        self.used_set = IpAddress.objects.filter(
+            subnet_id__in=subnet.get_related_subnet_pks()
+        )
+        self.reserved_addresses = None
 
     def __getitem__(self, i):
         if isinstance(i, slice):
@@ -122,13 +131,35 @@ class HostsSet:
             return HostsSet(self.subnet, self.start + start, self.start + stop)
         if i >= self.count():
             raise IndexError
-        # Host starts from next address
-        host = self.subnet.subnet._address_class(self.network + 1 + i + self.start)
-        # In case of single hosts ie subnet/32 & /128
+        host = self._get_host(i)
+        used = self.used_set.filter(ip_address=str(host)).exists()
+        return HostsResponse(str(host), used, self._is_reserved(host))
+
+    def _get_host(self, index):
+        host = self.subnet.subnet._address_class(self.network + 1 + index + self.start)
         if self.subnet.subnet.prefixlen in [32, 128]:
             host = host - 1
-        used = self.used_set.filter(ip_address=str(host)).exists()
-        return HostsResponse(str(host), used)
+        return host
+
+    def _is_reserved(self, host):
+        if self.stop is None:
+            return any(
+                host in child.subnet
+                for child in self.subnet.child_subnet_set.only(
+                    "subnet", "master_subnet"
+                ).iterator()
+            )
+        if self.reserved_addresses is None:
+            self.reserved_addresses = set()
+            start = int(self._get_host(0))
+            end = int(self._get_host(self.stop - self.start - 1))
+            for child in self.subnet.child_subnet_set.only(
+                "subnet", "master_subnet"
+            ).iterator():
+                child_start = max(start, int(child.subnet.network_address))
+                child_end = min(end, int(child.subnet.broadcast_address))
+                self.reserved_addresses.update(range(child_start, child_end + 1))
+        return int(host) in self.reserved_addresses
 
     def count(self):
         if self.stop is not None:
@@ -263,10 +294,19 @@ class SubnetHostsView(IpAddressOrgMixin, ProtectedAPIMixin, ListAPIView):
     pagination_class = HostsListPagination
 
     def get_queryset(self):
-        super().get_queryset()
-        subnet = get_object_or_404(self.subnet_model, pk=self.kwargs["subnet_id"])
+        subnet = self.get_subnet()
         qs = HostsSet(subnet)
         return qs
+
+
+class SubnetAllocationView(IpAddressOrgMixin, ProtectedAPIMixin, RetrieveAPIView):
+    subnet_model = Subnet
+    queryset = Subnet.objects.none()
+    serializer_class = serializers.Serializer
+
+    def get(self, request, *args, **kwargs):
+        subnet = self.get_subnet()
+        return Response(subnet.get_allocation())
 
 
 import_subnet = ImportSubnetView.as_view()
@@ -278,3 +318,4 @@ ip_address = IpAddressView.as_view()
 subnet_list_ipaddress = IpAddressListCreateView.as_view()
 get_next_available_ip = AvailableIpView.as_view()
 subnet_hosts = SubnetHostsView.as_view()
+subnet_allocation = SubnetAllocationView.as_view()

@@ -25,7 +25,13 @@
 <h2>{% trans 'Network Hierarchical View' %}</h2>
 <div id="jstree"></div>
 
+<div id="graph-loading" role="status">
+  {% trans 'Loading subnet allocation...' %}
+</div>
 <div id="graph"></div>
+<ul id="graph-error" class="errorlist hide">
+  <li>{% trans 'Unable to load subnet allocation.' %}</li>
+</ul>
 
 <h3 class="subnet-visual">{% trans 'Subnet Visual Display' %}</h3>
 <div class="subnet-visual">
@@ -80,36 +86,12 @@
     subnet_href.appendChild(subnet_node);
     parent_element.appendChild(subnet_list);
   }
-  // Ipam Graph / Visual
-  var rootStyle = getComputedStyle(document.documentElement);
-  var data = [],
-    layout = {},
-    vals = {{ values| safe }}
-  vals[1] = Number(vals[1]);
-  data = [
-    {
-      values: {{ values| safe }},
-    labels: {{ labels| safe }},
-    text: vals,
-    type: 'pie',
-    hoverinfo: 'label+text',
-    textinfo: 'percent',
-    marker: {
-      colors: [
-        rootStyle.getPropertyValue('--ow-color-danger').trim(),
-        rootStyle.getPropertyValue('--ow-color-success').trim()
-      ]
-    },
-    textfont: {
-      size: 18,
-      color: rootStyle.getPropertyValue('--ow-color-white').trim(),
-    }
-      }
-  ];
-  layout = {
-    title: '{% trans "Subnet Freespace Display" %}'
-  };
-  Plotly.newPlot('graph', data, layout);
+  initSubnetAllocationGraph(
+    django.jQuery,
+    '{% url "ipam:subnet_allocation" original.pk %}',
+    ['{% trans "Available" %}', '{% trans "Reserved" %}', '{% trans "Used" %}'],
+    '{% trans "Subnet Allocation" %}'
+  );
 </script>
 {% endif %}
 {% endblock %}

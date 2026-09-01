@@ -19,7 +19,6 @@ from rest_framework.exceptions import PermissionDenied
 from reversion.admin import VersionAdmin
 
 from .api.utils import AuthorizeCSVOrgManaged, CsvImportAPIException
-from .api.views import HostsSet
 from .base.forms import IpAddressImportForm
 from .base.models import CsvImportException
 from .filters import SubnetFilter, SubnetOrganizationFilter
@@ -87,8 +86,6 @@ class SubnetAdmin(
             subnet_tree.append(instance_subnets)
             collection_depth += 1
 
-        used = instance.ipaddress_set.count()
-
         # Storing UUID corresponding to respective IP address in a dictionary
         ip_id_list = (
             IpAddress.objects.filter(subnet=instance)
@@ -101,12 +98,7 @@ class SubnetAdmin(
         ip_uuid = {}
         for ip_addr, Ip in ip_id_list.items():
             ip_uuid[ip_addr] = f"{Ip[0:8]}-{Ip[8:12]}-{Ip[12:16]}-{Ip[16:20]}-{Ip[20:]}"
-        available = HostsSet(instance).count() - used
-        labels = ["Used", "Available"]
-        values = [used, available]
         extra_context = {
-            "labels": labels,
-            "values": values,
             "original": instance,
             "ip_uuid": ip_uuid,
             "ipaddress_add_url": ipaddress_add_url,

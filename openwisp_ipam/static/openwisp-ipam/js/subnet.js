@@ -69,6 +69,9 @@ function initHostsInfiniteScroll(
         "</a>"
       );
     }
+    if (addr.reserved) {
+      return '<span class="reserved">' + addr.address + "</span>";
+    }
     return (
       '<a href=\"' +
       address_add_url +
@@ -196,4 +199,54 @@ function initHostsInfiniteScroll(
   });
   $("#subnet-visual").scroll(onUpdate);
   onUpdate();
+}
+
+function initSubnetAllocationGraph($, allocationUrl, labels, title) {
+  "use strict";
+  var rootStyle = getComputedStyle(document.documentElement),
+    addresses = gettext("addresses");
+  $.ajax({
+    type: "GET",
+    url: allocationUrl,
+    success: function (allocation) {
+      var values = [allocation.available, allocation.reserved, allocation.used];
+      Plotly.newPlot(
+        "graph",
+        [
+          {
+            values: values,
+            labels: labels,
+            customdata: labels.map(function (label) {
+              return label.toLowerCase();
+            }),
+            type: "pie",
+            sort: false,
+            hovertemplate:
+              "%{value:,.0f} %{customdata} " +
+              addresses +
+              " (%{percent:.2%})<extra></extra>",
+            textinfo: "percent",
+            marker: {
+              colors: [
+                rootStyle.getPropertyValue("--ow-color-success").trim(),
+                rootStyle.getPropertyValue("--ow-color-warning").trim(),
+                rootStyle.getPropertyValue("--ow-color-danger").trim(),
+              ],
+            },
+            textfont: {
+              size: 18,
+              color: rootStyle.getPropertyValue("--ow-color-white").trim(),
+            },
+          },
+        ],
+        { title: title },
+      );
+    },
+    error: function () {
+      $("#graph-error").removeClass("hide");
+    },
+    complete: function () {
+      $("#graph-loading").addClass("hide");
+    },
+  });
 }

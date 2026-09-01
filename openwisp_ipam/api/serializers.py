@@ -35,3 +35,4 @@ class ImportSubnetSerializer(serializers.Serializer):
 class HostsResponseSerializer(serializers.Serializer):
     address = serializers.CharField()
     used = serializers.BooleanField()
+    reserved = serializers.BooleanField()

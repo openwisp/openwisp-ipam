@@ -92,6 +92,32 @@ Returns the next available IP address under a subnet.
 
     /api/v1/ipam/subnet/<subnet_id>/get-next-available-ip/
 
+Subnet Allocation
+~~~~~~~~~~~~~~~~~
+
+Fetch aggregate allocation data for a specific subnet. The response
+separates IP addresses assigned to the subnet or its descendants, address
+space reserved by direct child subnets, and available address space.
+
+GET
++++
+
+.. code-block:: text
+
+    /api/v1/ipam/subnet/<subnet_id>/allocation/
+
+Response
+++++++++
+
+.. code-block:: json
+
+    {
+        "total": 65534,
+        "used": 10,
+        "reserved": 512,
+        "available": 65012
+    }
+
 Request IP
 ~~~~~~~~~~
 

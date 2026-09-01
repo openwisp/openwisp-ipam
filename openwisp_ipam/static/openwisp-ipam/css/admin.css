@@ -10,7 +10,8 @@ section.subnet-visual {
   overflow-y: scroll;
   height: 700px;
 }
-.subnet-visual a {
+.subnet-visual a,
+.subnet-visual .reserved {
   display: inline-block;
   width: 120px;
   text-align: center;
@@ -41,6 +42,10 @@ section.subnet-visual {
   background: color-mix(in srgb, var(--ow-color-danger), var(--ow-color-black) 15%);
   border: 1px solid var(--ow-overlay-40);
 }
+.subnet-visual .reserved {
+  background: var(--ow-color-warning);
+  border: 1px solid var(--ow-overlay-25);
+}
 
 .subnet-visual .page {
   display: inline;
@@ -51,4 +56,32 @@ section.subnet-visual {
 }
 #goto-button {
   padding: 7px 10px;
+}
+
+#graph-loading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 20px;
+}
+
+#graph-loading.hide {
+  display: none;
+}
+
+#graph-loading::before {
+  animation: graph-loading 1s linear infinite;
+  border: 2px solid var(--ow-overlay-25);
+  border-radius: 50%;
+  border-top-color: var(--ow-color-success);
+  content: "";
+  height: 16px;
+  width: 16px;
+}
+
+@keyframes graph-loading {
+  to {
+    transform: rotate(360deg);
+  }
 }

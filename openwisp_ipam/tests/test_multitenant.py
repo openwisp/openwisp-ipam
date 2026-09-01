@@ -187,6 +187,26 @@ class TestMultitenantApi(
             response = self.client.get(url)
             self.assertEqual(response.status_code, 404)
 
+    def test_subnet_allocation(self):
+        org_a = self._get_org(org_name="org_a")
+        subnet = self._create_subnet(subnet="10.0.0.0/24", organization=org_a)
+        url = reverse("ipam:subnet_allocation", args=(subnet.id,))
+
+        with self.subTest("Test subnet allocation accessible by org manager"):
+            self._login(username="user_a", password="tester")
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest("Test subnet allocation accessible by superuser"):
+            self._login(username="superuser", password="tester")
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+
+        with self.subTest("Test subnet allocation inaccessible by other organizations"):
+            self._login(username="user_b", password="tester")
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 404)
+
     def test_subnet_list_ipaddress(self):
         org_a = self._get_org(org_name="org_a")
         subnet = self._create_subnet(subnet="10.0.0.0/24", organization=org_a)
