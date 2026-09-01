@@ -6,7 +6,7 @@ coverage erase
 coverage run runtests.py --parallel --exclude-tag=selenium_tests \
   || coverage run runtests.py --exclude-tag=selenium_tests
 
-SELENIUM_HEADLESS=1 coverage run runtests.py --tag=selenium_tests --no-input --exclude-pytest
+SELENIUM_HEADLESS=1 coverage run runtests.py --tag=selenium_tests --no-input
 
 SAMPLE_APP=1 coverage run runtests.py --parallel --exclude-tag=selenium_tests \
   || SAMPLE_APP=1 coverage run runtests.py --exclude-tag=selenium_tests
