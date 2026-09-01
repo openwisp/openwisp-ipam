@@ -280,6 +280,13 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 "Please create this organization or adapt the CSV file being imported "
                 "by pointing the data to another organization."
             )
+        if not instance.is_active:
+            raise CsvImportException(
+                _(
+                    "The import operation failed because the data being imported "
+                    "belongs to a disabled organization: “{org_slug}”. "
+                ).format(org_slug=org_slug)
+            )
         return instance
 
 

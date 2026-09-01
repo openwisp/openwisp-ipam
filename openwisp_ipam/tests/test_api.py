@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from openwisp_users.tests.test_api import AuthenticationMixin, TestDisabledOrgApiMixin
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from swapper import load_model
 
@@ -14,7 +15,14 @@ Subnet = load_model("openwisp_ipam", "Subnet")
 IpAddress = load_model("openwisp_ipam", "IpAddress")
 
 
-class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase):
+class TestApi(
+    TestMultitenantAdminMixin,
+    TestDisabledOrgApiMixin,
+    AuthenticationMixin,
+    CreateModelsMixin,
+    PostDataMixin,
+    TestCase,
+):
     def setUp(self):
         super().setUp()
         self._login()
@@ -351,3 +359,128 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         host_address_32 = response.data["results"][0]["address"]
         self.assertEqual(host_address_128, "2001:db00::")
         self.assertEqual(host_address_32, "192.168.0.0")
+
+    def test_subnet_disabled_org_api_crud(self):
+        org = self._create_org(name="disabled-org", slug="disabled-org")
+        subnet = self._create_subnet(organization=org, subnet="10.50.0.0/24")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        self._test_disabled_org_api_crud(
+            subnet,
+            detail_url=reverse("ipam:subnet", args=[subnet.pk]),
+            list_url=reverse("ipam:subnet_list_create"),
+            create_payload={
+                "name": "new-subnet",
+                "subnet": "10.51.0.0/24",
+                "organization": str(org.pk),
+            },
+            update_payload={"name": "changed"},
+        )
+
+    def test_ipaddress_disabled_org_api_crud(self):
+        org = self._create_org(name="disabled-org", slug="disabled-org")
+        subnet = self._create_subnet(organization=org, subnet="10.52.0.0/24")
+        ip_address = self._create_ipaddress(ip_address="10.52.0.5", subnet=subnet)
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        self._test_disabled_org_api_crud(
+            ip_address,
+            detail_url=reverse("ipam:ip_address", args=[ip_address.pk]),
+            list_url=reverse("ipam:list_create_ip_address", args=[subnet.pk]),
+            create_payload={"subnet": str(subnet.pk), "ip_address": "10.52.0.6"},
+            update_payload={"description": "changed"},
+            unchanged_field="description",
+            organization=org,
+            # `IpAddress` has no `organization` field of its own, so the
+            # nested create is blocked by `DisabledOrgParentSubnetPermission`
+            # (403), not by the serializer's default 400 create expectation.
+            superuser_expected={"create": {"status": 403}},
+        )
+
+    def test_ipaddress_api_cannot_move_to_disabled_org_subnet(self):
+        active_org = self._get_org()
+        active_subnet = self._create_subnet(
+            organization=active_org, subnet="10.53.0.0/24"
+        )
+        ip_address = self._create_ipaddress(
+            ip_address="10.53.0.5", subnet=active_subnet
+        )
+        disabled_subnet = self._create_disabled_org_subnet(subnet="10.54.0.0/24")
+        response = self.client.patch(
+            reverse("ipam:ip_address", args=(ip_address.id,)),
+            data=json.dumps({"subnet": str(disabled_subnet.id)}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("subnet", response.data)
+        ip_address.refresh_from_db()
+        self.assertEqual(ip_address.subnet_id, active_subnet.id)
+
+    def test_request_ip_disabled_org_api(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.55.0.0/24")
+        response = self.client.post(
+            reverse("ipam:request_ip", args=(subnet.id,)),
+            data=json.dumps({"description": "Testing"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 0)
+
+    def test_create_ip_address_disabled_org_api(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.56.0.0/24")
+        post_data = json.dumps({"subnet": str(subnet.id), "ip_address": "10.56.0.5"})
+        response = self.client.post(
+            reverse("ipam:list_create_ip_address", args=(subnet.id,)),
+            data=post_data,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 0)
+
+    def test_get_next_available_ip_disabled_org_api(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.57.0.0/24")
+        response = self.client.get(
+            reverse("ipam:get_next_available_ip", args=(subnet.id,))
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_subnet_hosts_disabled_org_api(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.58.0.0/24")
+        response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
+        self.assertEqual(response.status_code, 200)
+
+    def test_export_subnet_disabled_org_api(self):
+        subnet = self._create_disabled_org_subnet(
+            subnet="10.59.0.0/24", name="Disabled export"
+        )
+        response = self.client.post(reverse("ipam:export-subnet", args=(subnet.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/csv")
+
+    def test_import_subnet_disabled_org_api(self):
+        org = self._create_org(name="disabled-import-org", slug="disabled-import-org")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        csv_data = """Disabled Import,
+        10.60.1.0/24,
+        disabled-import-org,
+        ,
+        ip address,description
+        10.60.1.1,Disabled"""
+        csvfile = SimpleUploadedFile("data.csv", bytes(csv_data, "utf-8"))
+        response = self.client.post(reverse("ipam:import-subnet"), {"csvfile": csvfile})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("disabled organization", response.data["error"])
+        self.assertEqual(Subnet.objects.filter(subnet="10.60.1.0/24").count(), 0)
+
+    def test_import_subnet_shared_org_api(self):
+        csv_data = """Shared subnet,
+        10.61.1.0/24,
+        ,
+        ,
+        ip address,description
+        10.61.1.1,Shared"""
+        csvfile = SimpleUploadedFile("data.csv", bytes(csv_data, "utf-8"))
+        response = self.client.post(reverse("ipam:import-subnet"), {"csvfile": csvfile})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(Subnet.objects.get(subnet="10.61.1.0/24").organization)

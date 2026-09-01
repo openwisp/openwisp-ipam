@@ -59,6 +59,7 @@ jobs:
           pip install -U pip wheel setuptools
           pip install -U -r requirements-test.txt
           pip install -U -e .
+          pip install --upgrade --force-reinstall --no-deps --no-cache-dir https://github.com/openwisp/openwisp-users/tarball/issues/522-disabled-org
           pip install ${{ matrix.django-version }}
           pip check
           sudo npm install -g prettier
@@ -68,11 +69,16 @@ jobs:
 
       - name: Tests
         if: ${{ !cancelled() && steps.deps.conclusion == 'success' }}
+        run: ./runtests
+        env:
+          SELENIUM_HEADLESS: 1
+          GECKO_LOG: 1
+
+      - name: Show gecko web driver log on failures
+        if: ${{ failure() }}
         run: |
-          coverage run ./runtests.py --parallel
-          SAMPLE_APP=1 coverage run ./runtests.py --parallel
-          coverage combine
-          coverage xml
+          [ -f geckodriver.log ] && cat geckodriver.log \
+            || echo "there is no gecko web driver log to show"
 
       - name: Upload Coverage
         if: ${{ success() }}

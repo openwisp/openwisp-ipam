@@ -42,6 +42,10 @@ section.subnet-visual {
   border: 1px solid var(--ow-overlay-40);
 }
 
+.subnet-visual a.disabled {
+  cursor: not-allowed;
+}
+
 .subnet-visual .page {
   display: inline;
 }

@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -312,6 +314,43 @@ class TestMultitenantApi(
             response = self.client.post(**post_data)
             self.assertEqual(response.status_code, 404)
 
+    def test_nested_ipaddress_writes_reject_other_organizations(self):
+        """Prevent nested writes from bypassing organization isolation."""
+        org_b = self._get_org(org_name="org_b")
+        org_c = self._create_org(name="org_c", slug="org_c")
+        active_subnet = self._create_subnet(subnet="10.1.0.0/24", organization=org_b)
+        disabled_subnet = self._create_subnet(subnet="10.2.0.0/24", organization=org_c)
+        org_c.is_active = False
+        org_c.save(update_fields=["is_active"])
+        self._login(username="user_a", password="tester")
+
+        for subnet, label in (
+            (active_subnet, "active subnet"),
+            (disabled_subnet, "disabled subnet"),
+        ):
+            with self.subTest(f"request IP for other organization's {label}"):
+                response = self.client.post(
+                    reverse("ipam:request_ip", args=(subnet.id,)),
+                    data=json.dumps({"description": "Testing"}),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 404)
+
+            with self.subTest(f"create IP for other organization's {label}"):
+                response = self.client.post(
+                    reverse("ipam:list_create_ip_address", args=(subnet.id,)),
+                    data=json.dumps(
+                        {
+                            "ip_address": f"{subnet.subnet.network_address + 5}",
+                            "subnet": str(subnet.id),
+                        }
+                    ),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(IpAddress.objects.count(), 0)
+
     def test_import_subnet(self):
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
@@ -434,12 +473,20 @@ class TestMultitenantApi(
         url = f'{reverse("ipam:subnet_list_create")}?format=api'
 
         with self.subTest(
-            "Test `Organization` and `Master subnet` field filter for org manager"
+            "Test `Organization` and `Master subnet` field filter for administrator"
         ):
-            self._login(username="user_a", password="tester")
+            self._login(username="administrator", password="tester")
             response = self.client.get(url)
             self.assertContains(response, "org_a</option>")
             self.assertContains(response, "10.0.0.0/24</option>")
+            self.assertNotContains(response, "org_b</option>")
+            self.assertNotContains(response, "10.10.0.0/24</option>")
+
+        with self.subTest("Operators can only view subnets in their organization"):
+            self._login(username="user_a", password="tester")
+            response = self.client.get(url)
+            self.assertNotContains(response, "org_a</option>")
+            self.assertNotContains(response, "10.0.0.0/24</option>")
             self.assertNotContains(response, "org_b</option>")
             self.assertNotContains(response, "10.10.0.0/24</option>")
 
