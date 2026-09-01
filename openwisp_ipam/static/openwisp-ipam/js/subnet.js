@@ -243,13 +243,20 @@ function initSubnetAllocationGraph($, allocationUrl, labels, title) {
           },
         ],
         { title: title },
+      ).then(
+        function () {
+          $("#graph-loading").addClass("hide");
+        },
+        function (error) {
+          console.error("Unable to render subnet allocation", error);
+          $("#graph-error").removeClass("hide");
+          $("#graph-loading").addClass("hide");
+        },
       );
     },
     error: function (xhr, status, error) {
       console.error("Unable to load subnet allocation", status, error);
       $("#graph-error").removeClass("hide");
-    },
-    complete: function () {
       $("#graph-loading").addClass("hide");
     },
   });

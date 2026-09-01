@@ -125,12 +125,19 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         The current subnet comes first, followed by its nearest ancestors and
         descendants level by level.
         """
-        pks = [self.pk]
+        return (
+            [self.pk]
+            + self._get_parent_subnet_pks()
+            + self.get_descendant_subnet_pks(organization_filter)
+        )
+
+    def _get_parent_subnet_pks(self):
+        pks = []
         parent_subnet = self.master_subnet
         while parent_subnet:
             pks.append(parent_subnet.pk)
             parent_subnet = parent_subnet.master_subnet
-        return pks + self.get_descendant_subnet_pks(organization_filter)
+        return pks
 
     def get_child_subnets(self, organization_filter=None):
         qs = self.child_subnet_set.all()
@@ -197,13 +204,18 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 reserved += child_end - child_start + 1
         total = max(end - start + 1, 0)
         descendant_pks = self.get_descendant_subnet_pks(organization_filter)
-        used = self._count_used_ips(self.ipaddress_set, start, end)
+        IpAddress = load_model("openwisp_ipam", "IpAddress")
+        used = self._count_used_ips(
+            IpAddress.objects.filter(
+                subnet_id__in=[self.pk] + self._get_parent_subnet_pks() + descendant_pks
+            ),
+            start,
+            end,
+        )
         if descendant_pks:
-            IpAddress = load_model("openwisp_ipam", "IpAddress")
             descendant_used = self._count_used_ips(
                 IpAddress.objects.filter(subnet_id__in=descendant_pks), start, end
             )
-            used += descendant_used
             reserved = max(reserved - descendant_used, 0)
         return {
             "total": total,
