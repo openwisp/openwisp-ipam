@@ -30,7 +30,7 @@ section.subnet-visual {
   padding: 8px 5px;
 }
 .subnet-visual a:hover {
-  background: color-mix(in srgb, var(--ow-color-success), black 15%);
+  background: color-mix(in srgb, var(--ow-color-success), var(--ow-color-black) 15%);
   border: 1px solid var(--ow-overlay-40);
 }
 .subnet-visual a.used {
@@ -38,7 +38,7 @@ section.subnet-visual {
   border: 1px solid var(--ow-overlay-25);
 }
 .subnet-visual a.used:hover {
-  background: color-mix(in srgb, var(--ow-color-danger), black 15%);
+  background: color-mix(in srgb, var(--ow-color-danger), var(--ow-color-black) 15%);
   border: 1px solid var(--ow-overlay-40);
 }
 
