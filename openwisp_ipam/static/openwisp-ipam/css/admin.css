@@ -41,7 +41,6 @@ section.subnet-visual {
   background: color-mix(in srgb, var(--ow-color-danger), var(--ow-color-black) 15%);
   border: 1px solid var(--ow-overlay-40);
 }
-
 .subnet-visual .page {
   display: inline;
 }
