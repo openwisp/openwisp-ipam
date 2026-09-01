@@ -3,6 +3,7 @@ from collections import OrderedDict
 from copy import deepcopy
 
 import swapper
+from django.db.models import Q
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.api.mixins import (
@@ -39,7 +40,7 @@ Subnet = swapper.load_model("openwisp_ipam", "Subnet")
 Organization = swapper.load_model("openwisp_users", "Organization")
 
 
-class IpAddressOrgMixin(FilterByOrganizationManaged, FilterByParentManaged):
+class IpAddressOrgMixin(FilterByParentManaged):
     def get_parent_queryset(self):
         qs = Subnet.objects.filter(pk=self.kwargs["subnet_id"])
         return qs
@@ -47,7 +48,17 @@ class IpAddressOrgMixin(FilterByOrganizationManaged, FilterByParentManaged):
     def get_organization_filter(self):
         if self.request.user.is_superuser:
             return None
-        return self.queryset_organization_conditions
+        organizations = self.request.user.organizations_managed
+        conditions = Q(organization__in=organizations)
+        if len(organizations):
+            conditions |= Q(organization__isnull=True)
+        return conditions
+
+    def get_organization_queryset(self, qs):
+        organization_filter = self.get_organization_filter()
+        if organization_filter is not None:
+            qs = qs.filter(organization_filter)
+        return qs
 
     def get_subnet(self):
         qs = self.get_parent_queryset()

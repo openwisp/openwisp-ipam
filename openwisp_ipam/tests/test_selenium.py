@@ -91,3 +91,28 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         self.assertEqual(used.text, "10.0.0.2")
         self.assertEqual(used.tag_name, "span")
         self.assertIsNone(used.get_attribute("href"))
+
+    def test_ipv6_subnet_visual_display(self):
+        subnet = self._create_subnet(subnet="2001:db8::/126")
+        used_subnet = self._create_subnet(
+            subnet="2001:db8::1/128", master_subnet=subnet
+        )
+        self._create_subnet(subnet="2001:db8::2/128", master_subnet=subnet)
+        self._create_ipaddress(ip_address="2001:db8::1", subnet=used_subnet)
+        self.login()
+        self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
+        self.wait_until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "#subnet-visual .reserved")
+            )
+        )
+        reserved = self.find_element(
+            by=By.CSS_SELECTOR,
+            value="#subnet-visual .reserved",
+        )
+        used = self.find_element(
+            by=By.CSS_SELECTOR,
+            value="#subnet-visual .used",
+        )
+        self.assertEqual(reserved.value_of_css_property("width"), "240px")
+        self.assertEqual(used.value_of_css_property("width"), "240px")

@@ -245,7 +245,8 @@ function initSubnetAllocationGraph($, allocationUrl, labels, title) {
         { title: title },
       );
     },
-    error: function () {
+    error: function (xhr, status, error) {
+      console.error("Unable to load subnet allocation", status, error);
       $("#graph-error").removeClass("hide");
     },
     complete: function () {

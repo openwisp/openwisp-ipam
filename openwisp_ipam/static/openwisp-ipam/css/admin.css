@@ -25,7 +25,9 @@ section.subnet-visual {
   font-weight: normal;
   text-decoration: none !important;
 }
-.subnet-visual.ipv6 a {
+.subnet-visual.ipv6 a,
+.subnet-visual.ipv6 .reserved,
+.subnet-visual.ipv6 .used {
   font-size: 12px;
   letter-spacing: -0.2px;
   width: 240px;
