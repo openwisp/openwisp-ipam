@@ -81,6 +81,7 @@
     parent_element.appendChild(subnet_list);
   }
   // Ipam Graph / Visual
+  var rootStyle = getComputedStyle(document.documentElement);
   var data = [],
     layout = {},
     vals = {{ values| safe }}
@@ -95,13 +96,13 @@
     textinfo: 'percent',
     marker: {
       colors: [
-        'rgba(149, 10, 10, 1)',
-        'rgba(20, 102, 26, 1)'
+        rootStyle.getPropertyValue('--ow-color-danger').trim(),
+        rootStyle.getPropertyValue('--ow-color-success').trim()
       ]
     },
     textfont: {
       size: 18,
-      color: '#FFF',
+      color: rootStyle.getPropertyValue('--ow-color-white').trim(),
     }
       }
   ];
