@@ -11,7 +11,8 @@ section.subnet-visual {
   height: 700px;
 }
 .subnet-visual a,
-.subnet-visual .reserved {
+.subnet-visual .reserved,
+.subnet-visual .used {
   display: inline-block;
   width: 120px;
   text-align: center;
@@ -34,17 +35,18 @@ section.subnet-visual {
   background: color-mix(in srgb, var(--ow-color-success), var(--ow-color-black) 15%);
   border: 1px solid var(--ow-overlay-40);
 }
-.subnet-visual a.used {
+.subnet-visual .used {
   background: var(--ow-color-danger);
   border: 1px solid var(--ow-overlay-25);
 }
-.subnet-visual a.used:hover {
+.subnet-visual .used:hover {
   background: color-mix(in srgb, var(--ow-color-danger), var(--ow-color-black) 15%);
   border: 1px solid var(--ow-overlay-40);
 }
 .subnet-visual .reserved {
   background: var(--ow-color-warning);
   border: 1px solid var(--ow-overlay-25);
+  color: var(--ow-color-black);
 }
 
 .subnet-visual .page {

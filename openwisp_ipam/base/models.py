@@ -119,7 +119,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             if ip_network(self.subnet).overlaps(subnet.subnet):
                 raise ValidationError({"subnet": error_message.format(subnet.subnet)})
 
-    def get_related_subnet_pks(self):
+    def get_related_subnet_pks(self, organization_filter=None):
         """Return a list of primary keys for this subnet, its ancestors and descendants.
 
         The current subnet comes first, followed by its nearest ancestors and
@@ -130,19 +130,26 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         while parent_subnet:
             pks.append(parent_subnet.pk)
             parent_subnet = parent_subnet.master_subnet
-        return pks + self.get_descendant_subnet_pks()
+        return pks + self.get_descendant_subnet_pks(organization_filter)
 
-    def get_descendant_subnet_pks(self):
+    def get_child_subnets(self, organization_filter=None):
+        qs = self.child_subnet_set.all()
+        if organization_filter is not None:
+            qs = qs.filter(organization_filter)
+        return qs
+
+    def get_descendant_subnet_pks(self, organization_filter=None):
         """Return a list of primary keys for this subnet's descendants."""
         pks = []
-        child_subnets = list(self.child_subnet_set.values_list("pk", flat=True))
+        child_subnets = list(
+            self.get_child_subnets(organization_filter).values_list("pk", flat=True)
+        )
         while child_subnets:
             pks += child_subnets
-            child_subnets = list(
-                self._meta.model.objects.filter(
-                    master_subnet__in=child_subnets
-                ).values_list("pk", flat=True)
-            )
+            qs = self._meta.model.objects.filter(master_subnet__in=child_subnets)
+            if organization_filter is not None:
+                qs = qs.filter(organization_filter)
+            child_subnets = list(qs.values_list("pk", flat=True))
         return pks
 
     def _validate_master_subnet_consistency(self):
@@ -171,7 +178,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 return str(host)
         return None
 
-    def get_allocation(self):
+    def get_allocation(self, organization_filter=None):
         """Return counts of total, used, reserved, and available addresses.
 
         Addresses with IP records in this subnet or its descendants are used.
@@ -179,19 +186,23 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         """
         start, end = self._get_usable_address_range()
         reserved = 0
-        for child in self.child_subnet_set.only("subnet", "master_subnet").iterator():
+        for child in (
+            self.get_child_subnets(organization_filter)
+            .only("subnet", "master_subnet")
+            .iterator()
+        ):
             child_start = max(start, int(child.subnet.network_address))
             child_end = min(end, int(child.subnet.broadcast_address))
             if child_start <= child_end:
                 reserved += child_end - child_start + 1
         total = max(end - start + 1, 0)
-        descendant_pks = self.get_descendant_subnet_pks()
-        used = self.ipaddress_set.count()
+        descendant_pks = self.get_descendant_subnet_pks(organization_filter)
+        used = self._count_used_ips(self.ipaddress_set, start, end)
         if descendant_pks:
             IpAddress = load_model("openwisp_ipam", "IpAddress")
-            descendant_used = IpAddress.objects.filter(
-                subnet_id__in=descendant_pks
-            ).count()
+            descendant_used = self._count_used_ips(
+                IpAddress.objects.filter(subnet_id__in=descendant_pks), start, end
+            )
             used += descendant_used
             reserved = max(reserved - descendant_used, 0)
         return {
@@ -200,6 +211,13 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             "reserved": reserved,
             "available": max(total - used - reserved, 0),
         }
+
+    @staticmethod
+    def _count_used_ips(queryset, start, end):
+        return sum(
+            start <= int(ip_address(address)) <= end
+            for address in queryset.values_list("ip_address", flat=True).iterator()
+        )
 
     def _get_usable_address_range(self):
         start = int(self.subnet.network_address)

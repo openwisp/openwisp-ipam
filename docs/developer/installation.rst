@@ -80,6 +80,7 @@ Run tests with:
 
 .. code-block:: shell
 
+    cd ..  # Back to repository root
     ./runtests
 
 Alternative Sources

@@ -207,6 +207,44 @@ class TestMultitenantApi(
             response = self.client.get(url)
             self.assertEqual(response.status_code, 404)
 
+    def test_shared_subnet_allocation(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24", organization=None)
+        org_a = self._get_org(org_name="org_a")
+        org_b = self._get_org(org_name="org_b")
+        subnet_a = self._create_subnet(
+            subnet="10.0.0.1/32", organization=org_a, master_subnet=subnet
+        )
+        subnet_b = self._create_subnet(
+            subnet="10.0.0.2/32", organization=org_b, master_subnet=subnet
+        )
+        self._create_ipaddress(ip_address="10.0.0.1", subnet=subnet_a)
+        self._create_ipaddress(ip_address="10.0.0.2", subnet=subnet_b)
+        allocation_url = reverse("ipam:subnet_allocation", args=(subnet.id,))
+        hosts_url = reverse("ipam:hosts", args=(subnet.id,))
+        for username, allocation, hosts in [
+            (
+                "user_a",
+                {"total": 254, "used": 1, "reserved": 0, "available": 253},
+                [
+                    {"address": "10.0.0.1", "used": True, "reserved": True},
+                    {"address": "10.0.0.2", "used": False, "reserved": False},
+                ],
+            ),
+            (
+                "user_b",
+                {"total": 254, "used": 1, "reserved": 0, "available": 253},
+                [
+                    {"address": "10.0.0.1", "used": False, "reserved": False},
+                    {"address": "10.0.0.2", "used": True, "reserved": True},
+                ],
+            ),
+        ]:
+            with self.subTest(username=username):
+                self._login(username=username, password="tester")
+                self.assertEqual(self.client.get(allocation_url).data, allocation)
+                response = self.client.get(hosts_url)
+                self.assertEqual(response.data["results"][:2], hosts)
+
     def test_subnet_list_ipaddress(self):
         org_a = self._get_org(org_name="org_a")
         subnet = self._create_subnet(subnet="10.0.0.0/24", organization=org_a)

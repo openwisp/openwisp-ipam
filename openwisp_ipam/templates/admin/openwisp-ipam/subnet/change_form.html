@@ -86,11 +86,15 @@
     subnet_href.appendChild(subnet_node);
     parent_element.appendChild(subnet_list);
   }
+  {% translate "Available" as available_label %}
+  {% translate "Reserved" as reserved_label %}
+  {% translate "Used" as used_label %}
+  {% translate "Subnet Allocation" as allocation_title %}
   initSubnetAllocationGraph(
     django.jQuery,
     '{% url "ipam:subnet_allocation" original.pk %}',
-    ['{% trans "Available" %}', '{% trans "Reserved" %}', '{% trans "Used" %}'],
-    '{% trans "Subnet Allocation" %}'
+    ['{{ available_label|escapejs }}', '{{ reserved_label|escapejs }}', '{{ used_label|escapejs }}'],
+    '{{ allocation_title|escapejs }}'
   );
 </script>
 {% endif %}

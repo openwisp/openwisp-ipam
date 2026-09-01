@@ -287,6 +287,10 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
         for index, expected in [
             (
+                0,
+                {"address": "10.0.0.1", "used": False, "reserved": False},
+            ),
+            (
                 1,
                 {"address": "10.0.0.2", "used": True, "reserved": True},
             ),
@@ -314,6 +318,18 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         self.assertEqual(
             response.data,
             {"total": 65534, "used": 2, "reserved": 511, "available": 65021},
+        )
+
+    def test_subnet_allocation_excludes_parent_endpoints(self):
+        subnet = self._create_subnet(subnet="10.10.0.0/24")
+        for address in ["10.10.0.0", "10.10.0.255"]:
+            child = self._create_subnet(subnet=f"{address}/32", master_subnet=subnet)
+            self._create_ipaddress(ip_address=address, subnet=child)
+        response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {"total": 254, "used": 0, "reserved": 0, "available": 254},
         )
 
     def test_ipv6_subnet_allocation_api(self):

@@ -56,6 +56,9 @@ function initHostsInfiniteScroll(
     var id = normalizeIP(addr.address);
     if (addr.used) {
       var uuid = ip_uuid[addr.address];
+      if (!uuid) {
+        return '<span class="used">' + addr.address + "</span>";
+      }
       //note 1234 was passed as a dummy to be later on replaced in the script
       return (
         '<a class = "used" href=\"' +
