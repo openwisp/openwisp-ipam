@@ -325,7 +325,7 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         used_child = self._create_subnet(subnet="10.10.3.2/32", master_subnet=subnet)
         self._create_ipaddress(ip_address="10.10.2.1", subnet=subnet)
         self._create_ipaddress(ip_address="10.10.3.2", subnet=used_child)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             response = self.client.get(
                 reverse("ipam:subnet_allocation", args=(subnet.id,))
             )

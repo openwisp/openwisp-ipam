@@ -146,18 +146,19 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             qs = qs.filter(organization_filter)
         return qs
 
-    def get_descendant_subnet_pks(self, organization_filter=None):
+    def get_descendant_subnet_pks(self, organization_filter=None, child_pks=None):
         """Return a list of primary keys for this subnet's descendants."""
         pks = []
-        child_subnets = list(
-            self.get_child_subnets(organization_filter).values_list("pk", flat=True)
-        )
-        while child_subnets:
-            pks += child_subnets
-            qs = self._meta.model.objects.filter(master_subnet__in=child_subnets)
+        if child_pks is None:
+            child_pks = list(
+                self.get_child_subnets(organization_filter).values_list("pk", flat=True)
+            )
+        while child_pks:
+            pks += child_pks
+            qs = self._meta.model.objects.filter(master_subnet__in=child_pks)
             if organization_filter is not None:
                 qs = qs.filter(organization_filter)
-            child_subnets = list(qs.values_list("pk", flat=True))
+            child_pks = list(qs.values_list("pk", flat=True))
         return pks
 
     def _validate_master_subnet_consistency(self):
@@ -195,11 +196,13 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         start, end = self._get_usable_address_range()
         reserved = 0
         reserved_ranges = []
+        child_pks = []
         for child in (
             self.get_child_subnets(organization_filter)
             .only("subnet", "master_subnet")
             .iterator()
         ):
+            child_pks.append(child.pk)
             child_start = max(start, int(child.subnet.network_address))
             child_end = min(end, int(child.subnet.broadcast_address))
             if child_start <= child_end:
@@ -207,7 +210,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
                 reserved_ranges.append((child_start, child_end))
         reserved_ranges.sort()
         total = max(end - start + 1, 0)
-        descendant_pks = self.get_descendant_subnet_pks(organization_filter)
+        descendant_pks = self.get_descendant_subnet_pks(organization_filter, child_pks)
         IpAddress = load_model("openwisp_ipam", "IpAddress")
         used_queryset = IpAddress.objects.filter(
             subnet_id__in=[self.pk] + self._get_parent_subnet_pks() + descendant_pks
