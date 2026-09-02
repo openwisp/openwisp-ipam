@@ -1,11 +1,12 @@
 import csv
+from bisect import bisect_right
 from io import StringIO
 from ipaddress import ip_address, ip_network
 
 import openpyxl
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_slug
-from django.db import models
+from django.db import connections, models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.mixins import ShareableOrgMixin
@@ -119,25 +120,45 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             if ip_network(self.subnet).overlaps(subnet.subnet):
                 raise ValidationError({"subnet": error_message.format(subnet.subnet)})
 
-    def get_related_subnet_pks(self):
+    def get_related_subnet_pks(self, organization_filter=None):
         """Return a list of primary keys for this subnet, its ancestors and descendants.
 
         The current subnet comes first, followed by its nearest ancestors and
         descendants level by level.
         """
-        pks = [self.pk]
+        return (
+            [self.pk]
+            + self._get_parent_subnet_pks()
+            + self.get_descendant_subnet_pks(organization_filter)
+        )
+
+    def _get_parent_subnet_pks(self):
+        pks = []
         parent_subnet = self.master_subnet
         while parent_subnet:
             pks.append(parent_subnet.pk)
             parent_subnet = parent_subnet.master_subnet
-        child_subnets = list(self.child_subnet_set.values_list("pk", flat=True))
-        while child_subnets:
-            pks += child_subnets
-            child_subnets = list(
-                self._meta.model.objects.filter(
-                    master_subnet__in=child_subnets
-                ).values_list("pk", flat=True)
+        return pks
+
+    def get_child_subnets(self, organization_filter=None):
+        qs = self.child_subnet_set.all()
+        if organization_filter is not None:
+            qs = qs.filter(organization_filter)
+        return qs
+
+    def get_descendant_subnet_pks(self, organization_filter=None, child_pks=None):
+        """Return a list of primary keys for this subnet's descendants."""
+        pks = []
+        if child_pks is None:
+            child_pks = list(
+                self.get_child_subnets(organization_filter).values_list("pk", flat=True)
             )
+        while child_pks:
+            pks += child_pks
+            qs = self._meta.model.objects.filter(master_subnet__in=child_pks)
+            if organization_filter is not None:
+                qs = qs.filter(organization_filter)
+            child_pks = list(qs.values_list("pk", flat=True))
         return pks
 
     def _validate_master_subnet_consistency(self):
@@ -165,6 +186,86 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             if str(host) not in ipaddress_set:
                 return str(host)
         return None
+
+    def get_allocation(self, organization_filter=None):
+        """Return counts of total, used, reserved, and available addresses.
+
+        Addresses with IP records in this subnet or its descendants are used.
+        Remaining addresses in direct child subnets are reserved.
+        """
+        start, end = self._get_usable_address_range()
+        reserved = 0
+        reserved_ranges = []
+        child_pks = []
+        for child in (
+            self.get_child_subnets(organization_filter)
+            .only("subnet", "master_subnet")
+            .iterator()
+        ):
+            child_pks.append(child.pk)
+            child_start = max(start, int(child.subnet.network_address))
+            child_end = min(end, int(child.subnet.broadcast_address))
+            if child_start <= child_end:
+                reserved += child_end - child_start + 1
+                reserved_ranges.append((child_start, child_end))
+        reserved_ranges.sort()
+        total = max(end - start + 1, 0)
+        descendant_pks = self.get_descendant_subnet_pks(organization_filter, child_pks)
+        IpAddress = load_model("openwisp_ipam", "IpAddress")
+        used_queryset = IpAddress.objects.filter(
+            subnet_id__in=[self.pk] + self._get_parent_subnet_pks() + descendant_pks
+        )
+        used, reserved_used = self._get_used_counts(
+            used_queryset,
+            start,
+            end,
+            reserved_ranges,
+        )
+        if reserved_ranges:
+            reserved = max(reserved - reserved_used, 0)
+        return {
+            "total": total,
+            "used": used,
+            "reserved": reserved,
+            "available": max(total - used - reserved, 0),
+        }
+
+    @staticmethod
+    def _get_used_counts(queryset, start, end, ranges):
+        """Count used addresses and the used addresses inside child subnet ranges.
+
+        `used` counts every IP address in the displayed subnet range. `reserved_used`
+        counts only used addresses in direct child subnet ranges, so the caller can
+        subtract them from `reserved`. Sorted, non-overlapping ranges allow binary
+        search to perform that check efficiently.
+        """
+        # PostgreSQL stores GenericIPAddressField as inet, unlike text-backed SQLite.
+        if connections[queryset.db].vendor == "postgresql":
+            queryset = queryset.filter(
+                ip_address__range=(str(ip_address(start)), str(ip_address(end)))
+            )
+        range_starts = [range_start for range_start, _ in ranges]
+        used = 0
+        reserved_used = 0
+        for address in queryset.values_list("ip_address", flat=True).iterator():
+            address = int(ip_address(address))
+            if not start <= address <= end:
+                continue
+            used += 1
+            range_index = bisect_right(range_starts, address) - 1
+            if range_index >= 0 and address <= ranges[range_index][1]:
+                reserved_used += 1
+        return used, reserved_used
+
+    def _get_usable_address_range(self):
+        start = int(self.subnet.network_address)
+        end = int(self.subnet.broadcast_address)
+        if self.subnet.version == 4 and self.subnet.prefixlen not in [31, 32]:
+            start += 1
+            end -= 1
+        elif self.subnet.version == 6 and self.subnet.prefixlen not in [127, 128]:
+            start += 1
+        return start, end
 
     def request_ip(self, options=None):
         if options is None:

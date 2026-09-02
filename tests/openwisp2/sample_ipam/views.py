@@ -12,6 +12,7 @@ from openwisp_ipam.api.views import (
     IpAddressListCreateView as BaseIpAddressListCreateView,
     IpAddressView as BaseIpAddressView,
     RequestIPView as BaseRequestIPView,
+    SubnetAllocationView as BaseSubnetAllocationView,
     SubnetHostsView as BaseSubnetHostsView,
     SubnetListCreateView as BaseSubnetListCreateView,
     SubnetView as BaseSubnetView,
@@ -93,6 +94,14 @@ class SubnetHostsView(BaseSubnetHostsView):
     pass
 
 
+class SubnetAllocationView(BaseSubnetAllocationView):
+    """
+    Retrieve aggregate subnet allocation data.
+    """
+
+    pass
+
+
 import_subnet = ImportSubnetView.as_view()
 export_subnet = ExportSubnetView.as_view()
 request_ip = RequestIPView.as_view()
@@ -102,3 +111,4 @@ ip_address = IpAddressView.as_view()
 subnet_list_ipaddress = IpAddressListCreateView.as_view()
 get_next_available_ip = AvailableIpView.as_view()
 subnet_hosts = SubnetHostsView.as_view()
+subnet_allocation = SubnetAllocationView.as_view()

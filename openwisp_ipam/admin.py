@@ -1,5 +1,4 @@
 import csv
-from collections import OrderedDict
 from copy import deepcopy
 from functools import update_wrapper
 
@@ -7,8 +6,6 @@ import swapper
 from django import forms
 from django.contrib import admin, messages
 from django.contrib.admin import ModelAdmin
-from django.db.models import TextField
-from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import path, re_path, reverse
@@ -19,7 +16,6 @@ from rest_framework.exceptions import PermissionDenied
 from reversion.admin import VersionAdmin
 
 from .api.utils import AuthorizeCSVOrgManaged, CsvImportAPIException
-from .api.views import HostsSet
 from .base.forms import IpAddressImportForm
 from .base.models import CsvImportException
 from .filters import SubnetFilter, SubnetOrganizationFilter
@@ -87,28 +83,8 @@ class SubnetAdmin(
             subnet_tree.append(instance_subnets)
             collection_depth += 1
 
-        used = instance.ipaddress_set.count()
-
-        # Storing UUID corresponding to respective IP address in a dictionary
-        ip_id_list = (
-            IpAddress.objects.filter(subnet=instance)
-            .annotate(str_id=Cast("id", output_field=TextField()))
-            .values_list("ip_address", "str_id")
-        )
-
-        # Converting UUIdField to String and then modifying to convert back to uuid form
-        ip_id_list = OrderedDict(ip_id_list)
-        ip_uuid = {}
-        for ip_addr, Ip in ip_id_list.items():
-            ip_uuid[ip_addr] = f"{Ip[0:8]}-{Ip[8:12]}-{Ip[12:16]}-{Ip[16:20]}-{Ip[20:]}"
-        available = HostsSet(instance).count() - used
-        labels = ["Used", "Available"]
-        values = [used, available]
         extra_context = {
-            "labels": labels,
-            "values": values,
             "original": instance,
-            "ip_uuid": ip_uuid,
             "ipaddress_add_url": ipaddress_add_url,
             "ipaddress_change_url": ipaddress_change_url,
             "subnet_change_url": subnet_change_url,

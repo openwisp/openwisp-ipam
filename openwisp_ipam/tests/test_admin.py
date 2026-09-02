@@ -1,10 +1,12 @@
 import json
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from swapper import load_model
 
 from . import CreateModelsMixin, PostDataMixin
@@ -75,6 +77,12 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         self.assertContains(
             response, '<h3 class="subnet-visual">Subnet Visual Display</h3>'
         )
+        self.assertContains(response, 'id="graph-loading"')
+        self.assertContains(response, 'id="graph-error" class="errorlist hide"')
+        self.assertContains(
+            response,
+            reverse("ipam:subnet_allocation", args=(subnet.id,)),
+        )
 
     def test_ipv6_subnet_change(self):
         subnet = self._create_subnet(
@@ -90,6 +98,15 @@ class TestAdmin(CreateModelsMixin, PostDataMixin, TestCase):
         self.assertContains(
             response, '<h3 class="subnet-visual">Subnet Visual Display</h3>'
         )
+
+    def test_subnet_change_escapes_translated_graph_labels(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        url = reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.pk])
+        with patch(
+            "django.template.base.gettext_lazy", return_value=mark_safe("Allocation's")
+        ):
+            response = self.client.get(url)
+        self.assertContains(response, "'Allocation\\u0027s'")
 
     def test_subnet_invalid_entry(self):
         post_data = self._post_data(

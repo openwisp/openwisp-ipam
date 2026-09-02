@@ -43,7 +43,6 @@ function initHostsInfiniteScroll(
   current_subnet,
   address_add_url,
   address_change_url,
-  ip_uuid,
 ) {
   "use strict";
   var renderedPages = 5,
@@ -55,11 +54,10 @@ function initHostsInfiniteScroll(
   function addressListItem(addr) {
     var id = normalizeIP(addr.address);
     if (addr.used) {
-      var uuid = ip_uuid[addr.address];
       //note 1234 was passed as a dummy to be later on replaced in the script
       return (
         '<a class = "used" href=\"' +
-        address_change_url.replace("1234", uuid) +
+        address_change_url.replace("1234", addr.ip_address_id) +
         "?_to_field=id&amp;_popup=1&amp;ip_address=" +
         addr.address +
         "&amp;subnet=" +
@@ -68,6 +66,9 @@ function initHostsInfiniteScroll(
         addr.address +
         "</a>"
       );
+    }
+    if (addr.reserved) {
+      return '<span class="reserved">' + addr.address + "</span>";
     }
     return (
       '<a href=\"' +
@@ -196,4 +197,62 @@ function initHostsInfiniteScroll(
   });
   $("#subnet-visual").scroll(onUpdate);
   onUpdate();
+}
+
+function initSubnetAllocationGraph($, allocationUrl, labels, title) {
+  "use strict";
+  var rootStyle = getComputedStyle(document.documentElement),
+    addresses = gettext("addresses");
+  $.ajax({
+    type: "GET",
+    url: allocationUrl,
+    success: function (allocation) {
+      var values = [allocation.available, allocation.reserved, allocation.used];
+      Plotly.newPlot(
+        "graph",
+        [
+          {
+            values: values,
+            labels: labels,
+            customdata: labels.map(function (label) {
+              return label.toLowerCase();
+            }),
+            type: "pie",
+            sort: false,
+            hovertemplate:
+              "%{value:,.0f} %{customdata} " +
+              addresses +
+              " (%{percent:.2%})<extra></extra>",
+            textinfo: "percent",
+            marker: {
+              colors: [
+                rootStyle.getPropertyValue("--ow-color-success").trim(),
+                rootStyle.getPropertyValue("--ipam-color-reserved").trim(),
+                rootStyle.getPropertyValue("--ow-color-danger").trim(),
+              ],
+            },
+            textfont: {
+              size: 18,
+              color: rootStyle.getPropertyValue("--ow-color-white").trim(),
+            },
+          },
+        ],
+        { title: title },
+      ).then(
+        function () {
+          $("#graph-loading").addClass("hide");
+        },
+        function (error) {
+          console.error("Unable to render subnet allocation", error);
+          $("#graph-error").removeClass("hide");
+          $("#graph-loading").addClass("hide");
+        },
+      );
+    },
+    error: function (xhr, status, error) {
+      console.error("Unable to load subnet allocation", status, error);
+      $("#graph-error").removeClass("hide");
+      $("#graph-loading").addClass("hide");
+    },
+  });
 }

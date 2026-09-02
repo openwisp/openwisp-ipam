@@ -279,6 +279,133 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         self.assertEqual(self.client.get(response.data["previous"]).status_code, 200)
         self.assertIsNone(response.data["next"])
 
+    def test_reserved_hosts(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        used_subnet = self._create_subnet(subnet="10.0.0.2/32", master_subnet=subnet)
+        self._create_subnet(subnet="10.0.0.3/32", master_subnet=subnet)
+        ipaddress = self._create_ipaddress(ip_address="10.0.0.2", subnet=used_subnet)
+        response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
+        for index, expected in [
+            (
+                0,
+                {
+                    "address": "10.0.0.1",
+                    "used": False,
+                    "reserved": False,
+                    "ip_address_id": None,
+                },
+            ),
+            (
+                1,
+                {
+                    "address": "10.0.0.2",
+                    "used": True,
+                    "reserved": False,
+                    "ip_address_id": str(ipaddress.pk),
+                },
+            ),
+            (
+                2,
+                {
+                    "address": "10.0.0.3",
+                    "used": False,
+                    "reserved": True,
+                    "ip_address_id": None,
+                },
+            ),
+        ]:
+            with self.subTest(address=expected["address"]):
+                self.assertEqual(response.data["results"][index], expected)
+
+    def test_subnet_allocation_api(self):
+        subnet = self._create_subnet(subnet="10.10.0.0/16")
+        first_child = self._create_subnet(subnet="10.10.0.0/24", master_subnet=subnet)
+        self._create_subnet(subnet="10.10.1.0/24", master_subnet=subnet)
+        self._create_subnet(subnet="10.10.0.0/25", master_subnet=first_child)
+        used_child = self._create_subnet(subnet="10.10.3.2/32", master_subnet=subnet)
+        self._create_ipaddress(ip_address="10.10.2.1", subnet=subnet)
+        self._create_ipaddress(ip_address="10.10.3.2", subnet=used_child)
+        with self.assertNumQueries(7):
+            response = self.client.get(
+                reverse("ipam:subnet_allocation", args=(subnet.id,))
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {"total": 65534, "used": 2, "reserved": 511, "available": 65021},
+        )
+
+    def test_subnet_allocation_excludes_parent_endpoints(self):
+        subnet = self._create_subnet(subnet="10.10.0.0/24")
+        for address in ["10.10.0.0", "10.10.0.255"]:
+            child = self._create_subnet(subnet=f"{address}/32", master_subnet=subnet)
+            self._create_ipaddress(ip_address=address, subnet=child)
+        response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {"total": 254, "used": 0, "reserved": 0, "available": 254},
+        )
+
+    def test_subnet_allocation_excludes_ancestor_ipaddress_from_reservations(self):
+        ancestor = self._create_subnet(subnet="10.10.0.0/16")
+        subnet = self._create_subnet(subnet="10.10.0.0/24", master_subnet=ancestor)
+        self._create_subnet(subnet="10.10.0.1/32", master_subnet=subnet)
+        self._create_ipaddress(ip_address="10.10.0.1", subnet=ancestor)
+        response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {"total": 254, "used": 1, "reserved": 0, "available": 253},
+        )
+
+    def test_subnet_allocation_includes_ancestor_ipaddresses(self):
+        subnet = self._create_subnet(subnet="10.10.0.0/24")
+        child = self._create_subnet(subnet="10.10.0.0/25", master_subnet=subnet)
+        ipaddress = self._create_ipaddress(ip_address="10.10.0.1", subnet=subnet)
+        self._create_ipaddress(ip_address="10.10.0.200", subnet=subnet)
+        hosts_response = self.client.get(reverse("ipam:hosts", args=(child.id,)))
+        allocation_response = self.client.get(
+            reverse("ipam:subnet_allocation", args=(child.id,))
+        )
+        self.assertEqual(
+            hosts_response.data["results"][0],
+            {
+                "address": "10.10.0.1",
+                "used": True,
+                "reserved": False,
+                "ip_address_id": str(ipaddress.pk),
+            },
+        )
+        self.assertEqual(
+            allocation_response.data,
+            {"total": 126, "used": 1, "reserved": 0, "available": 125},
+        )
+
+    def test_ipv6_subnet_allocation_api(self):
+        subnet = self._create_subnet(subnet="2001:db8::/126")
+        self._create_subnet(subnet="2001:db8::2/127", master_subnet=subnet)
+        self._create_ipaddress(ip_address="2001:db8::1", subnet=subnet)
+        response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.data,
+            {"total": 3, "used": 1, "reserved": 2, "available": 0},
+        )
+
+    def test_point_to_point_subnet_allocation_api(self):
+        for subnet_value in ["192.0.2.0/31", "2001:db8::/127"]:
+            with self.subTest(subnet=subnet_value):
+                subnet = self._create_subnet(subnet=subnet_value)
+                response = self.client.get(
+                    reverse("ipam:subnet_allocation", args=(subnet.id,))
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data,
+                    {"total": 2, "used": 0, "reserved": 0, "available": 2},
+                )
+
     def test_bearer_auth(self):
         self._logout()
         self._create_user(username="tester", password="tester", is_superuser=True)
@@ -307,6 +434,9 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
         response = self.client.get(
             reverse("ipam:list_create_ip_address", args=(subnet.id,))
         )
+        self.assertEqual(response.status_code, 401)
+
+        response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
         self.assertEqual(response.status_code, 401)
 
         response = self.client.delete(reverse("ipam:subnet", args=(subnet.id,)))
