@@ -5,7 +5,7 @@ from ipaddress import ip_address, ip_network
 import openpyxl
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_slug
-from django.db import models
+from django.db import connections, models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from openwisp_users.mixins import ShareableOrgMixin
@@ -226,6 +226,11 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
 
     @staticmethod
     def _count_used_ips(queryset, start, end):
+        # PostgreSQL stores GenericIPAddressField as inet, unlike text-backed SQLite.
+        if connections[queryset.db].vendor == "postgresql":
+            queryset = queryset.filter(
+                ip_address__range=(str(ip_address(start)), str(ip_address(end)))
+            )
         return sum(
             start <= int(ip_address(address)) <= end
             for address in queryset.values_list("ip_address", flat=True).iterator()

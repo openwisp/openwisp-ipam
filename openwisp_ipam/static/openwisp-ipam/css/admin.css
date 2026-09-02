@@ -1,6 +1,11 @@
 .list-ip {
   padding: 10px;
 }
+/* Defined locally because openwisp-utils has no suitable problem color for white text. */
+:root {
+  --ipam-color-reserved: #fea500;
+}
+
 .subnet-visual {
   margin: 10px 20px 0;
   padding: 0;
@@ -46,9 +51,13 @@ section.subnet-visual {
   border: 1px solid var(--ow-overlay-40);
 }
 .subnet-visual .reserved {
-  background: var(--ow-color-warning);
+  background: var(--ipam-color-reserved);
   border: 1px solid var(--ow-overlay-25);
-  color: var(--ow-color-black);
+  color: var(--ow-color-white);
+}
+.subnet-visual .reserved:hover {
+  background: color-mix(in srgb, var(--ipam-color-reserved), var(--ow-color-black) 15%);
+  border: 1px solid var(--ow-overlay-40);
 }
 
 .subnet-visual .page {

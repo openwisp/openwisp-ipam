@@ -282,21 +282,41 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
     def test_reserved_hosts(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
         used_subnet = self._create_subnet(subnet="10.0.0.2/32", master_subnet=subnet)
-        self._create_subnet(subnet="10.0.0.3/32", master_subnet=subnet)
-        self._create_ipaddress(ip_address="10.0.0.2", subnet=used_subnet)
+        reserved_subnet = self._create_subnet(
+            subnet="10.0.0.3/32", master_subnet=subnet
+        )
+        ipaddress = self._create_ipaddress(ip_address="10.0.0.2", subnet=used_subnet)
         response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
         for index, expected in [
             (
                 0,
-                {"address": "10.0.0.1", "used": False, "reserved": False},
+                {
+                    "address": "10.0.0.1",
+                    "used": False,
+                    "reserved": False,
+                    "ip_address_id": None,
+                    "reserved_subnet_id": None,
+                },
             ),
             (
                 1,
-                {"address": "10.0.0.2", "used": True, "reserved": True},
+                {
+                    "address": "10.0.0.2",
+                    "used": True,
+                    "reserved": True,
+                    "ip_address_id": str(ipaddress.pk),
+                    "reserved_subnet_id": str(used_subnet.pk),
+                },
             ),
             (
                 2,
-                {"address": "10.0.0.3", "used": False, "reserved": True},
+                {
+                    "address": "10.0.0.3",
+                    "used": False,
+                    "reserved": True,
+                    "ip_address_id": None,
+                    "reserved_subnet_id": str(reserved_subnet.pk),
+                },
             ),
         ]:
             with self.subTest(address=expected["address"]):
@@ -335,14 +355,21 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
     def test_subnet_allocation_includes_ancestor_ipaddresses(self):
         subnet = self._create_subnet(subnet="10.10.0.0/24")
         child = self._create_subnet(subnet="10.10.0.0/25", master_subnet=subnet)
-        self._create_ipaddress(ip_address="10.10.0.1", subnet=subnet)
+        ipaddress = self._create_ipaddress(ip_address="10.10.0.1", subnet=subnet)
+        self._create_ipaddress(ip_address="10.10.0.200", subnet=subnet)
         hosts_response = self.client.get(reverse("ipam:hosts", args=(child.id,)))
         allocation_response = self.client.get(
             reverse("ipam:subnet_allocation", args=(child.id,))
         )
         self.assertEqual(
             hosts_response.data["results"][0],
-            {"address": "10.10.0.1", "used": True, "reserved": False},
+            {
+                "address": "10.10.0.1",
+                "used": True,
+                "reserved": False,
+                "ip_address_id": str(ipaddress.pk),
+                "reserved_subnet_id": None,
+            },
         )
         self.assertEqual(
             allocation_response.data,

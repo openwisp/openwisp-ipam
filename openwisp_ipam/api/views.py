@@ -133,7 +133,7 @@ class HostsSet:
         self.used_set = IpAddress.objects.filter(
             subnet_id__in=subnet.get_related_subnet_pks(organization_filter)
         )
-        self.reserved_addresses = None
+        self.reserved_subnets = None
 
     def __getitem__(self, i):
         if isinstance(i, slice):
@@ -154,8 +154,12 @@ class HostsSet:
         if i >= self.count():
             raise IndexError
         host = self._get_host(i)
-        used = self.used_set.filter(ip_address=str(host)).exists()
-        return HostsResponse(str(host), used, self._is_reserved(host))
+        ip_address = self.used_set.filter(ip_address=str(host)).only("pk").first()
+        return HostsResponse(
+            str(host),
+            ip_address=ip_address,
+            reserved_subnet=self._get_reserved_subnet(host),
+        )
 
     def _get_host(self, index):
         host = self.subnet.subnet._address_class(self.network + 1 + index + self.start)
@@ -163,27 +167,33 @@ class HostsSet:
             host = host - 1
         return host
 
-    def _is_reserved(self, host):
+    def _get_reserved_subnet(self, host):
         if self.stop is None:
-            return any(
-                host in child.subnet
-                for child in self.subnet.get_child_subnets(self.organization_filter)
-                .only("subnet", "master_subnet")
-                .iterator()
+            return next(
+                (
+                    child
+                    for child in self.subnet.get_child_subnets(self.organization_filter)
+                    .only("pk", "subnet")
+                    .iterator()
+                    if host in child.subnet
+                ),
+                None,
             )
-        if self.reserved_addresses is None:
-            self.reserved_addresses = set()
+        if self.reserved_subnets is None:
+            self.reserved_subnets = {}
             start = int(self._get_host(0))
             end = int(self._get_host(self.stop - self.start - 1))
             for child in (
                 self.subnet.get_child_subnets(self.organization_filter)
-                .only("subnet", "master_subnet")
+                .only("pk", "subnet")
                 .iterator()
             ):
                 child_start = max(start, int(child.subnet.network_address))
                 child_end = min(end, int(child.subnet.broadcast_address))
-                self.reserved_addresses.update(range(child_start, child_end + 1))
-        return int(host) in self.reserved_addresses
+                self.reserved_subnets.update(
+                    dict.fromkeys(range(child_start, child_end + 1), child)
+                )
+        return self.reserved_subnets.get(int(host))
 
     def count(self):
         if self.stop is not None:

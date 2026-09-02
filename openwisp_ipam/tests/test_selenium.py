@@ -23,6 +23,18 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         self._create_ipaddress(ip_address="10.0.0.1", subnet=used_subnet)
         self.login()
         self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
+        self.wait_until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "#subnet-visual .reserved")
+            )
+        )
+        self.assertTrue(
+            self.web_driver.execute_script(
+                "return typeof initSubnetAllocationGraph === 'function';"
+            ),
+            "The subnet allocation graph initializer was not loaded.",
+        )
+        self.assert_no_browser_errors()
         self.wait_until(EC.invisibility_of_element_located((By.ID, "graph-loading")))
         reserved = self.find_element(
             by=By.XPATH,
@@ -45,7 +57,7 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         self.assertEqual(version, "2.35.2")
         self.assertEqual(trace["values"], [4, 1, 1])
         self.assertEqual(trace["labels"], ["Available", "Reserved", "Used"])
-        self.assertEqual(trace["colors"], ["#498b26", "#ffb442", "#a72d1d"])
+        self.assertEqual(trace["colors"], ["#498b26", "#fea500", "#a72d1d"])
         self.assertEqual(trace["customdata"], ["available", "reserved", "used"])
         self.assertIsNone(trace["text"])
         self.assertEqual(trace["textinfo"], "percent")
@@ -66,14 +78,18 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         )
         tooltip = self.find_element(by=By.CSS_SELECTOR, value=".hovertext")
         self.assertEqual(tooltip.text, "1 reserved addresses (16.67%)")
+        self.assert_no_browser_errors()
 
     def test_subnet_visual_display(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
         used_subnet = self._create_subnet(subnet="10.0.0.2/32", master_subnet=subnet)
-        self._create_subnet(subnet="10.0.0.3/32", master_subnet=subnet)
-        self._create_ipaddress(ip_address="10.0.0.2", subnet=used_subnet)
+        reserved_subnet = self._create_subnet(
+            subnet="10.0.0.3/32", master_subnet=subnet
+        )
+        ipaddress = self._create_ipaddress(ip_address="10.0.0.2", subnet=used_subnet)
         self.login()
         self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
+        self.assert_no_browser_errors()
         self.wait_until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, "#subnet-visual .reserved")
@@ -89,8 +105,18 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         )
         self.assertEqual(reserved.text, "10.0.0.3")
         self.assertEqual(used.text, "10.0.0.2")
-        self.assertEqual(used.tag_name, "span")
-        self.assertIsNone(used.get_attribute("href"))
+        self.assertEqual(reserved.tag_name, "a")
+        self.assertIn(
+            reverse(f"admin:{self.app_label}_subnet_change", args=[reserved_subnet.id]),
+            reserved.get_attribute("href"),
+        )
+        self.assertEqual(
+            reserved.get_attribute("onclick"), "return showAddAnotherPopup(this);"
+        )
+        self.assertEqual(used.tag_name, "a")
+        self.assertIn(str(ipaddress.id), used.get_attribute("href"))
+        self.assertEqual(reserved.value_of_css_property("color"), "rgb(255, 255, 255)")
+        self.assert_no_browser_errors()
 
     def test_ipv6_subnet_visual_display(self):
         subnet = self._create_subnet(subnet="2001:db8::/126")
@@ -101,6 +127,7 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         self._create_ipaddress(ip_address="2001:db8::1", subnet=used_subnet)
         self.login()
         self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
+        self.assert_no_browser_errors()
         self.wait_until(
             EC.presence_of_element_located(
                 (By.CSS_SELECTOR, "#subnet-visual .reserved")
@@ -116,3 +143,4 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         )
         self.assertEqual(reserved.value_of_css_property("width"), "240px")
         self.assertEqual(used.value_of_css_property("width"), "240px")
+        self.assert_no_browser_errors()

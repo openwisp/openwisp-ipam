@@ -217,8 +217,8 @@ class TestMultitenantApi(
         subnet_b = self._create_subnet(
             subnet="10.0.0.2/32", organization=org_b, master_subnet=subnet
         )
-        self._create_ipaddress(ip_address="10.0.0.1", subnet=subnet_a)
-        self._create_ipaddress(ip_address="10.0.0.2", subnet=subnet_b)
+        ipaddress_a = self._create_ipaddress(ip_address="10.0.0.1", subnet=subnet_a)
+        ipaddress_b = self._create_ipaddress(ip_address="10.0.0.2", subnet=subnet_b)
         allocation_url = reverse("ipam:subnet_allocation", args=(subnet.id,))
         hosts_url = reverse("ipam:hosts", args=(subnet.id,))
         for username, allocation, hosts in [
@@ -226,16 +226,40 @@ class TestMultitenantApi(
                 "user_a",
                 {"total": 254, "used": 1, "reserved": 0, "available": 253},
                 [
-                    {"address": "10.0.0.1", "used": True, "reserved": True},
-                    {"address": "10.0.0.2", "used": False, "reserved": False},
+                    {
+                        "address": "10.0.0.1",
+                        "used": True,
+                        "reserved": True,
+                        "ip_address_id": str(ipaddress_a.pk),
+                        "reserved_subnet_id": str(subnet_a.pk),
+                    },
+                    {
+                        "address": "10.0.0.2",
+                        "used": False,
+                        "reserved": False,
+                        "ip_address_id": None,
+                        "reserved_subnet_id": None,
+                    },
                 ],
             ),
             (
                 "user_b",
                 {"total": 254, "used": 1, "reserved": 0, "available": 253},
                 [
-                    {"address": "10.0.0.1", "used": False, "reserved": False},
-                    {"address": "10.0.0.2", "used": True, "reserved": True},
+                    {
+                        "address": "10.0.0.1",
+                        "used": False,
+                        "reserved": False,
+                        "ip_address_id": None,
+                        "reserved_subnet_id": None,
+                    },
+                    {
+                        "address": "10.0.0.2",
+                        "used": True,
+                        "reserved": True,
+                        "ip_address_id": str(ipaddress_b.pk),
+                        "reserved_subnet_id": str(subnet_b.pk),
+                    },
                 ],
             ),
         ]:

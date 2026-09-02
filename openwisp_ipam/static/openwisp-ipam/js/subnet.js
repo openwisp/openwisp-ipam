@@ -43,7 +43,7 @@ function initHostsInfiniteScroll(
   current_subnet,
   address_add_url,
   address_change_url,
-  ip_uuid,
+  subnet_change_url,
 ) {
   "use strict";
   var renderedPages = 5,
@@ -55,14 +55,10 @@ function initHostsInfiniteScroll(
   function addressListItem(addr) {
     var id = normalizeIP(addr.address);
     if (addr.used) {
-      var uuid = ip_uuid[addr.address];
-      if (!uuid) {
-        return '<span class="used">' + addr.address + "</span>";
-      }
       //note 1234 was passed as a dummy to be later on replaced in the script
       return (
         '<a class = "used" href=\"' +
-        address_change_url.replace("1234", uuid) +
+        address_change_url.replace("1234", addr.ip_address_id) +
         "?_to_field=id&amp;_popup=1&amp;ip_address=" +
         addr.address +
         "&amp;subnet=" +
@@ -73,7 +69,13 @@ function initHostsInfiniteScroll(
       );
     }
     if (addr.reserved) {
-      return '<span class="reserved">' + addr.address + "</span>";
+      return (
+        '<a class="reserved" href=\"' +
+        subnet_change_url.replace("1234", addr.reserved_subnet_id) +
+        '?_to_field=id&amp;_popup=1" onclick="return showAddAnotherPopup(this);">' +
+        addr.address +
+        "</a>"
+      );
     }
     return (
       '<a href=\"' +
@@ -232,7 +234,7 @@ function initSubnetAllocationGraph($, allocationUrl, labels, title) {
             marker: {
               colors: [
                 rootStyle.getPropertyValue("--ow-color-success").trim(),
-                rootStyle.getPropertyValue("--ow-color-warning").trim(),
+                rootStyle.getPropertyValue("--ipam-color-reserved").trim(),
                 rootStyle.getPropertyValue("--ow-color-danger").trim(),
               ],
             },

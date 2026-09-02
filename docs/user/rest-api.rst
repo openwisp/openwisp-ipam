@@ -96,8 +96,9 @@ Subnet Allocation
 ~~~~~~~~~~~~~~~~~
 
 Fetch aggregate allocation data for a specific subnet. The response
-separates IP addresses assigned to the subnet or its descendants, address
-space reserved by direct child subnets, and available address space.
+separates IP addresses in the visible subnet hierarchy, including ancestor
+records within the subnet range, address space reserved by direct child
+subnets, and available address space.
 
 GET
 +++
