@@ -43,7 +43,6 @@ function initHostsInfiniteScroll(
   current_subnet,
   address_add_url,
   address_change_url,
-  subnet_change_url,
 ) {
   "use strict";
   var renderedPages = 5,
@@ -69,13 +68,7 @@ function initHostsInfiniteScroll(
       );
     }
     if (addr.reserved) {
-      return (
-        '<a class="reserved" href=\"' +
-        subnet_change_url.replace("1234", addr.reserved_subnet_id) +
-        '?_to_field=id&amp;_popup=1" onclick="return showAddAnotherPopup(this);">' +
-        addr.address +
-        "</a>"
-      );
+      return '<span class="reserved">' + addr.address + "</span>";
     }
     return (
       '<a href=\"' +

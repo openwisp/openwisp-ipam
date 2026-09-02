@@ -83,9 +83,7 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
     def test_subnet_visual_display(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
         used_subnet = self._create_subnet(subnet="10.0.0.2/32", master_subnet=subnet)
-        reserved_subnet = self._create_subnet(
-            subnet="10.0.0.3/32", master_subnet=subnet
-        )
+        self._create_subnet(subnet="10.0.0.3/32", master_subnet=subnet)
         ipaddress = self._create_ipaddress(ip_address="10.0.0.2", subnet=used_subnet)
         self.login()
         self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
@@ -105,14 +103,8 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         )
         self.assertEqual(reserved.text, "10.0.0.3")
         self.assertEqual(used.text, "10.0.0.2")
-        self.assertEqual(reserved.tag_name, "a")
-        self.assertIn(
-            reverse(f"admin:{self.app_label}_subnet_change", args=[reserved_subnet.id]),
-            reserved.get_attribute("href"),
-        )
-        self.assertEqual(
-            reserved.get_attribute("onclick"), "return showAddAnotherPopup(this);"
-        )
+        self.assertEqual(reserved.tag_name, "span")
+        self.assertIsNone(reserved.get_attribute("href"))
         self.assertEqual(used.tag_name, "a")
         self.assertIn(str(ipaddress.id), used.get_attribute("href"))
         self.assertEqual(reserved.value_of_css_property("color"), "rgb(255, 255, 255)")

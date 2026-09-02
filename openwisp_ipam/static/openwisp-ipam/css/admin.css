@@ -1,7 +1,7 @@
 .list-ip {
   padding: 10px;
 }
-/* Defined locally because openwisp-utils has no suitable problem color for white text. */
+/* Defined locally on purpose because openwisp-utils has no suitable color variable. */
 :root {
   --ipam-color-reserved: #fea500;
 }

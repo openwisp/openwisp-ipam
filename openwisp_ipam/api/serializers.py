@@ -37,4 +37,3 @@ class HostsResponseSerializer(serializers.Serializer):
     used = serializers.BooleanField()
     reserved = serializers.BooleanField()
     ip_address_id = serializers.UUIDField(allow_null=True)
-    reserved_subnet_id = serializers.UUIDField(allow_null=True)

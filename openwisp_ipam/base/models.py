@@ -193,6 +193,7 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         """
         start, end = self._get_usable_address_range()
         reserved = 0
+        reserved_ranges = []
         for child in (
             self.get_child_subnets(organization_filter)
             .only("subnet", "master_subnet")
@@ -202,21 +203,23 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             child_end = min(end, int(child.subnet.broadcast_address))
             if child_start <= child_end:
                 reserved += child_end - child_start + 1
+                reserved_ranges.append((child_start, child_end))
         total = max(end - start + 1, 0)
         descendant_pks = self.get_descendant_subnet_pks(organization_filter)
         IpAddress = load_model("openwisp_ipam", "IpAddress")
+        used_queryset = IpAddress.objects.filter(
+            subnet_id__in=[self.pk] + self._get_parent_subnet_pks() + descendant_pks
+        )
         used = self._count_used_ips(
-            IpAddress.objects.filter(
-                subnet_id__in=[self.pk] + self._get_parent_subnet_pks() + descendant_pks
-            ),
+            used_queryset,
             start,
             end,
         )
-        if descendant_pks:
-            descendant_used = self._count_used_ips(
-                IpAddress.objects.filter(subnet_id__in=descendant_pks), start, end
+        if reserved_ranges:
+            reserved_used = self._count_used_ips(
+                used_queryset, start, end, ranges=reserved_ranges
             )
-            reserved = max(reserved - descendant_used, 0)
+            reserved = max(reserved - reserved_used, 0)
         return {
             "total": total,
             "used": used,
@@ -225,16 +228,24 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         }
 
     @staticmethod
-    def _count_used_ips(queryset, start, end):
+    def _count_used_ips(queryset, start, end, ranges=None):
         # PostgreSQL stores GenericIPAddressField as inet, unlike text-backed SQLite.
         if connections[queryset.db].vendor == "postgresql":
             queryset = queryset.filter(
                 ip_address__range=(str(ip_address(start)), str(ip_address(end)))
             )
-        return sum(
-            start <= int(ip_address(address)) <= end
-            for address in queryset.values_list("ip_address", flat=True).iterator()
-        )
+        count = 0
+        for address in queryset.values_list("ip_address", flat=True).iterator():
+            address = int(ip_address(address))
+            if start <= address <= end and (
+                ranges is None
+                or any(
+                    range_start <= address <= range_end
+                    for range_start, range_end in ranges
+                )
+            ):
+                count += 1
+        return count
 
     def _get_usable_address_range(self):
         start = int(self.subnet.network_address)
