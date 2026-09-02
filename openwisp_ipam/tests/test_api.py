@@ -393,6 +393,19 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
             {"total": 3, "used": 1, "reserved": 2, "available": 0},
         )
 
+    def test_point_to_point_subnet_allocation_api(self):
+        for subnet_value in ["192.0.2.0/31", "2001:db8::/127"]:
+            with self.subTest(subnet=subnet_value):
+                subnet = self._create_subnet(subnet=subnet_value)
+                response = self.client.get(
+                    reverse("ipam:subnet_allocation", args=(subnet.id,))
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response.data,
+                    {"total": 2, "used": 0, "reserved": 0, "available": 2},
+                )
+
     def test_bearer_auth(self):
         self._logout()
         self._create_user(username="tester", password="tester", is_superuser=True)

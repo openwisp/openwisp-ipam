@@ -250,10 +250,11 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     def _get_usable_address_range(self):
         start = int(self.subnet.network_address)
         end = int(self.subnet.broadcast_address)
-        if self.subnet.prefixlen not in [32, 128]:
+        if self.subnet.version == 4 and self.subnet.prefixlen not in [31, 32]:
             start += 1
-            if self.subnet.version == 4:
-                end -= 1
+            end -= 1
+        elif self.subnet.version == 6 and self.subnet.prefixlen not in [127, 128]:
+            start += 1
         return start, end
 
     def request_ip(self, options=None):
