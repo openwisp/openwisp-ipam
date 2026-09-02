@@ -158,7 +158,7 @@ class HostsSet:
         return HostsResponse(
             str(host),
             ip_address=ip_address,
-            reserved=self._is_reserved(host),
+            reserved=not ip_address and self._is_reserved(host),
         )
 
     def _get_host(self, index):

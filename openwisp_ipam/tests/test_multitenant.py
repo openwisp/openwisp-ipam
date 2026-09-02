@@ -229,7 +229,7 @@ class TestMultitenantApi(
                     {
                         "address": "10.0.0.1",
                         "used": True,
-                        "reserved": True,
+                        "reserved": False,
                         "ip_address_id": str(ipaddress_a.pk),
                     },
                     {
@@ -253,7 +253,7 @@ class TestMultitenantApi(
                     {
                         "address": "10.0.0.2",
                         "used": True,
-                        "reserved": True,
+                        "reserved": False,
                         "ip_address_id": str(ipaddress_b.pk),
                     },
                 ],

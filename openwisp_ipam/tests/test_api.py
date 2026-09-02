@@ -300,7 +300,7 @@ class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestC
                 {
                     "address": "10.0.0.2",
                     "used": True,
-                    "reserved": True,
+                    "reserved": False,
                     "ip_address_id": str(ipaddress.pk),
                 },
             ),
