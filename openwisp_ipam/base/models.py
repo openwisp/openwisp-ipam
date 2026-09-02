@@ -1,4 +1,5 @@
 import csv
+from bisect import bisect_right
 from io import StringIO
 from ipaddress import ip_address, ip_network
 
@@ -204,21 +205,20 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             if child_start <= child_end:
                 reserved += child_end - child_start + 1
                 reserved_ranges.append((child_start, child_end))
+        reserved_ranges.sort()
         total = max(end - start + 1, 0)
         descendant_pks = self.get_descendant_subnet_pks(organization_filter)
         IpAddress = load_model("openwisp_ipam", "IpAddress")
         used_queryset = IpAddress.objects.filter(
             subnet_id__in=[self.pk] + self._get_parent_subnet_pks() + descendant_pks
         )
-        used = self._count_used_ips(
+        used, reserved_used = self._get_used_counts(
             used_queryset,
             start,
             end,
+            reserved_ranges,
         )
         if reserved_ranges:
-            reserved_used = self._count_used_ips(
-                used_queryset, start, end, ranges=reserved_ranges
-            )
             reserved = max(reserved - reserved_used, 0)
         return {
             "total": total,
@@ -228,24 +228,31 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         }
 
     @staticmethod
-    def _count_used_ips(queryset, start, end, ranges=None):
+    def _get_used_counts(queryset, start, end, ranges):
+        """Count used addresses and the used addresses inside child subnet ranges.
+
+        `used` counts every IP address in the displayed subnet range. `reserved_used`
+        counts only used addresses in direct child subnet ranges, so the caller can
+        subtract them from `reserved`. Sorted, non-overlapping ranges allow binary
+        search to perform that check efficiently.
+        """
         # PostgreSQL stores GenericIPAddressField as inet, unlike text-backed SQLite.
         if connections[queryset.db].vendor == "postgresql":
             queryset = queryset.filter(
                 ip_address__range=(str(ip_address(start)), str(ip_address(end)))
             )
-        count = 0
+        range_starts = [range_start for range_start, _ in ranges]
+        used = 0
+        reserved_used = 0
         for address in queryset.values_list("ip_address", flat=True).iterator():
             address = int(ip_address(address))
-            if start <= address <= end and (
-                ranges is None
-                or any(
-                    range_start <= address <= range_end
-                    for range_start, range_end in ranges
-                )
-            ):
-                count += 1
-        return count
+            if not start <= address <= end:
+                continue
+            used += 1
+            range_index = bisect_right(range_starts, address) - 1
+            if range_index >= 0 and address <= ranges[range_index][1]:
+                reserved_used += 1
+        return used, reserved_used
 
     def _get_usable_address_range(self):
         start = int(self.subnet.network_address)
