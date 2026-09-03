@@ -6,6 +6,13 @@ Version 1.4.0 [unreleased]
 
 Work in progress.
 
+Version 1.3.1 [2026-09-03]
+--------------------------
+
+- Fixed a regression affecting OpenWISP Controller caused by changes to
+  the shared `test model mixins
+  <https://github.com/openwisp/openwisp-ipam/commit/257c28fe868da57ba8bfc1e0660bd4dc9e46652f>`_.
+
 Version 1.3.0 [2026-09-03]
 --------------------------
 
