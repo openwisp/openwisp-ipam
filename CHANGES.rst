@@ -1,10 +1,44 @@
 Changelog
 =========
 
-Version 1.3.0 [unreleased]
+Version 1.3.0 [2026-09-03]
 --------------------------
 
-Work in progress.
+Features
+~~~~~~~~
+
+- Added `support for reserved subnets in the address allocation graph
+  <https://github.com/openwisp/openwisp-ipam/issues/114>`_, including
+  their visualization and a dedicated REST API endpoint for retrieving
+  reserved subnet data.
+
+Changes
+~~~~~~~
+
+Other changes
++++++++++++++
+
+- Improved address allocation graph performance by loading graph data
+  asynchronously.
+
+Dependencies
+++++++++++++
+
+- Bumped ``openwisp-users`` from ``~=1.2.0`` to `~=1.3.0
+  <https://github.com/openwisp/openwisp-users/blob/1.3.0/CHANGES.rst>`_.
+- Bumped ``openwisp-utils[rest]`` from ``~=1.2.0`` to `~=1.3.0
+  <https://github.com/openwisp/openwisp-utils/blob/1.3.0/CHANGES.rst>`__.
+- Bumped ``django-reversion`` from ``~=6.0.0`` to `~=6.3.0
+  <https://github.com/etianen/django-reversion/blob/v6.3.0/CHANGELOG.rst>`_.
+- Dropped support for Django ``4.2``.
+- Dropped support for Python ``3.9``.
+
+Bugfixes
+~~~~~~~~
+
+- Fixed `duplicate IP address validation across related subnets
+  <https://github.com/openwisp/openwisp-ipam/issues/116>`_ so IP addresses
+  cannot be duplicated across parent and child subnets.
 
 Version 1.2.1 [2026-06-15]
 --------------------------
