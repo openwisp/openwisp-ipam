@@ -5,6 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
+from openwisp_utils.tests import AssertNumQueriesSubTestMixin
 from swapper import load_model
 
 from . import CreateModelsMixin, PostDataMixin
@@ -14,7 +15,13 @@ Subnet = load_model("openwisp_ipam", "Subnet")
 IpAddress = load_model("openwisp_ipam", "IpAddress")
 
 
-class TestApi(TestMultitenantAdminMixin, CreateModelsMixin, PostDataMixin, TestCase):
+class TestApi(
+    AssertNumQueriesSubTestMixin,
+    TestMultitenantAdminMixin,
+    CreateModelsMixin,
+    PostDataMixin,
+    TestCase,
+):
     def setUp(self):
         super().setUp()
         self._login()

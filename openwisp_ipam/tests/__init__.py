@@ -2,7 +2,6 @@ import json
 import os
 
 from openwisp_users.tests.utils import TestOrganizationMixin
-from openwisp_utils.tests import AssertNumQueriesSubTestMixin
 from swapper import load_model
 
 Subnet = load_model("openwisp_ipam", "Subnet")
@@ -16,7 +15,7 @@ class FileMixin(object):
         return os.path.join(d, file)
 
 
-class CreateModelsMixin(AssertNumQueriesSubTestMixin, TestOrganizationMixin):
+class CreateModelsMixin(TestOrganizationMixin):
     def _get_extra_fields(self, **kwargs):
         if "organization" not in kwargs:
             kwargs["organization"] = self._get_org()
