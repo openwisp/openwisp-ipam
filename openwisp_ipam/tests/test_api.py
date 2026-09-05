@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from openwisp_utils.tests import AssertNumQueriesSubTestMixin
@@ -494,17 +494,41 @@ class TestApi(
         self.assertEqual(host_address_32, "192.168.0.0")
 
 
-class TestApiUrls(TestCase):
-    def test_get_api_urls_without_api_views(self):
-        url_map = {url.name: url.callback for url in get_api_urls()}
-        self.assertEqual(url_map["hosts"], views.subnet_hosts)
-        self.assertEqual(url_map["subnet"], views.subnet)
+class TestApiUrls(SimpleTestCase):
+    def test_get_api_urls_uses_overrides_and_default_fallbacks(self):
+        def custom_view(request):
+            return None
 
-    def test_get_api_urls_with_partial_api_views(self):
-        def custom_subnet_hosts(request, *args, **kwargs):
-            pass
+        view_names = {
+            "import-subnet": "import_subnet",
+            "get_next_available_ip": "get_next_available_ip",
+            "request_ip": "request_ip",
+            "export-subnet": "export_subnet",
+            "list_create_ip_address": "subnet_list_ipaddress",
+            "subnet_list_create": "subnet_list_create",
+            "subnet": "subnet",
+            "hosts": "subnet_hosts",
+            "subnet_allocation": "subnet_allocation",
+            "ip_address": "ip_address",
+        }
+        default_callbacks = {
+            pattern.name: pattern.callback for pattern in get_api_urls()
+        }
+        custom_views = SimpleNamespace(
+            **{
+                view_name: custom_view
+                for view_name in view_names.values()
+                if view_name != "subnet_hosts"
+            }
+        )
+        callbacks = {
+            pattern.name: pattern.callback for pattern in get_api_urls(custom_views)
+        }
+        for url_name, view_name in view_names.items():
 
-        custom_views = SimpleNamespace(subnet_hosts=custom_subnet_hosts)
-        url_map = {url.name: url.callback for url in get_api_urls(custom_views)}
-        self.assertEqual(url_map["hosts"], custom_subnet_hosts)
-        self.assertEqual(url_map["subnet"], views.subnet)
+            with self.subTest(url_name=url_name):
+                self.assertIs(default_callbacks[url_name], getattr(views, view_name))
+                expected = (
+                    views.subnet_hosts if view_name == "subnet_hosts" else custom_view
+                )
+                self.assertIs(callbacks[url_name], expected)
