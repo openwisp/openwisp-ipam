@@ -11,6 +11,7 @@ from swapper import load_model
 
 from openwisp_ipam.api import views
 from openwisp_ipam.api.urls import get_api_urls
+from openwisp_ipam.urls import get_urls
 
 from . import CreateModelsMixin, PostDataMixin
 
@@ -524,11 +525,22 @@ class TestApiUrls(SimpleTestCase):
         callbacks = {
             pattern.name: pattern.callback for pattern in get_api_urls(custom_views)
         }
+        wrapper_default_callbacks = {
+            pattern.name: pattern.callback for pattern in get_urls()[0].url_patterns
+        }
+        wrapper_callbacks = {
+            pattern.name: pattern.callback
+            for pattern in get_urls(custom_views)[0].url_patterns
+        }
         for url_name, view_name in view_names.items():
 
             with self.subTest(url_name=url_name):
-                self.assertIs(default_callbacks[url_name], getattr(views, view_name))
                 expected = (
                     views.subnet_hosts if view_name == "subnet_hosts" else custom_view
                 )
+                self.assertIs(default_callbacks[url_name], getattr(views, view_name))
                 self.assertIs(callbacks[url_name], expected)
+                self.assertIs(
+                    wrapper_default_callbacks[url_name], getattr(views, view_name)
+                )
+                self.assertIs(wrapper_callbacks[url_name], expected)
