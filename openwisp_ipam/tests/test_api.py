@@ -497,8 +497,6 @@ class TestApi(
 
 class TestApiUrls(SimpleTestCase):
     def test_get_api_urls_uses_overrides_and_default_fallbacks(self):
-        def custom_view(request):
-            return None
 
         view_names = {
             "import-subnet": "import_subnet",
@@ -517,7 +515,7 @@ class TestApiUrls(SimpleTestCase):
         }
         custom_views = SimpleNamespace(
             **{
-                view_name: custom_view
+                view_name: (lambda request, _name=view_name: None)
                 for view_name in view_names.values()
                 if view_name != "subnet_hosts"
             }
@@ -536,7 +534,9 @@ class TestApiUrls(SimpleTestCase):
 
             with self.subTest(url_name=url_name):
                 expected = (
-                    views.subnet_hosts if view_name == "subnet_hosts" else custom_view
+                    views.subnet_hosts
+                    if view_name == "subnet_hosts"
+                    else getattr(custom_views, view_name)
                 )
                 self.assertIs(default_callbacks[url_name], getattr(views, view_name))
                 self.assertIs(callbacks[url_name], expected)
