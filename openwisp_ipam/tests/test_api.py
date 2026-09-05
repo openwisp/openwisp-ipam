@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -7,6 +8,9 @@ from django.urls import reverse
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from openwisp_utils.tests import AssertNumQueriesSubTestMixin
 from swapper import load_model
+
+from openwisp_ipam.api import views
+from openwisp_ipam.api.urls import get_api_urls
 
 from . import CreateModelsMixin, PostDataMixin
 
@@ -488,3 +492,19 @@ class TestApi(
         host_address_32 = response.data["results"][0]["address"]
         self.assertEqual(host_address_128, "2001:db00::")
         self.assertEqual(host_address_32, "192.168.0.0")
+
+
+class TestApiUrls(TestCase):
+    def test_get_api_urls_without_api_views(self):
+        url_map = {url.name: url.callback for url in get_api_urls()}
+        self.assertEqual(url_map["hosts"], views.subnet_hosts)
+        self.assertEqual(url_map["subnet"], views.subnet)
+
+    def test_get_api_urls_with_partial_api_views(self):
+        def custom_subnet_hosts(request, *args, **kwargs):
+            pass
+
+        custom_views = SimpleNamespace(subnet_hosts=custom_subnet_hosts)
+        url_map = {url.name: url.callback for url in get_api_urls(custom_views)}
+        self.assertEqual(url_map["hosts"], custom_subnet_hosts)
+        self.assertEqual(url_map["subnet"], views.subnet)
