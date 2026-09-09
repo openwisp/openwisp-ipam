@@ -279,9 +279,13 @@ Substitute ``myipam`` with the name you chose in step 1.
     urlpatterns = [
         # ... other urls in your project ...
         # openwisp-ipam urls
-        # path('', include(get_urls(api_views))) <-- Use only when changing API views (dicussed below)
+        # path('', include(get_urls(api_views))) <-- Use only when changing API views (see below)
         path("", include("openwisp_ipam.urls")),
     ]
+
+The ``api_views`` module only needs to contain the views you want to
+override. Any view which is not found in it will fall back to the default
+implementation, so there is no need to redefine all the views.
 
 For more information about URL configuration in django, please refer to
 the `"URL dispatcher" section in the django documentation
