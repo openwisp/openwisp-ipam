@@ -5,6 +5,7 @@ from openwisp_ipam.tests.test_forms import TestForms as BaseTestForms
 from openwisp_ipam.tests.test_models import TestModels as BaseTestModels
 from openwisp_ipam.tests.test_multitenant import (
     TestMultitenantAdmin as BaseTestMultitenantAdmin,
+    TestMultitenantApi as BaseTestMultitenantApi,
 )
 
 
@@ -32,6 +33,10 @@ class TestMultitenantAdmin(BaseTestMultitenantAdmin):
     app_label = "sample_ipam"
 
 
+class TestMultitenantApi(BaseTestMultitenantApi):
+    pass
+
+
 # this is necessary to avoid excuting the base test suites
 del BaseTestAdmin
 del BaseTestApi
@@ -39,3 +44,4 @@ del BaseTestCommands
 del BaseTestForms
 del BaseTestModels
 del BaseTestMultitenantAdmin
+del BaseTestMultitenantApi

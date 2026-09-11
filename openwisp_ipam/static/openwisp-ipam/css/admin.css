@@ -1,6 +1,11 @@
 .list-ip {
   padding: 10px;
 }
+/* Defined locally on purpose because openwisp-utils has no suitable color variable. */
+:root {
+  --ipam-color-reserved: #fea500;
+}
+
 .subnet-visual {
   margin: 10px 20px 0;
   padding: 0;
@@ -10,36 +15,49 @@ section.subnet-visual {
   overflow-y: scroll;
   height: 700px;
 }
-.subnet-visual a {
+.subnet-visual a,
+.subnet-visual .reserved,
+.subnet-visual .used {
   display: inline-block;
   width: 120px;
   text-align: center;
   padding: 5px 0;
   margin: 0 10px 10px 0px;
   border-radius: 0;
-  color: #fff;
-  background: rgba(20, 102, 26, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  color: var(--ow-color-white);
+  background: var(--ow-color-success);
+  border: 1px solid var(--ow-overlay-25);
   font-weight: normal;
   text-decoration: none !important;
 }
-.subnet-visual.ipv6 a {
+.subnet-visual.ipv6 a,
+.subnet-visual.ipv6 .reserved,
+.subnet-visual.ipv6 .used {
   font-size: 12px;
   letter-spacing: -0.2px;
   width: 240px;
   padding: 8px 5px;
 }
 .subnet-visual a:hover {
-  background: rgba(20, 102, 26, 1);
-  border: 1px solid rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--ow-color-success), var(--ow-color-black) 15%);
+  border: 1px solid var(--ow-overlay-40);
 }
-.subnet-visual a.used {
-  background: rgba(149, 10, 10, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.2);
+.subnet-visual .used {
+  background: var(--ow-color-danger);
+  border: 1px solid var(--ow-overlay-25);
 }
-.subnet-visual a.used:hover {
-  background: rgba(149, 10, 10, 1);
-  border: 1px solid rgba(0, 0, 0, 0.4);
+.subnet-visual .used:hover {
+  background: color-mix(in srgb, var(--ow-color-danger), var(--ow-color-black) 15%);
+  border: 1px solid var(--ow-overlay-40);
+}
+.subnet-visual .reserved {
+  background: var(--ipam-color-reserved);
+  border: 1px solid var(--ow-overlay-25);
+  color: var(--ow-color-white);
+}
+.subnet-visual .reserved:hover {
+  background: color-mix(in srgb, var(--ipam-color-reserved), var(--ow-color-black) 15%);
+  border: 1px solid var(--ow-overlay-40);
 }
 
 .subnet-visual a.disabled {
@@ -55,4 +73,32 @@ section.subnet-visual {
 }
 #goto-button {
   padding: 7px 10px;
+}
+
+#graph-loading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 20px;
+}
+
+#graph-loading.hide {
+  display: none;
+}
+
+#graph-loading::before {
+  animation: graph-loading 1s linear infinite;
+  border: 2px solid var(--ow-overlay-25);
+  border-radius: 50%;
+  border-top-color: var(--ow-color-success);
+  content: "";
+  height: 16px;
+  width: 16px;
+}
+
+@keyframes graph-loading {
+  to {
+    transform: rotate(360deg);
+  }
 }

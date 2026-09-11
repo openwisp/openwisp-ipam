@@ -25,7 +25,13 @@
 <h2>{% trans 'Network Hierarchical View' %}</h2>
 <div id="jstree"></div>
 
+<div id="graph-loading" role="status">
+  {% trans 'Loading subnet allocation...' %}
+</div>
 <div id="graph"></div>
+<ul id="graph-error" class="errorlist hide">
+  <li>{% trans 'Unable to load subnet allocation.' %}</li>
+</ul>
 
 <h3 class="subnet-visual">{% trans 'Subnet Visual Display' %}</h3>
 <div class="subnet-visual">
@@ -54,7 +60,7 @@
   var isOrganizationActive = {{ is_organization_active|yesno:"true,false" }};
   var disabledIpaddressMessage = "{{ disabled_ipaddress_message|escapejs }}";
   django.jQuery(document).ready(function () {
-    initHostsInfiniteScroll(django.jQuery, current_subnet, ipAddUrl, ipChangeUrl, {{ ip_uuid| safe}}, hasIpaddressAddPermission, isOrganizationActive, disabledIpaddressMessage)
+    initHostsInfiniteScroll(django.jQuery, current_subnet, ipAddUrl, ipChangeUrl, hasIpaddressAddPermission, isOrganizationActive, disabledIpaddressMessage)
   });
   // Nested Subnet Tree
   subnet_tree = [];
@@ -84,36 +90,16 @@
     subnet_href.appendChild(subnet_node);
     parent_element.appendChild(subnet_list);
   }
-  // Ipam Graph / Visual
-  var data = [],
-    layout = {},
-    vals = {{ values| safe }}
-  vals[1] = Number(vals[1]);
-  data = [
-    {
-      values: {{ values| safe }},
-    labels: {{ labels| safe }},
-    text: vals,
-    type: 'pie',
-    hoverinfo: 'label+text',
-    textinfo: 'percent',
-    marker: {
-      colors: [
-        'rgba(149, 10, 10, 1)',
-        'rgba(20, 102, 26, 1)'
-      ]
-    },
-    textfont: {
-      size: 18,
-      color: '#FFF',
-    }
-      }
-  ];
-  layout = {
-    title: '{% trans "Subnet Freespace Display" %}'
-  };
-  Plotly.newPlot('graph', data, layout);
+  {% translate "Available" as available_label %}
+  {% translate "Reserved" as reserved_label %}
+  {% translate "Used" as used_label %}
+  {% translate "Subnet Allocation" as allocation_title %}
+  initSubnetAllocationGraph(
+    django.jQuery,
+    '{% url "ipam:subnet_allocation" original.pk %}',
+    ['{{ available_label|escapejs }}', '{{ reserved_label|escapejs }}', '{{ used_label|escapejs }}'],
+    '{{ allocation_title|escapejs }}'
+  );
 </script>
 {% endif %}
 {% endblock %}
-
