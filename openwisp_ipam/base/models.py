@@ -203,9 +203,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         """
         subnet = self.subnet
         if not isinstance(prefixlen, int) or not (
-            subnet.prefixlen <= prefixlen <= subnet.max_prefixlen
+            subnet.prefixlen < prefixlen <= subnet.max_prefixlen
         ):
-            raise ValueError("prefixlen must be within the subnet range")
+            raise ValueError("prefixlen must be within the child subnet range")
         try:
             ip_indexes = tuple(ip_indexes)
         except TypeError as error:

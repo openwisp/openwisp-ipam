@@ -139,7 +139,13 @@ class TestModels(CreateModelsMixin, TestCase):
 
     def test_get_available_subnets_validates_arguments(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
-        for prefixlen, indexes in ((23, ()), (33, ()), (32, (-1,)), (32, (1,))):
+        for prefixlen, indexes in (
+            (23, ()),
+            (24, ()),
+            (33, ()),
+            (32, (-1,)),
+            (32, (1,)),
+        ):
             with self.subTest(prefixlen=prefixlen, indexes=indexes):
                 with self.assertRaises(ValueError):
                     list(subnet.get_available_subnets(prefixlen, ip_indexes=indexes))
