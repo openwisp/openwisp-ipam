@@ -146,6 +146,38 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             qs = qs.filter(organization_filter)
         return qs
 
+    def get_available_subnets(self, prefixlen):
+        """Find free child subnets of the requested size.
+
+        Returns them from the lowest to the highest address. It only checks existing
+        child subnets. The caller must check IP assignments and save the selected
+        subnet.
+
+        This method is a generator, so callers can stop when they have enough
+        candidates without creating a list of every available subnet.
+        """
+        subnet = self.subnet
+        if not subnet.prefixlen <= prefixlen <= subnet.max_prefixlen:
+            raise ValueError("prefixlen must be within the subnet range")
+        subnet_size = 1 << (subnet.max_prefixlen - prefixlen)
+        subnet_end = int(subnet.broadcast_address)
+        candidate_start = int(subnet.network_address)
+        occupied_ranges = sorted(
+            (
+                (int(child.subnet.network_address), int(child.subnet.broadcast_address))
+                for child in self.get_child_subnets().only("subnet").iterator()
+            ),
+        )
+        for occupied_start, occupied_end in occupied_ranges:
+            while candidate_start + subnet_size - 1 < occupied_start:
+                yield ip_network((candidate_start, prefixlen))
+                candidate_start += subnet_size
+            if candidate_start <= occupied_end:
+                candidate_start = ((occupied_end // subnet_size) + 1) * subnet_size
+        while candidate_start + subnet_size - 1 <= subnet_end:
+            yield ip_network((candidate_start, prefixlen))
+            candidate_start += subnet_size
+
     def get_descendant_subnet_pks(self, organization_filter=None, child_pks=None):
         """Return a list of primary keys for this subnet's descendants."""
         pks = []
