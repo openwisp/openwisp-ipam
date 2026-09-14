@@ -161,6 +161,29 @@ class TestModels(CreateModelsMixin, TestCase):
                     list(expected_subnets),
                 )
 
+    def test_get_available_subnets_boundary_prefixes(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        self.assertEqual(
+            [
+                str(available_subnet)
+                for available_subnet in subnet.get_available_subnets(24)
+            ],
+            ["10.0.0.0/24"],
+        )
+        for prefixlen in (23, 33):
+            with self.subTest(prefixlen=prefixlen):
+                with self.assertRaises(ValueError):
+                    next(subnet.get_available_subnets(prefixlen))
+
+    def test_get_available_subnets_mixed_prefixes(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        self._create_subnet(subnet="10.0.0.16/29", master_subnet=subnet)
+        available_subnets = islice(subnet.get_available_subnets(prefixlen=28), 3)
+        self.assertEqual(
+            [str(available_subnet) for available_subnet in available_subnets],
+            ["10.0.0.0/28", "10.0.0.32/28", "10.0.0.48/28"],
+        )
+
     def test_ipaddress_in_different_organizations(self):
         org1 = self._create_org(name="test1organization")
         org2 = self._create_org(name="test2organization")
