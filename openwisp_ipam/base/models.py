@@ -146,6 +146,109 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             qs = qs.filter(organization_filter)
         return qs
 
+    def _get_containing_networks(self):
+        networks = []
+        subnet = self
+        while subnet:
+            networks.append(subnet.subnet)
+            subnet = subnet.master_subnet
+        return networks
+
+    @staticmethod
+    def _is_address_usable_in_network(address, network):
+        """Check address usability within one network.
+
+        IPv4 network and broadcast addresses are unusable except in ``/31``
+        and ``/32`` networks. IPv6 network addresses are unusable except in
+        ``/127`` and ``/128`` networks, while ``::`` and ``::1`` are always
+        unusable.
+        """
+        if address.version != network.version or address not in network:
+            return False
+        if address.version == 6:
+            if int(address) in (0, 1):
+                return False
+            return network.prefixlen >= 127 or address != network.network_address
+        return network.prefixlen >= 31 or address not in (
+            network.network_address,
+            network.broadcast_address,
+        )
+
+    @classmethod
+    def _is_ip_usable(cls, address, networks):
+        return all(
+            cls._is_address_usable_in_network(address, network) for network in networks
+        )
+
+    def is_ip_usable(self, address):
+        """Check whether an IP address can be assigned to this subnet.
+
+        The address must belong to this subnet and avoid unusable endpoints in
+        this subnet and each ancestor subnet.
+        """
+        try:
+            address = ip_address(address)
+        except ValueError:
+            return False
+        return self._is_ip_usable(address, self._get_containing_networks())
+
+    def get_available_subnets(self, prefixlen, *, ip_indexes=()):
+        """Yield unused child subnets of the requested size, lowest first.
+
+        This only finds candidates. It does not create or reserve subnet
+        records. ``prefixlen`` is the CIDR prefix to use. ``ip_indexes`` lists
+        zero-based addresses that will be assigned in each candidate. A
+        candidate is skipped when any required address is unusable in it or one
+        of its parent subnets.
+        """
+        subnet = self.subnet
+        if not isinstance(prefixlen, int) or not (
+            subnet.prefixlen <= prefixlen <= subnet.max_prefixlen
+        ):
+            raise ValueError("prefixlen must be within the subnet range")
+        try:
+            ip_indexes = tuple(ip_indexes)
+        except TypeError as error:
+            raise ValueError("ip_indexes must be an iterable of indexes") from error
+        subnet_size = 1 << (subnet.max_prefixlen - prefixlen)
+        if any(
+            not isinstance(index, int)
+            or isinstance(index, bool)
+            or not 0 <= index < subnet_size
+            for index in ip_indexes
+        ):
+            raise ValueError("ip_indexes must be valid indexes in the requested subnet")
+        containing_networks = self._get_containing_networks()
+        subnet_end = int(subnet.broadcast_address)
+        candidate_start = int(subnet.network_address)
+        occupied_ranges = sorted(
+            (int(child.subnet.network_address), int(child.subnet.broadcast_address))
+            for child in self.get_child_subnets().only("subnet").iterator()
+        )
+        for occupied_start, occupied_end in occupied_ranges:
+            while candidate_start + subnet_size - 1 < occupied_start:
+                candidate = ip_network(
+                    (subnet._address_class(candidate_start), prefixlen)
+                )
+                if all(
+                    self._is_ip_usable(
+                        candidate[index], [candidate, *containing_networks]
+                    )
+                    for index in ip_indexes
+                ):
+                    yield candidate
+                candidate_start += subnet_size
+            if candidate_start <= occupied_end:
+                candidate_start = ((occupied_end // subnet_size) + 1) * subnet_size
+        while candidate_start + subnet_size - 1 <= subnet_end:
+            candidate = ip_network((subnet._address_class(candidate_start), prefixlen))
+            if all(
+                self._is_ip_usable(candidate[index], [candidate, *containing_networks])
+                for index in ip_indexes
+            ):
+                yield candidate
+            candidate_start += subnet_size
+
     def get_descendant_subnet_pks(self, organization_filter=None, child_pks=None):
         """Return a list of primary keys for this subnet's descendants."""
         pks = []
@@ -180,10 +283,19 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             raise ValidationError({"master_subnet": _("Invalid master subnet.")})
 
     def get_next_available_ip(self):
-        ipaddress_set = [ip.ip_address for ip in self.ipaddress_set.all()]
+        """Return the next assignable, unallocated IP address in this subnet.
+
+        Usability is checked against this subnet and its ancestors. Existing
+        IP address records directly assigned to this subnet are skipped.
+        """
+        ipaddress_set = set(self.ipaddress_set.values_list("ip_address", flat=True))
+        containing_networks = self._get_containing_networks()
         subnet_hosts = self.subnet.hosts()
         for host in subnet_hosts:
-            if str(host) not in ipaddress_set:
+            if (
+                self._is_ip_usable(host, containing_networks)
+                and str(host) not in ipaddress_set
+            ):
                 return str(host)
         return None
 
@@ -260,14 +372,23 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
     def _get_usable_address_range(self):
         start = int(self.subnet.network_address)
         end = int(self.subnet.broadcast_address)
-        if self.subnet.version == 4 and self.subnet.prefixlen not in [31, 32]:
+        networks = self._get_containing_networks()
+        while start <= end and not self._is_ip_usable(
+            self.subnet._address_class(start), networks
+        ):
             start += 1
+        while start <= end and not self._is_ip_usable(
+            self.subnet._address_class(end), networks
+        ):
             end -= 1
-        elif self.subnet.version == 6 and self.subnet.prefixlen not in [127, 128]:
-            start += 1
         return start, end
 
     def request_ip(self, options=None):
+        """Create and return the next assignable IP address in this subnet.
+
+        ``options`` are passed to the new IP address record. Returns ``None``
+        when the subnet has no assignable, unallocated addresses.
+        """
         if options is None:
             options = {}
         ip = self.get_next_available_ip()
@@ -405,6 +526,10 @@ class AbstractIpAddress(TimeStampedEditableModel):
         if ip_address(self.ip_address) not in self.subnet.subnet:
             raise ValidationError(
                 {"ip_address": _("IP address does not belong to the subnet")}
+            )
+        if not self.subnet.is_ip_usable(self.ip_address):
+            raise ValidationError(
+                {"ip_address": _("IP address is not usable in the subnet hierarchy.")}
             )
         self._validate_related_subnets()
 
