@@ -52,6 +52,12 @@ class TestModels(CreateModelsMixin, TestCase):
                     ["IP address is not usable in the subnet hierarchy."],
                 )
 
+    def test_is_ip_usable_rejects_invalid_addresses(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        for address in ("invalid", "2001:db8::1"):
+            with self.subTest(address=address):
+                self.assertFalse(subnet.is_ip_usable(address))
+
     def test_inherited_unusable_ipaddress(self):
         parent = self._create_subnet(subnet="10.0.0.0/24")
         child = self._create_subnet(subnet="10.0.0.0/31", master_subnet=parent)
@@ -145,6 +151,8 @@ class TestModels(CreateModelsMixin, TestCase):
             (33, ()),
             (32, (-1,)),
             (32, (1,)),
+            (31, (True,)),
+            (31, 1),
         ):
             with self.subTest(prefixlen=prefixlen, indexes=indexes):
                 with self.assertRaises(ValueError):
