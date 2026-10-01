@@ -171,6 +171,48 @@ class TestApi(
         self.assertEqual(response.status_code, 201)
         self.assertEqual(str(IpAddress.objects.first().ip_address), "10.0.0.2")
 
+    def test_ip_address_api_rejects_unusable_addresses(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        for address in ("10.0.0.0", "10.0.0.255"):
+            with self.subTest(address=address):
+                response = self.client.post(
+                    reverse("ipam:list_create_ip_address", args=(subnet.id,)),
+                    data=self._post_data(ip_address=address, subnet=str(subnet.id)),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("ip_address", response.data)
+        ip_address = self._create_ipaddress(ip_address="10.0.0.1", subnet=subnet)
+        response = self.client.patch(
+            reverse("ipam:ip_address", args=(ip_address.id,)),
+            data=json.dumps({"ip_address": "10.0.0.0"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IpAddress.objects.get(pk=ip_address.id).ip_address, "10.0.0.1")
+
+    def test_ipv6_allocation_api_excludes_unusable_addresses(self):
+        subnet = self._create_subnet(subnet="::/126")
+        response = self.client.get(
+            reverse("ipam:get_next_available_ip", args=(subnet.id,))
+        )
+        self.assertEqual(response.data, "::2")
+        response = self.client.post(
+            reverse("ipam:request_ip", args=(subnet.id,)),
+            data=self._post_data(subnet=str(subnet.id), description="Testing"),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["ip_address"], "::2")
+        response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
+        self.assertEqual(
+            [host["address"] for host in response.data["results"]], ["::2", "::3"]
+        )
+        response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
+        self.assertEqual(
+            response.data, {"total": 2, "used": 1, "reserved": 0, "available": 1}
+        )
+
     def test_read_ip_address_api(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
         ip_address = self._create_ipaddress(ip_address="10.0.0.1", subnet=subnet)
@@ -346,7 +388,8 @@ class TestApi(
         subnet = self._create_subnet(subnet="10.10.0.0/24")
         for address in ["10.10.0.0", "10.10.0.255"]:
             child = self._create_subnet(subnet=f"{address}/32", master_subnet=subnet)
-            self._create_ipaddress(ip_address=address, subnet=child)
+            # Legacy records can predate usability validation and remain reportable.
+            IpAddress.objects.create(ip_address=address, subnet=child)
         response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(

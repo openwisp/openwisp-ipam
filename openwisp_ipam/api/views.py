@@ -129,7 +129,7 @@ class HostsSet:
         self.stop = stop
         self.subnet = subnet
         self.organization_filter = organization_filter
-        self.network = int(self.subnet.subnet.network_address)
+        self.range_start, self.range_end = self.subnet._get_usable_address_range()
         self.used_set = IpAddress.objects.filter(
             subnet_id__in=subnet.get_related_subnet_pks(organization_filter)
         )
@@ -162,10 +162,7 @@ class HostsSet:
         )
 
     def _get_host(self, index):
-        host = self.subnet.subnet._address_class(self.network + 1 + index + self.start)
-        if self.subnet.subnet.prefixlen in [32, 128]:
-            host = host - 1
-        return host
+        return self.subnet.subnet._address_class(self.range_start + index + self.start)
 
     def _is_reserved(self, host):
         if self.stop is None:
@@ -192,27 +189,13 @@ class HostsSet:
     def count(self):
         if self.stop is not None:
             return self.stop - self.start
-        broadcast = int(self.subnet.subnet.broadcast_address)
-        # IPV4
-        if self.subnet.subnet.version == 4:
-            # Networks with a mask of 32 will return a list
-            # containing the single host address
-            if self.subnet.subnet.prefixlen == 32:
-                return 1
-            # Other than subnet /32, exclude broadcast
-            return broadcast - self.network - 1
-        # IPV6
-        else:
-            # Subnet/128 only contains single host address
-            if self.subnet.subnet.prefixlen == 128:
-                return 1
-            return broadcast - self.network
+        return max(self.range_end - self.range_start + 1, 0)
 
     def __len__(self):
         return self.count()
 
     def index_of(self, address):
-        index = int(self.subnet.subnet._address_class(address)) - self.network - 1
+        index = int(self.subnet.subnet._address_class(address)) - self.range_start
         if index < 0 or index >= self.count():  # pragma: no cover
             raise serializers.ValidationError({"detail": _("Invalid Address")})
         return index
