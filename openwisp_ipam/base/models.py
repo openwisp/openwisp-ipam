@@ -203,9 +203,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         """
         subnet = self.subnet
         if not isinstance(prefixlen, int) or not (
-            subnet.prefixlen < prefixlen <= subnet.max_prefixlen
+            subnet.prefixlen <= prefixlen <= subnet.max_prefixlen
         ):
-            raise ValueError("prefixlen must be within the child subnet range")
+            raise ValueError("prefixlen must be within the subnet range")
         try:
             ip_indexes = tuple(ip_indexes)
         except TypeError as error:
@@ -223,7 +223,9 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         candidate_start = int(subnet.network_address)
         occupied_ranges = sorted(
             (int(child.subnet.network_address), int(child.subnet.broadcast_address))
-            for child in self.get_child_subnets().only("subnet").iterator()
+            for child in self.get_child_subnets()
+            .only("subnet", "master_subnet")
+            .iterator()
         )
         for occupied_start, occupied_end in occupied_ranges:
             while candidate_start + subnet_size - 1 < occupied_start:

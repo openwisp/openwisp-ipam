@@ -147,7 +147,6 @@ class TestModels(CreateModelsMixin, TestCase):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
         for prefixlen, indexes in (
             (23, ()),
-            (24, ()),
             (33, ()),
             (32, (-1,)),
             (32, (1,)),
@@ -241,6 +240,99 @@ class TestModels(CreateModelsMixin, TestCase):
         self.assertEqual(
             child_subnet.get_related_subnet_pks(),
             [child_subnet.pk, root_subnet.pk, grandchild_subnet.pk],
+        )
+
+    def test_get_available_subnets(self):
+        cases = (
+            (
+                "IPv4",
+                "10.0.0.0/24",
+                28,
+                (
+                    "10.0.0.16/28",
+                    # leaves 10.0.0.32/29 free, which is too small for a /28
+                    "10.0.0.40/29",
+                    "10.0.0.48/28",
+                    "10.0.0.64/28",
+                    "10.0.0.80/28",
+                    "10.0.0.112/28",
+                    "10.0.0.128/28",
+                    "10.0.0.144/28",
+                    "10.0.0.176/28",
+                    "10.0.0.192/28",
+                ),
+                (
+                    "10.0.0.0/28",
+                    "10.0.0.96/28",
+                    "10.0.0.160/28",
+                    "10.0.0.208/28",
+                    "10.0.0.224/28",
+                ),
+            ),
+            (
+                "IPv6",
+                "2001:db8::/120",
+                128,
+                ("2001:db8::1/128", "2001:db8::3/128", "2001:db8::5/128"),
+                (
+                    "2001:db8::/128",
+                    "2001:db8::2/128",
+                    "2001:db8::4/128",
+                    "2001:db8::6/128",
+                    "2001:db8::7/128",
+                ),
+            ),
+        )
+        for name, master_subnet, prefixlen, occupied_subnets, expected_subnets in cases:
+            with self.subTest(name):
+                subnet = self._create_subnet(subnet=master_subnet)
+                for subnet_value in occupied_subnets:
+                    self._create_subnet(subnet=subnet_value, master_subnet=subnet)
+                with self.assertNumQueries(1):
+                    available_subnets = list(
+                        islice(subnet.get_available_subnets(prefixlen=prefixlen), 5)
+                    )
+                self.assertEqual(
+                    [str(available_subnet) for available_subnet in available_subnets],
+                    list(expected_subnets),
+                )
+                if name == "IPv4":
+                    for available_subnet in available_subnets:
+                        self._create_subnet(
+                            subnet=str(available_subnet), master_subnet=subnet
+                        )
+                    self.assertEqual(subnet.get_child_subnets().count(), 15)
+
+    def test_get_available_subnets_low_ipv6_addresses(self):
+        subnet = self._create_subnet(subnet="::/16")
+        self._create_subnet(subnet="0:200::/24", master_subnet=subnet)
+        available_subnets = islice(subnet.get_available_subnets(prefixlen=24), 3)
+        self.assertEqual(
+            [str(available_subnet) for available_subnet in available_subnets],
+            ["::/24", "0:100::/24", "0:300::/24"],
+        )
+
+    def test_get_available_subnets_boundary_prefixes(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        self.assertEqual(
+            [
+                str(available_subnet)
+                for available_subnet in subnet.get_available_subnets(24)
+            ],
+            ["10.0.0.0/24"],
+        )
+        for prefixlen in (23, 33):
+            with self.subTest(prefixlen=prefixlen):
+                with self.assertRaises(ValueError):
+                    next(subnet.get_available_subnets(prefixlen))
+
+    def test_get_available_subnets_mixed_prefixes(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        self._create_subnet(subnet="10.0.0.16/29", master_subnet=subnet)
+        available_subnets = islice(subnet.get_available_subnets(prefixlen=28), 3)
+        self.assertEqual(
+            [str(available_subnet) for available_subnet in available_subnets],
+            ["10.0.0.0/28", "10.0.0.32/28", "10.0.0.48/28"],
         )
 
     def test_ipaddress_in_different_organizations(self):
