@@ -134,6 +134,8 @@ class TestModels(CreateModelsMixin, TestCase):
                 28,
                 (
                     "10.0.0.16/28",
+                    # leaves 10.0.0.32/29 free, which is too small for a /28
+                    "10.0.0.40/29",
                     "10.0.0.48/28",
                     "10.0.0.64/28",
                     "10.0.0.80/28",
@@ -145,10 +147,10 @@ class TestModels(CreateModelsMixin, TestCase):
                 ),
                 (
                     "10.0.0.0/28",
-                    "10.0.0.32/28",
                     "10.0.0.96/28",
                     "10.0.0.160/28",
                     "10.0.0.208/28",
+                    "10.0.0.224/28",
                 ),
             ),
             (
