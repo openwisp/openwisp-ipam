@@ -1,12 +1,17 @@
 import json
+from types import SimpleNamespace
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from openwisp_utils.tests import AssertNumQueriesSubTestMixin
 from swapper import load_model
+
+from openwisp_ipam.api import views
+from openwisp_ipam.api.urls import get_api_urls
+from openwisp_ipam.urls import get_urls
 
 from . import CreateModelsMixin, PostDataMixin
 
@@ -488,3 +493,54 @@ class TestApi(
         host_address_32 = response.data["results"][0]["address"]
         self.assertEqual(host_address_128, "2001:db00::")
         self.assertEqual(host_address_32, "192.168.0.0")
+
+
+class TestApiUrls(SimpleTestCase):
+    def test_get_api_urls_uses_overrides_and_default_fallbacks(self):
+
+        view_names = {
+            "import-subnet": "import_subnet",
+            "get_next_available_ip": "get_next_available_ip",
+            "request_ip": "request_ip",
+            "export-subnet": "export_subnet",
+            "list_create_ip_address": "subnet_list_ipaddress",
+            "subnet_list_create": "subnet_list_create",
+            "subnet": "subnet",
+            "hosts": "subnet_hosts",
+            "subnet_allocation": "subnet_allocation",
+            "ip_address": "ip_address",
+        }
+        default_callbacks = {
+            pattern.name: pattern.callback for pattern in get_api_urls()
+        }
+        custom_views = SimpleNamespace(
+            **{
+                view_name: (lambda request, _name=view_name: None)
+                for view_name in view_names.values()
+                if view_name != "subnet_hosts"
+            }
+        )
+        callbacks = {
+            pattern.name: pattern.callback for pattern in get_api_urls(custom_views)
+        }
+        wrapper_default_callbacks = {
+            pattern.name: pattern.callback for pattern in get_urls()[0].url_patterns
+        }
+        wrapper_callbacks = {
+            pattern.name: pattern.callback
+            for pattern in get_urls(custom_views)[0].url_patterns
+        }
+        for url_name, view_name in view_names.items():
+
+            with self.subTest(url_name=url_name):
+                expected = (
+                    views.subnet_hosts
+                    if view_name == "subnet_hosts"
+                    else getattr(custom_views, view_name)
+                )
+                self.assertIs(default_callbacks[url_name], getattr(views, view_name))
+                self.assertIs(callbacks[url_name], expected)
+                self.assertIs(
+                    wrapper_default_callbacks[url_name], getattr(views, view_name)
+                )
+                self.assertIs(wrapper_callbacks[url_name], expected)
