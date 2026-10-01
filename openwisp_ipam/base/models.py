@@ -1,7 +1,7 @@
 import csv
 from bisect import bisect_right
 from io import StringIO
-from ipaddress import ip_address, ip_network
+from ipaddress import IPv4Network, IPv6Network, ip_address, ip_network
 
 import openpyxl
 from django.core.exceptions import ValidationError
@@ -159,23 +159,26 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
         subnet = self.subnet
         if not subnet.prefixlen <= prefixlen <= subnet.max_prefixlen:
             raise ValueError("prefixlen must be within the subnet range")
+        network_class = IPv4Network if subnet.version == 4 else IPv6Network
         subnet_size = 1 << (subnet.max_prefixlen - prefixlen)
         subnet_end = int(subnet.broadcast_address)
         candidate_start = int(subnet.network_address)
         occupied_ranges = sorted(
             (
                 (int(child.subnet.network_address), int(child.subnet.broadcast_address))
-                for child in self.get_child_subnets().only("subnet").iterator()
+                for child in self.get_child_subnets()
+                .only("subnet", "master_subnet")
+                .iterator()
             ),
         )
         for occupied_start, occupied_end in occupied_ranges:
             while candidate_start + subnet_size - 1 < occupied_start:
-                yield ip_network((candidate_start, prefixlen))
+                yield network_class((candidate_start, prefixlen))
                 candidate_start += subnet_size
             if candidate_start <= occupied_end:
                 candidate_start = ((occupied_end // subnet_size) + 1) * subnet_size
         while candidate_start + subnet_size - 1 <= subnet_end:
-            yield ip_network((candidate_start, prefixlen))
+            yield network_class((candidate_start, prefixlen))
             candidate_start += subnet_size
 
     def get_descendant_subnet_pks(self, organization_filter=None, child_pks=None):
