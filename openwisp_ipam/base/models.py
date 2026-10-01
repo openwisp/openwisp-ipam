@@ -218,6 +218,12 @@ class AbstractSubnet(ShareableOrgMixin, TimeStampedEditableModel):
             for index in ip_indexes
         ):
             raise ValueError("ip_indexes must be valid indexes in the requested subnet")
+        if (
+            subnet.version == 4
+            and prefixlen < 31
+            and (0 in ip_indexes or subnet_size - 1 in ip_indexes)
+        ) or (subnet.version == 6 and prefixlen < 127 and 0 in ip_indexes):
+            return
         containing_networks = self._get_containing_networks()
         subnet_end = int(subnet.broadcast_address)
         candidate_start = int(subnet.network_address)

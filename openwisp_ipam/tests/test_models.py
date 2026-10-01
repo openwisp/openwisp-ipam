@@ -2,6 +2,7 @@ import csv
 from io import StringIO
 from ipaddress import IPv4Network, IPv6Network, ip_network
 from itertools import islice
+from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -142,6 +143,24 @@ class TestModels(CreateModelsMixin, TestCase):
         self.assertEqual(
             [str(candidate) for candidate in available_subnets], ["::2/127"]
         )
+
+    def test_get_available_subnets_skips_impossible_ip_indexes(self):
+        for subnet_value, prefixlen, indexes in (
+            ("10.0.0.0/16", 24, (0,)),
+            ("192.0.0.0/16", 24, (255,)),
+            ("2001:db8::/48", 64, (0,)),
+        ):
+            with self.subTest(subnet=subnet_value, indexes=indexes):
+                subnet = self._create_subnet(subnet=subnet_value)
+                with patch("openwisp_ipam.base.models.ip_network") as mock_ip_network:
+                    available_subnets = list(
+                        islice(
+                            subnet.get_available_subnets(prefixlen, ip_indexes=indexes),
+                            1,
+                        )
+                    )
+                self.assertEqual(available_subnets, [])
+                mock_ip_network.assert_not_called()
 
     def test_get_available_subnets_validates_arguments(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
