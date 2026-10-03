@@ -184,6 +184,8 @@ subnet      Subnet UUID
 description Optional description for the IP address
 =========== =======================================
 
+.. _ipam_address_usability:
+
 Address Usability
 +++++++++++++++++
 
