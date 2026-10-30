@@ -43,6 +43,9 @@ function initHostsInfiniteScroll(
   current_subnet,
   address_add_url,
   address_change_url,
+  has_add_permission,
+  is_organization_active,
+  disabled_ipaddress_message,
 ) {
   "use strict";
   var renderedPages = 5,
@@ -51,39 +54,46 @@ function initHostsInfiniteScroll(
     nextPageUrl = "/api/v1/ipam/subnet/" + current_subnet + "/hosts/",
     searchQuery = "",
     lastRenderedPage = 0; //1 based indexing (0 -> no page rendered)
+  function addressLink(address, id, href, class_name, title) {
+    return (
+      '<a id="addr_' +
+      id +
+      '"' +
+      (class_name ? ' class="' + class_name + '"' : "") +
+      (title ? ' title="' + title + '"' : "") +
+      (href ? ' href="' + href + '" onclick="return showAddAnotherPopup(this);"' : "") +
+      ">" +
+      address +
+      "</a>"
+    );
+  }
   function addressListItem(addr) {
     var id = normalizeIP(addr.address);
+    var href = null;
+    var class_name = "";
+    var title = "";
     if (addr.used) {
-      //note 1234 was passed as a dummy to be later on replaced in the script
-      return (
-        '<a class = "used" href=\"' +
+      href =
         address_change_url.replace("1234", addr.ip_address_id) +
         "?_to_field=id&amp;_popup=1&amp;ip_address=" +
         addr.address +
         "&amp;subnet=" +
-        current_subnet +
-        '"onclick="return showAddAnotherPopup(this);">' +
-        addr.address +
-        "</a>"
-      );
-    }
-    if (addr.reserved) {
+        current_subnet;
+      class_name = "used";
+    } else if (addr.reserved) {
       return '<span class="reserved">' + addr.address + "</span>";
+    } else if (has_add_permission) {
+      href =
+        address_add_url +
+        "?_to_field=id&amp;_popup=1&amp;ip_address=" +
+        addr.address +
+        "&amp;subnet=" +
+        current_subnet;
+    } else if (!is_organization_active) {
+      class_name = "disabled";
+      title = disabled_ipaddress_message;
     }
-    return (
-      '<a href=\"' +
-      address_add_url +
-      "?_to_field=id&amp;_popup=1&amp;ip_address=" +
-      addr.address +
-      "&amp;subnet=" +
-      current_subnet +
-      '"onclick="return showAddAnotherPopup(this);" ' +
-      'id="addr_' +
-      id +
-      '">' +
-      addr.address +
-      "</a>"
-    );
+    return addressLink(addr.address, id, href, class_name, title);
   }
   function pageContainer(page) {
     var div = $('<div class="page"></div>');

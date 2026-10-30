@@ -45,6 +45,14 @@ class CreateModelsMixin(TestOrganizationMixin):
         instance.save()
         return instance
 
+    def _create_disabled_org_subnet(self, organization=None, **kwargs):
+        if organization is None:
+            organization = self._create_org(name="disabled-org", slug="disabled-org")
+        subnet = self._create_subnet(organization=organization, **kwargs)
+        organization.is_active = False
+        organization.save(update_fields=["is_active"])
+        return subnet
+
 
 class PostDataMixin(object):
     def _post_data(self, **kwargs):
