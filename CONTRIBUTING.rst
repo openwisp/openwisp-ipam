@@ -1,5 +1,2 @@
-Contributing
-============
-
-Please refer to the `OpenWISP contributing guidelines
-<http://openwisp.io/docs/developer/contributing.html>`_.
+Please refer to the `OpenWISP Contribution Guidelines
+<https://openwisp.io/docs/dev/developer/contributing.html>`_.

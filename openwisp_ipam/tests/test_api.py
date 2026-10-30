@@ -1,13 +1,18 @@
 import json
+from types import SimpleNamespace
 
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from openwisp_users.tests.test_api import AuthenticationMixin, TestDisabledOrgApiMixin
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
 from openwisp_utils.tests import AssertNumQueriesSubTestMixin
 from swapper import load_model
+
+from openwisp_ipam.api import views
+from openwisp_ipam.api.urls import get_api_urls
+from openwisp_ipam.urls import get_urls
 
 from . import CreateModelsMixin, PostDataMixin
 
@@ -173,6 +178,48 @@ class TestApi(
         )
         self.assertEqual(response.status_code, 201)
         self.assertEqual(str(IpAddress.objects.first().ip_address), "10.0.0.2")
+
+    def test_ip_address_api_rejects_unusable_addresses(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        for address in ("10.0.0.0", "10.0.0.255"):
+            with self.subTest(address=address):
+                response = self.client.post(
+                    reverse("ipam:list_create_ip_address", args=(subnet.id,)),
+                    data=self._post_data(ip_address=address, subnet=str(subnet.id)),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("ip_address", response.data)
+        ip_address = self._create_ipaddress(ip_address="10.0.0.1", subnet=subnet)
+        response = self.client.patch(
+            reverse("ipam:ip_address", args=(ip_address.id,)),
+            data=json.dumps({"ip_address": "10.0.0.0"}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(IpAddress.objects.get(pk=ip_address.id).ip_address, "10.0.0.1")
+
+    def test_ipv6_allocation_api_excludes_unusable_addresses(self):
+        subnet = self._create_subnet(subnet="::/126")
+        response = self.client.get(
+            reverse("ipam:get_next_available_ip", args=(subnet.id,))
+        )
+        self.assertEqual(response.data, "::2")
+        response = self.client.post(
+            reverse("ipam:request_ip", args=(subnet.id,)),
+            data=self._post_data(subnet=str(subnet.id), description="Testing"),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["ip_address"], "::2")
+        response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
+        self.assertEqual(
+            [host["address"] for host in response.data["results"]], ["::2", "::3"]
+        )
+        response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
+        self.assertEqual(
+            response.data, {"total": 2, "used": 1, "reserved": 0, "available": 1}
+        )
 
     def test_read_ip_address_api(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24")
@@ -349,7 +396,8 @@ class TestApi(
         subnet = self._create_subnet(subnet="10.10.0.0/24")
         for address in ["10.10.0.0", "10.10.0.255"]:
             child = self._create_subnet(subnet=f"{address}/32", master_subnet=subnet)
-            self._create_ipaddress(ip_address=address, subnet=child)
+            # Legacy records can predate usability validation and remain reportable.
+            IpAddress.objects.create(ip_address=address, subnet=child)
         response = self.client.get(reverse("ipam:subnet_allocation", args=(subnet.id,)))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -616,3 +664,54 @@ class TestApi(
         response = self.client.post(reverse("ipam:import-subnet"), {"csvfile": csvfile})
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(Subnet.objects.get(subnet="10.61.1.0/24").organization)
+
+
+class TestApiUrls(SimpleTestCase):
+    def test_get_api_urls_uses_overrides_and_default_fallbacks(self):
+
+        view_names = {
+            "import-subnet": "import_subnet",
+            "get_next_available_ip": "get_next_available_ip",
+            "request_ip": "request_ip",
+            "export-subnet": "export_subnet",
+            "list_create_ip_address": "subnet_list_ipaddress",
+            "subnet_list_create": "subnet_list_create",
+            "subnet": "subnet",
+            "hosts": "subnet_hosts",
+            "subnet_allocation": "subnet_allocation",
+            "ip_address": "ip_address",
+        }
+        default_callbacks = {
+            pattern.name: pattern.callback for pattern in get_api_urls()
+        }
+        custom_views = SimpleNamespace(
+            **{
+                view_name: (lambda request, _name=view_name: None)
+                for view_name in view_names.values()
+                if view_name != "subnet_hosts"
+            }
+        )
+        callbacks = {
+            pattern.name: pattern.callback for pattern in get_api_urls(custom_views)
+        }
+        wrapper_default_callbacks = {
+            pattern.name: pattern.callback for pattern in get_urls()[0].url_patterns
+        }
+        wrapper_callbacks = {
+            pattern.name: pattern.callback
+            for pattern in get_urls(custom_views)[0].url_patterns
+        }
+        for url_name, view_name in view_names.items():
+
+            with self.subTest(url_name=url_name):
+                expected = (
+                    views.subnet_hosts
+                    if view_name == "subnet_hosts"
+                    else getattr(custom_views, view_name)
+                )
+                self.assertIs(default_callbacks[url_name], getattr(views, view_name))
+                self.assertIs(callbacks[url_name], expected)
+                self.assertIs(
+                    wrapper_default_callbacks[url_name], getattr(views, view_name)
+                )
+                self.assertIs(wrapper_callbacks[url_name], expected)

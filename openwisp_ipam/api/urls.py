@@ -1,42 +1,51 @@
 from django.urls import path
 
+from . import views
 
-def get_api_urls(api_views):
+
+def get_api_urls(api_views=None):
     """
     returns:: all the API urls of the app
     arguments::
-        api_views: location for getting API views
+        api_views: optional module or object providing custom API views,
+                   any view not found in it falls back to the default one
     """
+    if api_views is None:
+        api_views = views
+
+    def get_view(name):
+        """Fall back to the standard view when a custom view is unavailable."""
+        return getattr(api_views, name, getattr(views, name))
 
     return [
-        path("import-subnet/", api_views.import_subnet, name="import-subnet"),
+        path("import-subnet/", get_view("import_subnet"), name="import-subnet"),
         path(
             "subnet/<str:subnet_id>/get-next-available-ip/",
-            api_views.get_next_available_ip,
+            get_view("get_next_available_ip"),
             name="get_next_available_ip",
         ),
         path(
             "subnet/<str:subnet_id>/request-ip/",
-            api_views.request_ip,
+            get_view("request_ip"),
             name="request_ip",
         ),
         path(
             "subnet/<str:subnet_id>/export/",
-            api_views.export_subnet,
+            get_view("export_subnet"),
             name="export-subnet",
         ),
         path(
             "subnet/<str:subnet_id>/ip-address/",
-            api_views.subnet_list_ipaddress,
+            get_view("subnet_list_ipaddress"),
             name="list_create_ip_address",
         ),
-        path("subnet/", api_views.subnet_list_create, name="subnet_list_create"),
-        path("subnet/<str:pk>/", api_views.subnet, name="subnet"),
-        path("subnet/<str:subnet_id>/hosts/", api_views.subnet_hosts, name="hosts"),
+        path("subnet/", get_view("subnet_list_create"), name="subnet_list_create"),
+        path("subnet/<str:pk>/", get_view("subnet"), name="subnet"),
+        path("subnet/<str:subnet_id>/hosts/", get_view("subnet_hosts"), name="hosts"),
         path(
             "subnet/<str:subnet_id>/allocation/",
-            api_views.subnet_allocation,
+            get_view("subnet_allocation"),
             name="subnet_allocation",
         ),
-        path("ip-address/<str:pk>/", api_views.ip_address, name="ip_address"),
+        path("ip-address/<str:pk>/", get_view("ip_address"), name="ip_address"),
     ]

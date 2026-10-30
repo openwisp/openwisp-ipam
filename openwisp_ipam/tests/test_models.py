@@ -1,6 +1,8 @@
 import csv
 from io import StringIO
 from ipaddress import IPv4Network, IPv6Network, ip_network
+from itertools import islice
+from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -39,6 +41,140 @@ class TestModels(CreateModelsMixin, TestCase):
             )
         except ValidationError:
             self.fail("ValidationError raised")
+
+    def test_unusable_ipaddress(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        for address in ("10.0.0.0", "10.0.0.255"):
+            with self.subTest(address=address):
+                with self.assertRaises(ValidationError) as context_manager:
+                    self._create_ipaddress(ip_address=address, subnet=subnet)
+                self.assertEqual(
+                    context_manager.exception.message_dict["ip_address"],
+                    ["IP address is not usable in the subnet hierarchy."],
+                )
+
+    def test_is_ip_usable_rejects_invalid_addresses(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        for address in ("invalid", "2001:db8::1"):
+            with self.subTest(address=address):
+                self.assertFalse(subnet.is_ip_usable(address))
+
+    def test_inherited_unusable_ipaddress(self):
+        parent = self._create_subnet(subnet="10.0.0.0/24")
+        child = self._create_subnet(subnet="10.0.0.0/31", master_subnet=parent)
+        grandchild = self._create_subnet(subnet="10.0.0.0/32", master_subnet=child)
+        with self.assertRaises(ValidationError) as context_manager:
+            self._create_ipaddress(ip_address="10.0.0.0", subnet=grandchild)
+        self.assertEqual(
+            context_manager.exception.message_dict["ip_address"],
+            ["IP address is not usable in the subnet hierarchy."],
+        )
+        self.assertEqual(child.get_next_available_ip(), "10.0.0.1")
+
+    def test_automatic_allocation_skips_inherited_endpoint_addresses(self):
+        parent = self._create_subnet(subnet="10.0.0.0/24")
+        for address in ("10.0.0.0", "10.0.0.255"):
+            with self.subTest(address=address):
+                child = self._create_subnet(
+                    subnet=f"{address}/32", master_subnet=parent
+                )
+                self.assertIsNone(child.get_next_available_ip())
+                self.assertIsNone(child.request_ip())
+
+    def test_automatic_allocation_skips_unusable_ipv6_addresses(self):
+        subnet = self._create_subnet(subnet="::/126")
+        self.assertEqual(subnet.get_next_available_ip(), "::2")
+        self.assertEqual(subnet.request_ip().ip_address, "::2")
+
+    def test_standalone_endpoint_usability(self):
+        for subnet_value, addresses in (
+            ("192.0.2.0/31", ("192.0.2.0", "192.0.2.1")),
+            ("192.0.2.2/32", ("192.0.2.2",)),
+            ("2001:db8::/127", ("2001:db8::", "2001:db8::1")),
+            ("2001:db8::2/128", ("2001:db8::2",)),
+        ):
+            with self.subTest(subnet=subnet_value):
+                subnet = self._create_subnet(subnet=subnet_value)
+                for address in addresses:
+                    with self.subTest(address=address):
+                        self._create_ipaddress(ip_address=address, subnet=subnet)
+
+    def test_ipv6_special_addresses_are_unusable(self):
+        subnet = self._create_subnet(subnet="::/126")
+        point_to_point = self._create_subnet(subnet="::/127", master_subnet=subnet)
+        host_route = self._create_subnet(subnet="::1/128", master_subnet=point_to_point)
+        for target_subnet, address in (
+            (subnet, "::"),
+            (subnet, "::1"),
+            (point_to_point, "::"),
+            (host_route, "::1"),
+        ):
+            with self.subTest(subnet=target_subnet.subnet, address=address):
+                with self.assertRaises(ValidationError):
+                    self._create_ipaddress(ip_address=address, subnet=target_subnet)
+
+    def test_ipv6_ancestor_base_address_is_unusable(self):
+        parent = self._create_subnet(subnet="2001:db8::/126")
+        child = self._create_subnet(subnet="2001:db8::/127", master_subnet=parent)
+        host_route = self._create_subnet(subnet="2001:db8::/128", master_subnet=child)
+        with self.assertRaises(ValidationError):
+            self._create_ipaddress(ip_address="2001:db8::", subnet=host_route)
+
+    def test_get_available_subnets_respects_required_ip_indexes(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        available_subnets = list(subnet.get_available_subnets(32, ip_indexes=(0,)))
+        self.assertEqual(str(available_subnets[0]), "10.0.0.1/32")
+        self.assertEqual(str(available_subnets[-1]), "10.0.0.254/32")
+        self.assertEqual(len(available_subnets), 254)
+
+        child = self._create_subnet(subnet="10.0.0.16/28", master_subnet=subnet)
+        available_subnets = list(
+            islice(subnet.get_available_subnets(28, ip_indexes=(1,)), 2)
+        )
+        self.assertEqual(
+            [str(available_subnet) for available_subnet in available_subnets],
+            ["10.0.0.0/28", "10.0.0.32/28"],
+        )
+        self.assertEqual(child.subnet.prefixlen, 28)
+
+    def test_get_available_subnets_preserves_ipv6_address_family(self):
+        subnet = self._create_subnet(subnet="::/126")
+        available_subnets = list(subnet.get_available_subnets(127, ip_indexes=(0,)))
+        self.assertEqual(
+            [str(candidate) for candidate in available_subnets], ["::2/127"]
+        )
+
+    def test_get_available_subnets_skips_impossible_ip_indexes(self):
+        for subnet_value, prefixlen, indexes in (
+            ("10.0.0.0/16", 24, (0,)),
+            ("192.0.0.0/16", 24, (255,)),
+            ("2001:db8::/48", 64, (0,)),
+        ):
+            with self.subTest(subnet=subnet_value, indexes=indexes):
+                subnet = self._create_subnet(subnet=subnet_value)
+                with patch("openwisp_ipam.base.models.ip_network") as mock_ip_network:
+                    available_subnets = list(
+                        islice(
+                            subnet.get_available_subnets(prefixlen, ip_indexes=indexes),
+                            1,
+                        )
+                    )
+                self.assertEqual(available_subnets, [])
+                mock_ip_network.assert_not_called()
+
+    def test_get_available_subnets_validates_arguments(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        for prefixlen, indexes in (
+            (23, ()),
+            (33, ()),
+            (32, (-1,)),
+            (32, (1,)),
+            (31, (True,)),
+            (31, 1),
+        ):
+            with self.subTest(prefixlen=prefixlen, indexes=indexes):
+                with self.assertRaises(ValueError):
+                    list(subnet.get_available_subnets(prefixlen, ip_indexes=indexes))
 
     def test_used_ipaddress(self):
         self._create_subnet(subnet="10.0.0.0/24")
@@ -123,6 +259,99 @@ class TestModels(CreateModelsMixin, TestCase):
         self.assertEqual(
             child_subnet.get_related_subnet_pks(),
             [child_subnet.pk, root_subnet.pk, grandchild_subnet.pk],
+        )
+
+    def test_get_available_subnets(self):
+        cases = (
+            (
+                "IPv4",
+                "10.0.0.0/24",
+                28,
+                (
+                    "10.0.0.16/28",
+                    # leaves 10.0.0.32/29 free, which is too small for a /28
+                    "10.0.0.40/29",
+                    "10.0.0.48/28",
+                    "10.0.0.64/28",
+                    "10.0.0.80/28",
+                    "10.0.0.112/28",
+                    "10.0.0.128/28",
+                    "10.0.0.144/28",
+                    "10.0.0.176/28",
+                    "10.0.0.192/28",
+                ),
+                (
+                    "10.0.0.0/28",
+                    "10.0.0.96/28",
+                    "10.0.0.160/28",
+                    "10.0.0.208/28",
+                    "10.0.0.224/28",
+                ),
+            ),
+            (
+                "IPv6",
+                "2001:db8::/120",
+                128,
+                ("2001:db8::1/128", "2001:db8::3/128", "2001:db8::5/128"),
+                (
+                    "2001:db8::/128",
+                    "2001:db8::2/128",
+                    "2001:db8::4/128",
+                    "2001:db8::6/128",
+                    "2001:db8::7/128",
+                ),
+            ),
+        )
+        for name, master_subnet, prefixlen, occupied_subnets, expected_subnets in cases:
+            with self.subTest(name):
+                subnet = self._create_subnet(subnet=master_subnet)
+                for subnet_value in occupied_subnets:
+                    self._create_subnet(subnet=subnet_value, master_subnet=subnet)
+                with self.assertNumQueries(1):
+                    available_subnets = list(
+                        islice(subnet.get_available_subnets(prefixlen=prefixlen), 5)
+                    )
+                self.assertEqual(
+                    [str(available_subnet) for available_subnet in available_subnets],
+                    list(expected_subnets),
+                )
+                if name == "IPv4":
+                    for available_subnet in available_subnets:
+                        self._create_subnet(
+                            subnet=str(available_subnet), master_subnet=subnet
+                        )
+                    self.assertEqual(subnet.get_child_subnets().count(), 15)
+
+    def test_get_available_subnets_low_ipv6_addresses(self):
+        subnet = self._create_subnet(subnet="::/16")
+        self._create_subnet(subnet="0:200::/24", master_subnet=subnet)
+        available_subnets = islice(subnet.get_available_subnets(prefixlen=24), 3)
+        self.assertEqual(
+            [str(available_subnet) for available_subnet in available_subnets],
+            ["::/24", "0:100::/24", "0:300::/24"],
+        )
+
+    def test_get_available_subnets_boundary_prefixes(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        self.assertEqual(
+            [
+                str(available_subnet)
+                for available_subnet in subnet.get_available_subnets(24)
+            ],
+            ["10.0.0.0/24"],
+        )
+        for prefixlen in (23, 33):
+            with self.subTest(prefixlen=prefixlen):
+                with self.assertRaises(ValueError):
+                    next(subnet.get_available_subnets(prefixlen))
+
+    def test_get_available_subnets_mixed_prefixes(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/24")
+        self._create_subnet(subnet="10.0.0.16/29", master_subnet=subnet)
+        available_subnets = islice(subnet.get_available_subnets(prefixlen=28), 3)
+        self.assertEqual(
+            [str(available_subnet) for available_subnet in available_subnets],
+            ["10.0.0.0/28", "10.0.0.32/28", "10.0.0.48/28"],
         )
 
     def test_ipaddress_in_different_organizations(self):

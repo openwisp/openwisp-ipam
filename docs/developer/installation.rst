@@ -33,11 +33,13 @@ Install sqlite:
 
     sudo apt-get install sqlite3 libsqlite3-dev openssl libssl-dev
 
-Fork and clone the forked repository:
+Fork the `openwisp-ipam repository
+<https://github.com/openwisp/openwisp-ipam>`_ on GitHub, then clone your
+fork. Replace ``YOUR_GITHUB_USERNAME`` with your GitHub username:
 
 .. code-block:: shell
 
-    git clone git://github.com/<your_fork>/openwisp-ipam
+    git clone git@github.com:YOUR_GITHUB_USERNAME/openwisp-ipam.git
 
 Navigate into the cloned repository:
 
@@ -105,8 +107,8 @@ To install the latest development version tarball via HTTPs:
 
     pip install https://github.com/openwisp/openwisp-ipam/tarball/master
 
-Alternatively you can use the git protocol:
+Alternatively you can install the latest development version from Git:
 
 .. code-block:: shell
 
-    pip install -e git+git://github.com/openwisp/openwisp-ipam#egg=openwisp_ipam
+    pip install -e git+https://github.com/openwisp/openwisp-ipam#egg=openwisp_ipam

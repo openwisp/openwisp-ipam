@@ -194,6 +194,17 @@ description Optional description for the IP address
     If the subnet belongs to a disabled organization, this request is
     rejected with ``403 Forbidden`` response.
 
+.. _ipam_address_usability:
+
+Address Usability
++++++++++++++++++
+
+An IP address must be usable in its subnet and in every ancestor subnet.
+For IPv4, network and broadcast addresses cannot be assigned, except in
+``/31`` and ``/32`` subnets. For IPv6, network addresses cannot be
+assigned, except in ``/127`` and ``/128`` subnets. The IPv6 addresses
+``::`` and ``::1`` cannot be assigned in any subnet.
+
 Subnet List/Create
 ~~~~~~~~~~~~~~~~~~
 

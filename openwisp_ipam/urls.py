@@ -4,11 +4,12 @@ from .api import views as ipam_api_views
 from .api.urls import get_api_urls
 
 
-def get_urls(api_views):
+def get_urls(api_views=None):
     """
     returns:: all the urls of the openwisp-ipam module
     arguments::
-        api_views: location for getting API views
+        api_views: optional module or object providing custom API views,
+                   any view not found in it falls back to the default one
     """
     return [
         path(
