@@ -12,9 +12,7 @@ from . import CreateModelsMixin
 
 
 @tag("selenium_tests")
-class TestSubnet(
-    SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase
-):
+class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase):
     app_label = "openwisp_ipam"
 
     def setUp(self):
