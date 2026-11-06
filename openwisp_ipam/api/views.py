@@ -14,6 +14,7 @@ from openwisp_users.api.mixins import (
 from openwisp_users.api.permissions import DisabledOrgReadOnly
 from openwisp_utils.api.pagination import OpenWispPagination
 from rest_framework import pagination, serializers, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -26,7 +27,7 @@ from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from rest_framework.utils.urls import remove_query_param, replace_query_param
 
-from ..base.models import AbstractSubnet, CsvImportException
+from ..base.models import CsvImportException
 from .responses import HostsResponse
 from .serializers import (
     HostsResponseSerializer,
@@ -158,7 +159,7 @@ class HostsListPagination(pagination.BasePagination):
 
 class HostsSet:
     # Needed for DjangoModelPermissions to check the right model
-    model = AbstractSubnet
+    model = Subnet
 
     def __init__(self, subnet, start=0, stop=None, organization_filter=None):
         self.start = start
@@ -344,6 +345,10 @@ class SubnetHostsView(ProtectedAPIMixin, IpAddressOrgMixin, ListAPIView):
 
     def get_queryset(self):
         subnet = self.get_subnet()
+        if subnet.organization_id is None and not self.request.user.is_superuser:
+            raise PermissionDenied(
+                _("Only superusers can view hosts in shared subnets.")
+            )
         qs = HostsSet(subnet, organization_filter=self.get_organization_filter())
         return qs
 
