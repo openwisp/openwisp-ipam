@@ -542,9 +542,9 @@ class TestApi(
 
     def test_subnet_disabled_org_api_crud(self):
         org = self._create_org(name="disabled-org", slug="disabled-org")
-        subnet = self._create_subnet(organization=org, subnet="10.50.0.0/24")
-        org.is_active = False
-        org.save(update_fields=["is_active"])
+        subnet = self._create_disabled_org_subnet(
+            organization=org, subnet="10.50.0.0/24"
+        )
         self._test_disabled_org_api_crud(
             subnet,
             detail_url=reverse("ipam:subnet", args=[subnet.pk]),

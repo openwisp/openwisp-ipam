@@ -392,6 +392,63 @@ class TestMultitenantApi(
             response = self.client.post(**post_data)
             self.assertEqual(response.status_code, 404)
 
+    def test_request_ip_shared_subnet_requires_superuser(self):
+        subnet = self._create_subnet(subnet="10.3.0.0/24", organization=None)
+        url = reverse("ipam:request_ip", args=(subnet.id,))
+
+        with self.subTest(
+            "active organization manager cannot request shared subnet IP"
+        ):
+            self.client.force_login(User.objects.get(username="user_a"))
+            response = self.client.post(
+                url,
+                data=json.dumps({"description": "Testing"}),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(
+                str(response.data["detail"]),
+                "Only superusers can create IP addresses in shared subnets.",
+            )
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 0)
+
+        with self.subTest("superuser can request shared subnet IP"):
+            self.client.force_login(User.objects.get(username="superuser"))
+            response = self.client.post(
+                url,
+                data=json.dumps({"description": "Testing"}),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.data["subnet"], subnet.id)
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 1)
+
+    def test_create_ip_address_shared_subnet_requires_superuser(self):
+        subnet = self._create_subnet(subnet="10.4.0.0/24", organization=None)
+        url = reverse("ipam:list_create_ip_address", args=(subnet.id,))
+        post_data = json.dumps({"ip_address": "10.4.0.5", "subnet": str(subnet.id)})
+
+        with self.subTest("active organization manager cannot create shared subnet IP"):
+            self.client.force_login(User.objects.get(username="user_a"))
+            response = self.client.post(
+                url, data=post_data, content_type="application/json"
+            )
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(
+                str(response.data["detail"]),
+                "Only superusers can create IP addresses in shared subnets.",
+            )
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 0)
+
+        with self.subTest("superuser can create shared subnet IP"):
+            self.client.force_login(User.objects.get(username="superuser"))
+            response = self.client.post(
+                url, data=post_data, content_type="application/json"
+            )
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.data["ip_address"], "10.4.0.5")
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 1)
+
     def test_nested_ipaddress_writes_reject_other_organizations(self):
         """Prevent nested writes from bypassing organization isolation."""
         org_b = self._get_org(org_name="org_b")

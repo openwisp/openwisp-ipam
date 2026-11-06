@@ -146,6 +146,10 @@ description Optional description for the IP address
     If the subnet belongs to a disabled organization, this request is
     rejected with ``403 Forbidden`` response.
 
+    If the subnet is shared (it does not belong to an organization), only
+    superusers can request an IP address. Other users receive a ``403
+    Forbidden`` response.
+
 Response
 ++++++++
 
@@ -193,6 +197,10 @@ description Optional description for the IP address
 
     If the subnet belongs to a disabled organization, this request is
     rejected with ``403 Forbidden`` response.
+
+    If the subnet is shared (it does not belong to an organization), only
+    superusers can create an IP address. Other users receive a ``403
+    Forbidden`` response.
 
 .. _ipam_address_usability:
 

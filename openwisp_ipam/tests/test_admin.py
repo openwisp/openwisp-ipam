@@ -372,20 +372,25 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
     def test_subnet_change_view_ipaddress_add_permission_flag(self):
         subnet = self._create_subnet(subnet="10.0.0.0/24", description="Sample Subnet")
         url = reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id])
-        response = self.client.get(url)
-        self.assertContains(response, "hasIpaddressAddPermission = true;")
-        org = subnet.organization
-        staff_user = self._create_user(
-            username="staff", email="staff@staff.com", is_staff=True
-        )
-        staff_user.user_permissions.add(
-            *Permission.objects.filter(codename__in=["view_subnet", "view_ipaddress"])
-        )
-        self._create_org_user(organization=org, user=staff_user, is_admin=True)
-        self.client.logout()
-        self.client.login(username="staff", password="tester")
-        response = self.client.get(url)
-        self.assertContains(response, "hasIpaddressAddPermission = false;")
+
+        with self.subTest("superuser can add IP addresses"):
+            response = self.client.get(url)
+            self.assertContains(response, "hasIpaddressAddPermission = true;")
+
+        with self.subTest("staff user cannot add IP addresses"):
+            org = subnet.organization
+            staff_user = self._create_user(
+                username="staff", email="staff@staff.com", is_staff=True
+            )
+            staff_user.user_permissions.add(
+                *Permission.objects.filter(
+                    codename__in=["view_subnet", "view_ipaddress"]
+                )
+            )
+            self._create_org_user(organization=org, user=staff_user, is_admin=True)
+            self.client.force_login(staff_user)
+            response = self.client.get(url)
+            self.assertContains(response, "hasIpaddressAddPermission = false;")
 
     def test_subnet_change_view_disabled_org_excludes_ipaddress_add_permission(self):
         subnet = self._create_disabled_org_subnet(subnet="10.72.0.0/24")
@@ -484,9 +489,9 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
 
     def test_subnet_disabled_org_admin_crud(self):
         org = self._create_org(name="disabled-org", slug="disabled-org")
-        subnet = self._create_subnet(organization=org, subnet="10.70.0.0/24")
-        org.is_active = False
-        org.save(update_fields=["is_active"])
+        subnet = self._create_disabled_org_subnet(
+            organization=org, subnet="10.70.0.0/24"
+        )
         change_data = {
             "name": "changed",
             "subnet": "10.70.0.0/24",
@@ -544,9 +549,9 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
 
     def test_subnet_admin_master_subnet_excludes_disabled_org(self):
         org = self._create_org(name="disabled-org", slug="disabled-org")
-        disabled_subnet = self._create_subnet(organization=org, subnet="10.73.0.0/24")
-        org.is_active = False
-        org.save(update_fields=["is_active"])
+        disabled_subnet = self._create_disabled_org_subnet(
+            organization=org, subnet="10.73.0.0/24"
+        )
         request = RequestFactory().get(reverse(f"admin:{self.app_label}_subnet_add"))
         request.user = User.objects.get(username="admin")
         model_admin = django_admin.site._registry[Subnet]
@@ -558,9 +563,9 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
 
     def test_ipaddress_admin_add_form_excludes_disabled_org_subnet(self):
         org = self._create_org(name="disabled-org", slug="disabled-org")
-        disabled_subnet = self._create_subnet(organization=org, subnet="10.74.0.0/24")
-        org.is_active = False
-        org.save(update_fields=["is_active"])
+        disabled_subnet = self._create_disabled_org_subnet(
+            organization=org, subnet="10.74.0.0/24"
+        )
         request = RequestFactory().get(reverse(f"admin:{self.app_label}_ipaddress_add"))
         request.user = User.objects.get(username="admin")
         model_admin = django_admin.site._registry[IpAddress]

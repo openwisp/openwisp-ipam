@@ -44,11 +44,14 @@ Organization = swapper.load_model("openwisp_users", "Organization")
 
 class DisabledOrgParentSubnetPermission(BasePermission):
     """
-    Blocks writes when the parent ``Subnet`` belongs to a disabled
-    organization.
+    Enforces parent ``Subnet`` write restrictions for disabled organizations
+    and shared subnets.
     """
 
     message = DisabledOrgReadOnly.message
+    shared_subnet_message = _(
+        "Only superusers can create IP addresses in shared subnets."
+    )
 
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS or getattr(
@@ -60,9 +63,12 @@ class DisabledOrgParentSubnetPermission(BasePermission):
         if not is_superuser:
             parent_queryset = view.get_organization_queryset(parent_queryset)
         subnet = parent_queryset.select_related("organization").first()
-        # Managers need an organization-scoped parent; shared subnet writes
-        # are restricted to superusers.
-        if subnet is None or subnet.organization_id is None:
+        if subnet is None:
+            # A scoped lookup can hide an unmanaged subnet. Deny non-superusers;
+            # let the view return its usual not-found response for superusers.
+            return is_superuser
+        if subnet.organization_id is None:
+            self.message = self.shared_subnet_message
             return is_superuser
         return subnet.organization.is_active
 
