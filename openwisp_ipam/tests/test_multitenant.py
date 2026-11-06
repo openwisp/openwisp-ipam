@@ -189,6 +189,26 @@ class TestMultitenantApi(
             response = self.client.get(url)
             self.assertEqual(response.status_code, 404)
 
+    def test_subnet_views_require_model_permission(self):
+        organization = self._get_org(org_name="org_a")
+        subnet = self._create_subnet(subnet="10.0.0.0/29", organization=organization)
+        # Default operator and administrator groups grant subnet permissions.
+        manager = self._create_user(
+            username="unprivileged_manager", email="unprivileged@example.com"
+        )
+        self._create_org_user(organization=organization, user=manager, is_admin=True)
+        self.client.force_login(manager)
+
+        with self.subTest("hosts require subnet view permission"):
+            response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
+            self.assertEqual(response.status_code, 403)
+
+        with self.subTest("allocation requires subnet view permission"):
+            response = self.client.get(
+                reverse("ipam:subnet_allocation", args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 403)
+
     def test_subnet_allocation(self):
         org_a = self._get_org(org_name="org_a")
         subnet = self._create_subnet(subnet="10.0.0.0/24", organization=org_a)

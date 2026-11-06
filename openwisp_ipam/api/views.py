@@ -336,7 +336,7 @@ class ExportSubnetView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
         return response
 
 
-class SubnetHostsView(IpAddressOrgMixin, ProtectedAPIMixin, ListAPIView):
+class SubnetHostsView(ProtectedAPIMixin, IpAddressOrgMixin, ListAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = HostsResponseSerializer
@@ -348,7 +348,7 @@ class SubnetHostsView(IpAddressOrgMixin, ProtectedAPIMixin, ListAPIView):
         return qs
 
 
-class SubnetAllocationView(IpAddressOrgMixin, ProtectedAPIMixin, RetrieveAPIView):
+class SubnetAllocationView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer

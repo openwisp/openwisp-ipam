@@ -23,6 +23,7 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         staff_user = self._create_user(
             username="staff", password="tester", email="staff@staff.com", is_staff=True
         )
+        # Default operator and administrator groups grant IP address add permission.
         staff_user.user_permissions.add(
             *Permission.objects.filter(codename__in=["view_subnet", "view_ipaddress"])
         )
@@ -35,6 +36,8 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
             self.login(username="staff", password="tester")
             self.open(url)
             address_element = self.find_element(By.CSS_SELECTOR, "a#addr_10001")
+            self.assertEqual(address_element.get_attribute("href"), None)
+            self.assertEqual(address_element.get_attribute("onclick"), None)
             address_element.click()
             self.assertEqual(len(self.web_driver.window_handles), 1)
         self.logout()
@@ -42,6 +45,7 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         with self.subTest("with add permission"):
             self.login()
             self.open(url)
+            original_window = self.web_driver.current_window_handle
             address_element = self.find_element(By.CSS_SELECTOR, "a#addr_10001")
             address_element.click()
             WebDriverWait(self.web_driver, 5).until(
@@ -52,6 +56,8 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
                 reverse(f"admin:{self.app_label}_ipaddress_add"),
                 self.web_driver.current_url,
             )
+            self.web_driver.close()
+            self.web_driver.switch_to.window(original_window)
 
     def test_available_address_popup_hidden_for_disabled_org(self):
         organization = self._create_org(name="disabled org", slug="disabled-org")
@@ -68,6 +74,8 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
             "Cannot create IP Address for a disabled organization.",
         )
         self.assertEqual(address_element.get_attribute("class"), "disabled")
+        self.assertEqual(address_element.get_attribute("href"), None)
+        self.assertEqual(address_element.get_attribute("onclick"), None)
         address_element.click()
         self.assertEqual(len(self.web_driver.window_handles), 1)
 

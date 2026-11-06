@@ -382,6 +382,7 @@ class TestAdmin(TestDisabledOrgAdminMixin, CreateModelsMixin, PostDataMixin, Tes
             staff_user = self._create_user(
                 username="staff", email="staff@staff.com", is_staff=True
             )
+            # Default operator and administrator groups grant IP address add permission.
             staff_user.user_permissions.add(
                 *Permission.objects.filter(
                     codename__in=["view_subnet", "view_ipaddress"]

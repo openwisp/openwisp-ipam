@@ -382,7 +382,7 @@ class TestApi(
         used_child = self._create_subnet(subnet="10.10.3.2/32", master_subnet=subnet)
         self._create_ipaddress(ip_address="10.10.2.1", subnet=subnet)
         self._create_ipaddress(ip_address="10.10.3.2", subnet=used_child)
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             response = self.client.get(
                 reverse("ipam:subnet_allocation", args=(subnet.id,))
             )
@@ -668,7 +668,6 @@ class TestApi(
 
 class TestApiUrls(SimpleTestCase):
     def test_get_api_urls_uses_overrides_and_default_fallbacks(self):
-
         view_names = {
             "import-subnet": "import_subnet",
             "get_next_available_ip": "get_next_available_ip",
@@ -702,7 +701,6 @@ class TestApiUrls(SimpleTestCase):
             for pattern in get_urls(custom_views)[0].url_patterns
         }
         for url_name, view_name in view_names.items():
-
             with self.subTest(url_name=url_name):
                 expected = (
                     views.subnet_hosts
