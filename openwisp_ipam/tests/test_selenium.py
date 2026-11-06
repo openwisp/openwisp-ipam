@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Permission
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import tag
 from django.urls import reverse
@@ -5,6 +6,8 @@ from openwisp_utils.tests import SeleniumTestMixin
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.color import Color
+from selenium.webdriver.support.ui import WebDriverWait
 
 from . import CreateModelsMixin
 
@@ -15,6 +18,93 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
 
     def setUp(self):
         self._create_admin(username=self.admin_username, password=self.admin_password)
+
+    def test_available_address_popup_respects_add_permission(self):
+        subnet = self._create_subnet(subnet="10.0.0.0/29", description="Sample Subnet")
+        staff_user = self._create_user(
+            username="staff", password="tester", email="staff@staff.com", is_staff=True
+        )
+        # Default operator and administrator groups grant IP address add permission.
+        staff_user.user_permissions.add(
+            *Permission.objects.filter(codename__in=["view_subnet", "view_ipaddress"])
+        )
+        self._create_org_user(
+            organization=subnet.organization, user=staff_user, is_admin=True
+        )
+        url = reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id])
+
+        with self.subTest("without add permission"):
+            self.login(username="staff", password="tester")
+            self.open(url)
+            address_element = self.find_element(By.CSS_SELECTOR, "a#addr_10001")
+            self.assertEqual(address_element.get_attribute("href"), None)
+            self.assertEqual(address_element.get_attribute("onclick"), None)
+            address_element.click()
+            self.assertEqual(len(self.web_driver.window_handles), 1)
+        self.logout()
+
+        with self.subTest("with add permission"):
+            self.login()
+            self.open(url)
+            original_window = self.web_driver.current_window_handle
+            address_element = self.find_element(By.CSS_SELECTOR, "a#addr_10001")
+            address_element.click()
+            WebDriverWait(self.web_driver, 5).until(
+                lambda driver: len(driver.window_handles) == 2
+            )
+            self.web_driver.switch_to.window(self.web_driver.window_handles[-1])
+            self.assertIn(
+                reverse(f"admin:{self.app_label}_ipaddress_add"),
+                self.web_driver.current_url,
+            )
+            self.web_driver.close()
+            self.web_driver.switch_to.window(original_window)
+
+    def test_available_address_popup_hidden_for_disabled_org(self):
+        organization = self._create_org(name="disabled org", slug="disabled-org")
+        subnet = self._create_disabled_org_subnet(
+            organization=organization, subnet="10.72.0.0/29"
+        )
+        # Even a superuser must not be able to open a popup when the subnet's
+        # organization is disabled.
+        self.login()
+        self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
+        address_element = self.find_element(By.CSS_SELECTOR, "a#addr_107201")
+        self.assertEqual(
+            address_element.get_attribute("title"),
+            "Cannot create IP Address for a disabled organization.",
+        )
+        self.assertEqual(address_element.get_attribute("class"), "disabled")
+        self.assertEqual(address_element.get_attribute("href"), None)
+        self.assertEqual(address_element.get_attribute("onclick"), None)
+        address_element.click()
+        self.assertEqual(len(self.web_driver.window_handles), 1)
+
+    def test_disabled_address_title_preserves_special_characters(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.72.0.0/29")
+        self.login()
+        self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
+        self.find_element(By.CSS_SELECTOR, "a#addr_107201")
+        title = 'Cannot create "address" & <subnet>.'
+        self.web_driver.execute_script(
+            """
+            const $ = django.jQuery;
+            const originalAjax = $.ajax;
+            $('#subnet-visual').empty();
+            $.ajax = function (options) {
+                options.success({results: [{address: '10.72.0.1'}], next: null});
+            };
+            try {
+                initHostsInfiniteScroll($, 'test', '', '', false, false, arguments[0]);
+            } finally {
+                $.ajax = originalAjax;
+            }
+            """,
+            title,
+        )
+        address_element = self.find_element(By.CSS_SELECTOR, "a#addr_107201")
+        self.assertEqual(address_element.get_attribute("title"), title)
+        self.assertEqual(address_element.get_attribute("href"), None)
 
     def test_subnet_allocation_graph(self):
         subnet = self._create_subnet(subnet="10.0.0.0/29")
@@ -107,7 +197,10 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         self.assertIsNone(reserved.get_attribute("href"))
         self.assertEqual(used.tag_name, "a")
         self.assertIn(str(ipaddress.id), used.get_attribute("href"))
-        self.assertEqual(reserved.value_of_css_property("color"), "rgb(255, 255, 255)")
+        self.assertEqual(
+            Color.from_string(reserved.value_of_css_property("color")).rgba,
+            "rgba(255, 255, 255, 1)",
+        )
         self.assert_no_browser_errors()
 
     def test_ipv6_subnet_visual_display(self):

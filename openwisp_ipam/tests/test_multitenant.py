@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -187,6 +189,26 @@ class TestMultitenantApi(
             response = self.client.get(url)
             self.assertEqual(response.status_code, 404)
 
+    def test_subnet_views_require_model_permission(self):
+        organization = self._get_org(org_name="org_a")
+        subnet = self._create_subnet(subnet="10.0.0.0/29", organization=organization)
+        # Default operator and administrator groups grant subnet permissions.
+        manager = self._create_user(
+            username="unprivileged_manager", email="unprivileged@example.com"
+        )
+        self._create_org_user(organization=organization, user=manager, is_admin=True)
+        self.client.force_login(manager)
+
+        with self.subTest("hosts require subnet view permission"):
+            response = self.client.get(reverse("ipam:hosts", args=(subnet.id,)))
+            self.assertEqual(response.status_code, 403)
+
+        with self.subTest("allocation requires subnet view permission"):
+            response = self.client.get(
+                reverse("ipam:subnet_allocation", args=(subnet.id,))
+            )
+            self.assertEqual(response.status_code, 403)
+
     def test_subnet_allocation(self):
         org_a = self._get_org(org_name="org_a")
         subnet = self._create_subnet(subnet="10.0.0.0/24", organization=org_a)
@@ -221,10 +243,32 @@ class TestMultitenantApi(
         ipaddress_b = self._create_ipaddress(ip_address="10.0.0.2", subnet=subnet_b)
         allocation_url = reverse("ipam:subnet_allocation", args=(subnet.id,))
         hosts_url = reverse("ipam:hosts", args=(subnet.id,))
-        for username, allocation, hosts in [
-            (
-                "user_a",
-                {"total": 254, "used": 1, "reserved": 0, "available": 253},
+        expected_allocation = {"total": 254, "used": 1, "reserved": 0, "available": 253}
+
+        with self.subTest("org_a manager can view allocation but not shared hosts"):
+            self._login(username="user_a", password="tester")
+            response = self.client.get(allocation_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data, expected_allocation)
+            response = self.client.get(hosts_url)
+            self.assertEqual(response.status_code, 403)
+            self.assertNotIn("results", response.data)
+
+        with self.subTest("org_b manager can view allocation but not shared hosts"):
+            self._login(username="user_b", password="tester")
+            response = self.client.get(allocation_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data, expected_allocation)
+            response = self.client.get(hosts_url)
+            self.assertEqual(response.status_code, 403)
+            self.assertNotIn("results", response.data)
+
+        with self.subTest("superuser can view shared hosts"):
+            self._login(username="superuser", password="tester")
+            response = self.client.get(hosts_url)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(
+                response.data["results"][:2],
                 [
                     {
                         "address": "10.0.0.1",
@@ -234,36 +278,12 @@ class TestMultitenantApi(
                     },
                     {
                         "address": "10.0.0.2",
-                        "used": False,
-                        "reserved": False,
-                        "ip_address_id": None,
-                    },
-                ],
-            ),
-            (
-                "user_b",
-                {"total": 254, "used": 1, "reserved": 0, "available": 253},
-                [
-                    {
-                        "address": "10.0.0.1",
-                        "used": False,
-                        "reserved": False,
-                        "ip_address_id": None,
-                    },
-                    {
-                        "address": "10.0.0.2",
                         "used": True,
                         "reserved": False,
                         "ip_address_id": str(ipaddress_b.pk),
                     },
                 ],
-            ),
-        ]:
-            with self.subTest(username=username):
-                self._login(username=username, password="tester")
-                self.assertEqual(self.client.get(allocation_url).data, allocation)
-                response = self.client.get(hosts_url)
-                self.assertEqual(response.data["results"][:2], hosts)
+            )
 
     def test_subnet_list_ipaddress(self):
         org_a = self._get_org(org_name="org_a")
@@ -390,6 +410,100 @@ class TestMultitenantApi(
             response = self.client.post(**post_data)
             self.assertEqual(response.status_code, 404)
 
+    def test_request_ip_shared_subnet_requires_superuser(self):
+        subnet = self._create_subnet(subnet="10.3.0.0/24", organization=None)
+        url = reverse("ipam:request_ip", args=(subnet.id,))
+
+        with self.subTest(
+            "active organization manager cannot request shared subnet IP"
+        ):
+            self.client.force_login(User.objects.get(username="user_a"))
+            response = self.client.post(
+                url,
+                data=json.dumps({"description": "Testing"}),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(
+                str(response.data["detail"]),
+                "Only superusers can create IP addresses in shared subnets.",
+            )
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 0)
+
+        with self.subTest("superuser can request shared subnet IP"):
+            self.client.force_login(User.objects.get(username="superuser"))
+            response = self.client.post(
+                url,
+                data=json.dumps({"description": "Testing"}),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.data["subnet"], subnet.id)
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 1)
+
+    def test_create_ip_address_shared_subnet_requires_superuser(self):
+        subnet = self._create_subnet(subnet="10.4.0.0/24", organization=None)
+        url = reverse("ipam:list_create_ip_address", args=(subnet.id,))
+        post_data = json.dumps({"ip_address": "10.4.0.5", "subnet": str(subnet.id)})
+
+        with self.subTest("active organization manager cannot create shared subnet IP"):
+            self.client.force_login(User.objects.get(username="user_a"))
+            response = self.client.post(
+                url, data=post_data, content_type="application/json"
+            )
+            self.assertEqual(response.status_code, 403)
+            self.assertEqual(
+                str(response.data["detail"]),
+                "Only superusers can create IP addresses in shared subnets.",
+            )
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 0)
+
+        with self.subTest("superuser can create shared subnet IP"):
+            self.client.force_login(User.objects.get(username="superuser"))
+            response = self.client.post(
+                url, data=post_data, content_type="application/json"
+            )
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(response.data["ip_address"], "10.4.0.5")
+            self.assertEqual(IpAddress.objects.filter(subnet=subnet).count(), 1)
+
+    def test_nested_ipaddress_writes_reject_other_organizations(self):
+        """Prevent nested writes from bypassing organization isolation."""
+        org_b = self._get_org(org_name="org_b")
+        org_c = self._create_org(name="org_c", slug="org_c")
+        active_subnet = self._create_subnet(subnet="10.1.0.0/24", organization=org_b)
+        disabled_subnet = self._create_subnet(subnet="10.2.0.0/24", organization=org_c)
+        org_c.is_active = False
+        org_c.save(update_fields=["is_active"])
+        self._login(username="user_a", password="tester")
+
+        for subnet, label in (
+            (active_subnet, "active subnet"),
+            (disabled_subnet, "disabled subnet"),
+        ):
+            with self.subTest(f"request IP for other organization's {label}"):
+                response = self.client.post(
+                    reverse("ipam:request_ip", args=(subnet.id,)),
+                    data=json.dumps({"description": "Testing"}),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 404)
+
+            with self.subTest(f"create IP for other organization's {label}"):
+                response = self.client.post(
+                    reverse("ipam:list_create_ip_address", args=(subnet.id,)),
+                    data=json.dumps(
+                        {
+                            "ip_address": f"{subnet.subnet.network_address + 5}",
+                            "subnet": str(subnet.id),
+                        }
+                    ),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 404)
+
+        self.assertEqual(IpAddress.objects.count(), 0)
+
     def test_import_subnet(self):
         csv_data = """Monachers - Matera,
         10.27.1.0/24,
@@ -512,12 +626,20 @@ class TestMultitenantApi(
         url = f'{reverse("ipam:subnet_list_create")}?format=api'
 
         with self.subTest(
-            "Test `Organization` and `Master subnet` field filter for org manager"
+            "Test `Organization` and `Master subnet` field filter for administrator"
         ):
-            self._login(username="user_a", password="tester")
+            self._login(username="administrator", password="tester")
             response = self.client.get(url)
             self.assertContains(response, "org_a</option>")
             self.assertContains(response, "10.0.0.0/24</option>")
+            self.assertNotContains(response, "org_b</option>")
+            self.assertNotContains(response, "10.10.0.0/24</option>")
+
+        with self.subTest("Operators can only view subnets in their organization"):
+            self._login(username="user_a", password="tester")
+            response = self.client.get(url)
+            self.assertNotContains(response, "org_a</option>")
+            self.assertNotContains(response, "10.0.0.0/24</option>")
             self.assertNotContains(response, "org_b</option>")
             self.assertNotContains(response, "10.10.0.0/24</option>")
 
