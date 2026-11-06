@@ -6,6 +6,7 @@ from openwisp_utils.tests import SeleniumTestMixin
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.color import Color
 from selenium.webdriver.support.ui import WebDriverWait
 
 from . import CreateModelsMixin
@@ -196,7 +197,10 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         self.assertIsNone(reserved.get_attribute("href"))
         self.assertEqual(used.tag_name, "a")
         self.assertIn(str(ipaddress.id), used.get_attribute("href"))
-        self.assertEqual(reserved.value_of_css_property("color"), "rgb(255, 255, 255)")
+        self.assertEqual(
+            Color.from_string(reserved.value_of_css_property("color")).rgba,
+            "rgba(255, 255, 255, 1)",
+        )
         self.assert_no_browser_errors()
 
     def test_ipv6_subnet_visual_display(self):
