@@ -71,6 +71,32 @@ class TestSubnet(SeleniumTestMixin, CreateModelsMixin, StaticLiveServerTestCase)
         address_element.click()
         self.assertEqual(len(self.web_driver.window_handles), 1)
 
+    def test_disabled_address_title_preserves_special_characters(self):
+        subnet = self._create_disabled_org_subnet(subnet="10.72.0.0/29")
+        self.login()
+        self.open(reverse(f"admin:{self.app_label}_subnet_change", args=[subnet.id]))
+        self.find_element(By.CSS_SELECTOR, "a#addr_107201")
+        title = 'Cannot create "address" & <subnet>.'
+        self.web_driver.execute_script(
+            """
+            const $ = django.jQuery;
+            const originalAjax = $.ajax;
+            $('#subnet-visual').empty();
+            $.ajax = function (options) {
+                options.success({results: [{address: '10.72.0.1'}], next: null});
+            };
+            try {
+                initHostsInfiniteScroll($, 'test', '', '', false, false, arguments[0]);
+            } finally {
+                $.ajax = originalAjax;
+            }
+            """,
+            title,
+        )
+        address_element = self.find_element(By.CSS_SELECTOR, "a#addr_107201")
+        self.assertEqual(address_element.get_attribute("title"), title)
+        self.assertEqual(address_element.get_attribute("href"), None)
+
     def test_subnet_allocation_graph(self):
         subnet = self._create_subnet(subnet="10.0.0.0/29")
         used_subnet = self._create_subnet(subnet="10.0.0.1/32", master_subnet=subnet)

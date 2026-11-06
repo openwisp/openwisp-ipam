@@ -60,7 +60,11 @@ function initHostsInfiniteScroll(
       id +
       '"' +
       (class_name ? ' class="' + class_name + '"' : "") +
-      (title ? ' title="' + title + '"' : "") +
+      (title
+        ? ' title="' +
+          title.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;") +
+          '"'
+        : "") +
       (href ? ' href="' + href + '" onclick="return showAddAnotherPopup(this);"' : "") +
       ">" +
       address +
