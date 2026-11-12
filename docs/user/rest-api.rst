@@ -141,6 +141,15 @@ Param       Description
 description Optional description for the IP address
 =========== =======================================
 
+.. important::
+
+    If the subnet belongs to a disabled organization, this request is
+    rejected with ``403 Forbidden`` response.
+
+    If the subnet is shared (it does not belong to an organization), only
+    superusers can request an IP address. Other users receive a ``403
+    Forbidden`` response.
+
 Response
 ++++++++
 
@@ -184,6 +193,15 @@ subnet      Subnet UUID
 description Optional description for the IP address
 =========== =======================================
 
+.. important::
+
+    If the subnet belongs to a disabled organization, this request is
+    rejected with ``403 Forbidden`` response.
+
+    If the subnet is shared (it does not belong to an organization), only
+    superusers can create an IP address. Other users receive a ``403
+    Forbidden`` response.
+
 .. _ipam_address_usability:
 
 Address Usability
@@ -226,6 +244,11 @@ master_subnet Master Subnet UUID
 description   Optional description for the IP address
 ============= =======================================
 
+.. important::
+
+    Creating a ``Subnet`` in a disabled organization is rejected with
+    ``400 Bad Request`` response.
+
 Subnet Detail
 ~~~~~~~~~~~~~
 
@@ -265,6 +288,12 @@ subnet        Subnet value in CIDR format
 master_subnet Master Subnet UUID
 description   Optional description for the IP address
 ============= =======================================
+
+.. important::
+
+    ``Subnet`` belonging to a disabled organization can be viewed or
+    deleted, but updating them is rejected with ``403 Forbidden``, even
+    for superusers.
 
 IP Address Detail
 ~~~~~~~~~~~~~~~~~
@@ -306,6 +335,12 @@ ip_address  IPv6/IPv4 value
 subnet      Subnet UUID
 description Optional description for the IP address
 =========== =======================================
+
+.. important::
+
+    ``IP Address`` belonging to a disabled organization can be viewed or
+    deleted, but updating them is rejected with ``403 Forbidden``
+    response.
 
 Export Subnet
 ~~~~~~~~~~~~~
