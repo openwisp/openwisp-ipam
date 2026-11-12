@@ -13,5 +13,5 @@ OpenWISP IPAM provides the following capabilities:
 - Possibility to search for an IP or subnet
 - Visual display for a specific subnet
 
-      .. image:: https://raw.githubusercontent.com/openwisp/openwisp-ipam/docs/docs/visual-display.png
-          :target: https://raw.githubusercontent.com/openwisp/openwisp-ipam/docs/docs/visual-display.png
+.. image:: https://raw.githubusercontent.com/openwisp/openwisp-ipam/docs/docs/visual-display.png
+    :target: https://raw.githubusercontent.com/openwisp/openwisp-ipam/docs/docs/visual-display.png
