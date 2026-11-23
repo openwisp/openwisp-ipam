@@ -1,5 +1,6 @@
 import glob
 import os
+import tempfile
 from io import StringIO
 
 from django.core.management import CommandError, call_command
@@ -46,6 +47,33 @@ class TestCommands(CreateModelsMixin, FileMixin, TestCase):
             call_command("import_subnet", file="invalid.pdf")
         with self.assertRaises(CommandError):
             call_command("import_subnet", file="invalid_path.csv")
+
+    def test_import_subnet_command_disabled_org(self):
+        org = self._create_org(name="disabled-import-org", slug="disabled-import-org")
+        org.is_active = False
+        org.save(update_fields=["is_active"])
+        csv_data = (
+            "Disabled Import,\n"
+            "10.80.1.0/24,\n"
+            "disabled-import-org,\n"
+            ",\n"
+            "ip address,description\n"
+            "10.80.1.1,Disabled\n"
+        )
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".csv", delete=False
+        ) as csvfile:
+            csvfile.write(csv_data)
+            csvfile_path = csvfile.name
+        self.addCleanup(os.remove, csvfile_path)
+        with self.assertRaises(CommandError) as ctx:
+            call_command("import_subnet", file=csvfile_path)
+        self.assertEqual(
+            str(ctx.exception),
+            "The import operation failed because the data being imported "
+            "belongs to a disabled organization: “disabled-import-org”. ",
+        )
+        self.assertEqual(Subnet.objects.filter(subnet="10.80.1.0/24").count(), 0)
 
     @classmethod
     def tearDownClass(cls):

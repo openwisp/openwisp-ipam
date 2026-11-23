@@ -11,8 +11,10 @@ from openwisp_users.api.mixins import (
     FilterByParentManaged,
     ProtectedAPIMixin as BaseProtectedAPIMixin,
 )
+from openwisp_users.api.permissions import DisabledOrgReadOnly
 from openwisp_utils.api.pagination import OpenWispPagination
 from rest_framework import pagination, serializers, status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -21,10 +23,11 @@ from rest_framework.generics import (
     RetrieveUpdateDestroyAPIView,
     get_object_or_404,
 )
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 from rest_framework.utils.urls import remove_query_param, replace_query_param
 
-from ..base.models import AbstractSubnet, CsvImportException
+from ..base.models import CsvImportException
 from .responses import HostsResponse
 from .serializers import (
     HostsResponseSerializer,
@@ -40,10 +43,44 @@ Subnet = swapper.load_model("openwisp_ipam", "Subnet")
 Organization = swapper.load_model("openwisp_users", "Organization")
 
 
+class DisabledOrgParentSubnetPermission(BasePermission):
+    """
+    Enforces parent ``Subnet`` write restrictions for disabled organizations
+    and shared subnets.
+    """
+
+    message = DisabledOrgReadOnly.message
+    shared_subnet_message = _(
+        "Only superusers can create IP addresses in shared subnets."
+    )
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS or getattr(
+            view, "allow_disabled_organization_writes", False
+        ):
+            return True
+        parent_queryset = view.get_parent_queryset()
+        is_superuser = request.user.is_superuser
+        if not is_superuser:
+            parent_queryset = view.get_organization_queryset(parent_queryset)
+        subnet = parent_queryset.select_related("organization").first()
+        if subnet is None:
+            # A scoped lookup can hide an unmanaged subnet. Deny non-superusers;
+            # let the view return its usual not-found response for superusers.
+            return is_superuser
+        if subnet.organization_id is None:
+            self.message = self.shared_subnet_message
+            return is_superuser
+        return subnet.organization.is_active
+
+
 class IpAddressOrgMixin(FilterByParentManaged):
     def get_parent_queryset(self):
         qs = Subnet.objects.filter(pk=self.kwargs["subnet_id"])
         return qs
+
+    def get_permissions(self):
+        return super().get_permissions() + [DisabledOrgParentSubnetPermission()]
 
     def get_organization_filter(self):
         if self.request.user.is_superuser:
@@ -122,7 +159,7 @@ class HostsListPagination(pagination.BasePagination):
 
 class HostsSet:
     # Needed for DjangoModelPermissions to check the right model
-    model = AbstractSubnet
+    model = Subnet
 
     def __init__(self, subnet, start=0, stop=None, organization_filter=None):
         self.start = start
@@ -211,7 +248,7 @@ class AvailableIpView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
         return Response(subnet.get_next_available_ip())
 
 
-class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAPIView):
+class IpAddressListCreateView(ProtectedAPIMixin, IpAddressOrgMixin, ListCreateAPIView):
     queryset = IpAddress.objects.none()
     subnet_model = Subnet
     serializer_class = IpAddressSerializer
@@ -224,7 +261,7 @@ class IpAddressListCreateView(IpAddressOrgMixin, ProtectedAPIMixin, ListCreateAP
 
 
 class SubnetListCreateView(
-    FilterByOrganizationManaged, ProtectedAPIMixin, ListCreateAPIView
+    ProtectedAPIMixin, FilterByOrganizationManaged, ListCreateAPIView
 ):
     serializer_class = SubnetSerializer
     pagination_class = OpenWispPagination
@@ -289,6 +326,8 @@ class ExportSubnetView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer
+    # this view only reads data (CSV export), even though it uses POST
+    allow_disabled_organization_writes = True
 
     def post(self, request, *args, **kwargs):
         response = HttpResponse(content_type="text/csv")
@@ -298,7 +337,7 @@ class ExportSubnetView(ProtectedAPIMixin, IpAddressOrgMixin, CreateAPIView):
         return response
 
 
-class SubnetHostsView(IpAddressOrgMixin, ProtectedAPIMixin, ListAPIView):
+class SubnetHostsView(ProtectedAPIMixin, IpAddressOrgMixin, ListAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = HostsResponseSerializer
@@ -306,11 +345,15 @@ class SubnetHostsView(IpAddressOrgMixin, ProtectedAPIMixin, ListAPIView):
 
     def get_queryset(self):
         subnet = self.get_subnet()
+        if subnet.organization_id is None and not self.request.user.is_superuser:
+            raise PermissionDenied(
+                _("Only superusers can view hosts in shared subnets.")
+            )
         qs = HostsSet(subnet, organization_filter=self.get_organization_filter())
         return qs
 
 
-class SubnetAllocationView(IpAddressOrgMixin, ProtectedAPIMixin, RetrieveAPIView):
+class SubnetAllocationView(ProtectedAPIMixin, IpAddressOrgMixin, RetrieveAPIView):
     subnet_model = Subnet
     queryset = Subnet.objects.none()
     serializer_class = serializers.Serializer

@@ -7,7 +7,7 @@ IpAddress = load_model("openwisp_ipam", "IpAddress")
 Subnet = load_model("openwisp_ipam", "Subnet")
 
 
-class IpRequestSerializer(ValidatedModelSerializer):
+class IpRequestSerializer(FilterSerializerByOrgManaged, ValidatedModelSerializer):
     class Meta:
         model = IpAddress
         fields = ("subnet", "description")

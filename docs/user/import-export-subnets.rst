@@ -40,6 +40,12 @@ importing data for ip addresses, the system checks if the subnet specified
 in the import file exists or not. If the subnet does not exists it will be
 created while importing data.
 
+.. important::
+
+    Data can only be imported into active organizations. Imports targeting
+    a disabled organization are rejected. A blank organization slug
+    remains supported for shared subnets.
+
 From Management Command
 ~~~~~~~~~~~~~~~~~~~~~~~
 
