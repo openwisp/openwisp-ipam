@@ -26,8 +26,8 @@ IpAddress = swapper.load_model("openwisp_ipam", "IpAddress")
 
 @admin.register(Subnet)
 class SubnetAdmin(
-    VersionAdmin,
     MultitenantAdminMixin,
+    VersionAdmin,
     TimeReadonlyAdminMixin,
     ModelAdmin,
     AuthorizeCSVOrgManaged,
@@ -192,7 +192,7 @@ class IpAddressAdminForm(forms.ModelForm):
 
 @admin.register(IpAddress)
 class IpAddressAdmin(
-    VersionAdmin, MultitenantAdminMixin, TimeReadonlyAdminMixin, ModelAdmin
+    MultitenantAdminMixin, VersionAdmin, TimeReadonlyAdminMixin, ModelAdmin
 ):
     form = IpAddressAdminForm
     change_form_template = "admin/openwisp-ipam/ip_address/change_form.html"

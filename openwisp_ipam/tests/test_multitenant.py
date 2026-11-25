@@ -1,9 +1,11 @@
+import reversion
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from openwisp_users.tests.utils import TestMultitenantAdminMixin
+from reversion.models import Version
 from swapper import load_model
 
 from openwisp_ipam.api.utils import AuthorizeCSVImport
@@ -108,6 +110,49 @@ class TestMultitenantAdmin(TestMultitenantAdminMixin, CreateModelsMixin, TestCas
             reverse("admin:ipam_export_subnet", args=(data["subnet2"].id,))
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_revision_views_superuser_only(self):
+        data = self._create_multitenancy_test_env()
+        administrator = self._create_administrator(
+            organizations=[data["org1"]],
+            username="org1_administrator",
+            email="org1administrator@test.com",
+        )
+        subnet2 = data["subnet2"]
+        with reversion.create_revision():
+            administrator.is_superuser = True
+            administrator.save()
+        with reversion.create_revision():
+            subnet2.name = "historical"
+            subnet2.save()
+        User.objects.filter(pk=administrator.pk).update(is_superuser=False)
+        Subnet.objects.filter(pk=subnet2.pk).update(name="current")
+        versions = [
+            Version.objects.get_for_object(administrator).first(),
+            Version.objects.get_for_object(subnet2).first(),
+        ]
+        self._login(username="org1_administrator", password="tester")
+        for model_name in ["subnet", "ipaddress"]:
+            urls = [reverse(f"admin:{self.app_label}_{model_name}_recoverlist")]
+            for version in versions:
+                urls += [
+                    reverse(
+                        f"admin:{self.app_label}_{model_name}_revision",
+                        args=(version.object_id, version.pk),
+                    ),
+                    reverse(
+                        f"admin:{self.app_label}_{model_name}_recover",
+                        args=(version.pk,),
+                    ),
+                ]
+            for url in urls:
+                for method in ("get", "post"):
+                    response = getattr(self.client, method)(url)
+                    self.assertEqual(response.status_code, 403, f"{method} {url}")
+        administrator.refresh_from_db()
+        self.assertFalse(administrator.is_superuser)
+        subnet2.refresh_from_db()
+        self.assertEqual(subnet2.name, "current")
 
 
 class TestMultitenantApi(
