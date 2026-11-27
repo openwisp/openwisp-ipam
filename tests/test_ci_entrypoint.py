@@ -34,11 +34,13 @@ class TestCiEntrypoint(unittest.TestCase):
         runner = runpy.run_path(str(ROOT / "runtests.py"))["run_focused_tests"]
         for label, sample in (
             (
-                "openwisp_ipam.tests.test_models.TestModels.test_ip_address_string_representation",
+                "openwisp_ipam.tests.test_models.TestModels."
+                "test_ip_address_string_representation",
                 "",
             ),
             (
-                "openwisp2.sample_ipam.tests.TestModels.test_ip_address_string_representation",
+                "openwisp2.sample_ipam.tests.TestModels."
+                "test_ip_address_string_representation",
                 "1",
             ),
         ):
