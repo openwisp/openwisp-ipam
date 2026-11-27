@@ -85,15 +85,9 @@ Run the full test suite with:
     cd ..  # Back to repository root
     ./runtests
 
-To run a focused test, pass the dotted path of a test module, class, or
-method. You can add ``--failfast`` or ``--noinput``:
-
-.. code-block:: shell
-
-    ./runtests openwisp_ipam.tests.test_models
-
-Run sample app tests separately because they use a different Django
-configuration.
+For focused tests, pass a dotted path, for example ``./runtests
+openwisp_ipam.tests.test_models``. Run sample app tests separately because
+they use different models.
 
 Alternative Sources
 -------------------
