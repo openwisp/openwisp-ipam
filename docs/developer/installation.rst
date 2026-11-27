@@ -78,12 +78,22 @@ Launch development server:
 
 You can access the admin interface at ``http://127.0.0.1:8000/admin/``.
 
-Run tests with:
+Run the full test suite with:
 
 .. code-block:: shell
 
     cd ..  # Back to repository root
     ./runtests
+
+To run a focused test, pass the dotted path of a test module, class, or
+method. You can add ``--failfast`` or ``--noinput``:
+
+.. code-block:: shell
+
+    ./runtests openwisp_ipam.tests.test_models
+
+Run sample app tests separately because they use a different Django
+configuration.
 
 Alternative Sources
 -------------------
