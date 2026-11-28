@@ -48,10 +48,12 @@ If instructions conflict, repository config and CI workflows win first, official
 - When separate tests cover different cases of the same feature, share almost identical database preparation, and primarily vary in input or expected outcome, group them in one test method with `subTest`. This is especially encouraged, but not limited to, TransactionTestCase tests, where it avoids repeated expensive database setup and teardown. Keep each subtest's setup explicit and independent, and retain separate test methods when cases exercise genuinely distinct behavior. Leave one blank line before each with `self.subTest(...)` statement only when a test method contains multiple such statements. Do not add a blank line for a single `subTest` statement inside a loop.
 - Use targeted tests while iterating, then run the documented full test command before considering the change complete.
 - Run the full test suite with a timeout of at least 15 minutes (`timeout=900000`).
-- For focused tests, call `./tests/manage.py test <pythonpath>` directly. Use `./runtests` only for the full suite because it runs multiple coverage and integration configurations and is not a focused-test runner.
+- Use `./runtests <pythonpath>` for focused tests and `./runtests` for the full coverage suite. Keep focused labels and flags on an explicit allowlist.
 - Prefer in-process tests so coverage tools can measure changed code.
 - Keep helpers and classes used by only one test method inside that method. Promote them to class or module scope only when genuinely reused.
 - Keep tests quiet on success. When code under test writes to stdout or stderr, use `capture_stdout`, `capture_stderr`, or `capture_any_output` from `openwisp_utils.tests` and assert the expected output. Do not leave unasserted output, logs, or warnings in test runs.
+- For CI configuration, dependency installation, or test entry point changes that do not change application behavior, run focused tests and QA locally. Open the PR after focused verification and require the relevant full suite in CI before declaring it complete.
+- Add CI dependencies to `./install-ci-deps.sh` and cache them. Keep cache inputs in sync with the installer and dependency files. Follow the shared structure and internal naming in `.github/workflows/ci.yml` so OpenWISP automation works across repositories.
 
 ## Django Rules
 
