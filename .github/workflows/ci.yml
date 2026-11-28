@@ -88,6 +88,7 @@ jobs:
         run: ./runtests
 
       - name: Focused runner test
+        if: ${{ !cancelled() && steps.deps.conclusion == 'success' }}
         run: python -m unittest discover -s tests -p test_runner.py
 
       - name: Upload Coverage
