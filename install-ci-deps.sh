@@ -2,7 +2,7 @@
 # Install the QA tools and Python dependencies for the selected CI row.
 set -e
 
-if [ "${CI_SYSTEM_DEPS_READY:-0}" != 1 ]; then
+if [ "${CI_SYSTEM_DEPS_READY:-0}" != 1 ] && [ "${CI_SYSTEM_DEPS_ONLY:-0}" != 1 ]; then
     sudo npm install -g prettier
 fi
 if [ "${CI_SYSTEM_DEPS_ONLY:-0}" = 1 ]; then
