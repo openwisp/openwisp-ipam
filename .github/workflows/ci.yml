@@ -87,6 +87,10 @@ jobs:
         if: ${{ !cancelled() && steps.deps.conclusion == 'success' }}
         run: ./runtests
 
+      - name: Focused runner test
+        if: ${{ !cancelled() && steps.deps.conclusion == 'success' }}
+        run: python -m unittest discover -s tests -p test_runner.py
+
       - name: Upload Coverage
         if: ${{ success() }}
         uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
